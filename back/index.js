@@ -122,7 +122,7 @@ app.use((err, req, res, next) => {
 });
 
 // Database Sync and Server Start
-sequelize.sync({ alter: true })
+sequelize.sync()
   .then(() => {
     console.log('Database synced successfully.');
     const server = app.listen(PORT, async () => {
