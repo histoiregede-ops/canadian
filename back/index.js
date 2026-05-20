@@ -18,6 +18,7 @@ const allowedOrigins = [
   'http://localhost:4200',
   'http://localhost:3000',
   'https://canada-erp.vercel.app',
+  'https://canada-erp-frontend.onrender.com',
   process.env.FRONTEND_URL
 ].filter(Boolean);
 const corsOrigin = function (origin, callback) {
@@ -124,8 +125,18 @@ app.use((err, req, res, next) => {
 // sequelize.sync({ alter: false }) // Disabled due to existing data conflicts
 //   .then(() => {
 //     console.log('Database synced successfully.');
-    const server = app.listen(PORT, () => {
+    const server = app.listen(PORT, async () => {
       console.log(`Server is running on port ${PORT}`);
+      try {
+        const userCount = await models.User.count();
+        if (userCount === 0) {
+          await models.User.create({ username: 'admin', password: 'admin123', role: 'admin', fullName: 'Administrateur' });
+          await models.User.create({ username: 'cashier1', password: 'cashier123', role: 'cashier', fullName: 'Caissier Principal' });
+          console.log('Default users created (admin/admin123, cashier1/cashier123)');
+        }
+      } catch (err) {
+        console.error('Error creating default users:', err.message);
+      }
     });
 
     // Initialize messaging tables
