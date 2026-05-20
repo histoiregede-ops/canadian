@@ -76,3 +76,45 @@
   border-left: 1px solid var(--border-color);
   border-right: 1px solid var(--border-color);
 }
+
+.hamburger {
+  display: none;
+  flex-direction: column;
+  justify-content: center;
+  gap: 5px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 8px;
+}
+
+.hamburger:hover {
+  background-color: #f1f5f9;
+}
+
+.hamburger-line {
+  display: block;
+  width: 22px;
+  height: 2px;
+  background-color: var(--text-main);
+  border-radius: 2px;
+}
+
+@media (max-width: 768px) {
+  .hamburger {
+    display: flex;
+  }
+
+  .search-bar {
+    display: none;
+  }
+
+  .date-display {
+    display: none;
+  }
+
+  .navbar {
+    padding: 0 12px;
+  }
+}

@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, Output, EventEmitter } from '@angular/core';
 import { CommonModule, DatePipe } from '@angular/common';
 import { RouterModule } from '@angular/router';
 
@@ -11,5 +11,10 @@ import { RouterModule } from '@angular/router';
   styleUrls: ['./navbar.component.css']
 })
 export class NavbarComponent {
+  @Output() toggleSidebar = new EventEmitter<void>();
   today: Date = new Date();
+
+  onToggle(): void {
+    this.toggleSidebar.emit();
+  }
 }

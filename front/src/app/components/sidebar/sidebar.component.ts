@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, Input, Output, EventEmitter } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule, Router } from '@angular/router';
 import { AuthService } from '../../services/auth';
@@ -11,6 +11,9 @@ import { AuthService } from '../../services/auth';
   styleUrls: ['./sidebar.component.css']
 })
 export class SidebarComponent implements OnInit {
+  @Input() isOpen = false;
+  @Output() closeSidebar = new EventEmitter<void>();
+
   user: any = null;
 
   constructor(
@@ -20,6 +23,10 @@ export class SidebarComponent implements OnInit {
 
   ngOnInit(): void {
     this.user = this.authService.getUser();
+  }
+
+  onNavClick(): void {
+    this.closeSidebar.emit();
   }
 
   logout(): void {

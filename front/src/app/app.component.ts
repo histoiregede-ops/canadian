@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, HostListener } from '@angular/core';
 import { RouterOutlet, Router, NavigationEnd } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { SidebarComponent } from './components/sidebar/sidebar.component';
@@ -14,6 +14,7 @@ import { filter } from 'rxjs';
 })
 export class AppComponent {
   isPublicPage = false;
+  sidebarOpen = false;
 
   private sidebarHiddenRoutes = ['/login', '/contact', '/shop', '/cart', '/checkout', '/client-messages'];
 
@@ -22,6 +23,22 @@ export class AppComponent {
       filter(event => event instanceof NavigationEnd)
     ).subscribe((event: any) => {
       this.isPublicPage = this.sidebarHiddenRoutes.some(route => event.url.startsWith(route));
+      this.closeSidebar();
     });
+  }
+
+  toggleSidebar(): void {
+    this.sidebarOpen = !this.sidebarOpen;
+  }
+
+  closeSidebar(): void {
+    this.sidebarOpen = false;
+  }
+
+  @HostListener('window:resize')
+  onResize(): void {
+    if (window.innerWidth > 768) {
+      this.sidebarOpen = false;
+    }
   }
 }

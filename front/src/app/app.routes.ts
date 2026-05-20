@@ -46,6 +46,8 @@ export const routes: Routes = [
   ]},
   // Public Routes
   { path: 'shop', component: ShopComponent },
+  { path: 'products', redirectTo: 'shop', pathMatch: 'full' },
+  { path: 'produits', redirectTo: 'shop', pathMatch: 'full' },
   { path: 'cart', component: CartComponent },
   { path: 'checkout', component: CheckoutComponent },
   { path: 'messages', component: MessagesComponent },

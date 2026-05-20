@@ -1,63 +1,65 @@
-<aside class="sidebar">
-  <div class="logo">
-    <img src="/logo_electro_canadien.ico" class="logo-img" alt="Logo">
-    <span class="logo-text">Electro Canadien</span>
+<aside class="sidebar" [class.open]="isOpen">
+  <div class="sidebar-header">
+    <div class="logo">
+      <img src="/logo_electro_canadien.ico" class="logo-img" alt="Logo">
+      <span class="logo-text">Electro Canadien</span>
+    </div>
+    <button class="sidebar-close" (click)="closeSidebar.emit()" title="Fermer">✕</button>
   </div>
 
   <nav class="nav-menu">
-    <a *ngIf="user?.role === 'admin' || user?.role === 'cashier'" routerLink="/dashboard" routerLinkActive="active" class="nav-item">
+    <a *ngIf="user?.role === 'admin' || user?.role === 'cashier'" routerLink="/dashboard" routerLinkActive="active" class="nav-item" (click)="onNavClick()">
       <span class="icon">📊</span>
       <span class="label">Tableau de bord</span>
     </a>
-    <a *ngIf="user?.role === 'admin' || user?.role === 'cashier'" routerLink="/inventory" routerLinkActive="active" class="nav-item">
+    <a *ngIf="user?.role === 'admin' || user?.role === 'cashier'" routerLink="/inventory" routerLinkActive="active" class="nav-item" (click)="onNavClick()">
       <span class="icon">📦</span>
       <span class="label">Catalogue & Stock</span>
     </a>
-    <a *ngIf="user?.role === 'admin'" routerLink="/categories" routerLinkActive="active" class="nav-item">
+    <a *ngIf="user?.role === 'admin'" routerLink="/categories" routerLinkActive="active" class="nav-item" (click)="onNavClick()">
       <span class="icon">🏷️</span>
       <span class="label">Catégories</span>
     </a>
-    <a *ngIf="user?.role === 'admin' || user?.role === 'cashier'" routerLink="/sales" routerLinkActive="active" class="nav-item">
+    <a *ngIf="user?.role === 'admin' || user?.role === 'cashier'" routerLink="/sales" routerLinkActive="active" class="nav-item" (click)="onNavClick()">
       <span class="icon">🛒</span>
       <span class="label">Ventes (POS)</span>
     </a>
-
-    <a *ngIf="user?.role === 'admin' || user?.role === 'technician'" routerLink="/repairs" routerLinkActive="active" class="nav-item">
+    <a *ngIf="user?.role === 'admin' || user?.role === 'technician'" routerLink="/repairs" routerLinkActive="active" class="nav-item" (click)="onNavClick()">
       <span class="icon">🔧</span>
       <span class="label">Réparations</span>
     </a>
-    <a *ngIf="user?.role === 'admin' || user?.role === 'technician'" routerLink="/installations" routerLinkActive="active" class="nav-item">
+    <a *ngIf="user?.role === 'admin' || user?.role === 'technician'" routerLink="/installations" routerLinkActive="active" class="nav-item" (click)="onNavClick()">
       <span class="icon">🏗️</span>
       <span class="label">Installations</span>
     </a>
-    <a *ngIf="user?.role === 'admin' || user?.role === 'cashier'" routerLink="/customers" routerLinkActive="active" class="nav-item">
+    <a *ngIf="user?.role === 'admin' || user?.role === 'cashier'" routerLink="/customers" routerLinkActive="active" class="nav-item" (click)="onNavClick()">
       <span class="icon">👥</span>
       <span class="label">Clients</span>
     </a>
-    <a *ngIf="user?.role === 'admin'" routerLink="/technicians" routerLinkActive="active" class="nav-item">
+    <a *ngIf="user?.role === 'admin'" routerLink="/technicians" routerLinkActive="active" class="nav-item" (click)="onNavClick()">
       <span class="icon">🛠️</span>
       <span class="label">Techniciens</span>
     </a>
-    <a *ngIf="user?.role === 'admin'" routerLink="/messages" routerLinkActive="active" class="nav-item">
+    <a *ngIf="user?.role === 'admin'" routerLink="/messages" routerLinkActive="active" class="nav-item" (click)="onNavClick()">
       <span class="icon">💬</span>
       <span class="label">Messagerie</span>
     </a>
-    <a *ngIf="user?.role === 'admin'" routerLink="/finance" routerLinkActive="active" class="nav-item">
+    <a *ngIf="user?.role === 'admin'" routerLink="/finance" routerLinkActive="active" class="nav-item" (click)="onNavClick()">
       <span class="icon">💰</span>
       <span class="label">Caisse & Finance</span>
     </a>
-    <a *ngIf="user?.role === 'admin'" routerLink="/reports" routerLinkActive="active" class="nav-item">
+    <a *ngIf="user?.role === 'admin'" routerLink="/reports" routerLinkActive="active" class="nav-item" (click)="onNavClick()">
       <span class="icon">📊</span>
       <span class="label">Rapports</span>
     </a>
-    <a *ngIf="user?.role === 'admin'" routerLink="/users" routerLinkActive="active" class="nav-item">
+    <a *ngIf="user?.role === 'admin'" routerLink="/users" routerLinkActive="active" class="nav-item" (click)="onNavClick()">
       <span class="icon">👥</span>
       <span class="label">Gestion Utilisateurs</span>
     </a>
   </nav>
 
   <div class="sidebar-footer">
-    <a routerLink="/settings" routerLinkActive="active" class="nav-item">
+    <a routerLink="/settings" routerLinkActive="active" class="nav-item" (click)="onNavClick()">
       <span class="icon">⚙️</span>
       <span class="label">Paramètres</span>
     </a>
