@@ -1,0 +1,226 @@
+<div class="messaging" *ngIf="isAuthenticated; else authTemplate">
+  <header class="messaging-header">
+    <div class="header-row">
+      <h1>Messagerie</h1>
+      <button class="btn-logout" (click)="onLogout()">Deconnexion</button>
+    </div>
+    <p class="subtitle">Bienvenue, {{ customer?.name }}</p>
+  </header>
+
+  <div class="messaging-body">
+    <aside class="conversations-panel" [class.open]="sidebarOpen">
+      <div class="panel-header">
+        <h2>Conversations</h2>
+        <button class="btn btn-primary" (click)="showNewConversationForm = !showNewConversationForm">
+          + Nouveau
+        </button>
+        <button class="btn-close-sidebar" (click)="sidebarOpen = false">&times;</button>
+      </div>
+
+      <div *ngIf="showNewConversationForm" class="new-conv-form">
+        <input
+          type="text"
+          [(ngModel)]="conversationSubject"
+          placeholder="Sujet de la conversation..."
+        />
+        <div class="form-actions">
+          <button class="btn btn-primary btn-sm" (click)="createNewConversation()">Creer</button>
+          <button class="btn btn-ghost btn-sm" (click)="showNewConversationForm = false">Annuler</button>
+        </div>
+      </div>
+
+      <div class="conversations-list">
+        <div *ngIf="loading" class="state-msg">Chargement...</div>
+        <div *ngIf="!loading && conversations.length === 0" class="state-msg">
+          Aucune conversation pour le moment
+        </div>
+        <div
+          *ngFor="let conv of conversations"
+          class="conv-item"
+          [class.active]="selectedConversation?.id === conv.id"
+          (click)="selectConversation(conv); sidebarOpen = false"
+        >
+          <div class="conv-body">
+            <h3>{{ conv.subject }}</h3>
+            <p class="conv-preview">{{ conv.lastMessage }}</p>
+          </div>
+          <div class="conv-meta">
+            <span class="badge" [class.closed]="conv.status === 'closed'">
+              {{ conv.status === 'open' ? 'Ouvert' : 'Ferme' }}
+            </span>
+            <span *ngIf="conv.unreadCount > 0" class="unread">{{ conv.unreadCount }}</span>
+          </div>
+        </div>
+      </div>
+    </aside>
+
+    <main class="chat-panel">
+      <div *ngIf="!selectedConversation" class="empty-state">
+        <div class="empty-icon">&#9993;</div>
+        <h2>Selectionnez une conversation</h2>
+        <p>Choisissez une conversation dans la liste ou creez-en une nouvelle</p>
+      </div>
+
+      <ng-container *ngIf="selectedConversation">
+        <div class="chat-header">
+          <button class="btn-back" (click)="sidebarOpen = true">&larr;</button>
+          <div class="chat-meta">
+            <h2>{{ selectedConversation.subject }}</h2>
+            <span class="status" [class.open]="selectedConversation.status === 'open'">
+              {{ selectedConversation.status === 'open' ? 'Ouvert' : 'Ferme' }}
+            </span>
+          </div>
+          <button
+            *ngIf="selectedConversation.status === 'open'"
+            class="btn btn-danger btn-sm"
+            (click)="closeConversation()"
+          >
+            Fermer
+          </button>
+        </div>
+
+        <div class="messages-list" #messagesContainer>
+          <div
+            *ngFor="let msg of messages"
+            class="message"
+            [class.outgoing]="msg.senderId === customer?.id"
+          >
+            <div class="msg-avatar">{{ (msg.senderName || '?').charAt(0).toUpperCase() }}</div>
+            <div class="msg-bubble">
+              <div class="msg-head">
+                <span class="msg-name">{{ msg.senderName }}</span>
+                <span class="msg-time">{{ msg.createdAt | date:'short' }}</span>
+              </div>
+              <p class="msg-text">{{ msg.content }}</p>
+            </div>
+          </div>
+          <div *ngIf="typingUsers.size > 0" class="typing">
+            <span class="dot-pulse"></span>
+            <span>Quelqu'un ecrit...</span>
+          </div>
+        </div>
+
+        <div *ngIf="selectedConversation.status === 'open'" class="input-area">
+          <textarea
+            [(ngModel)]="newMessage"
+            (keydown)="onKeyDown($event)"
+            placeholder="Tapez votre message... (Shift+Entree pour nouvelle ligne)"
+            rows="1"
+          ></textarea>
+          <button
+            class="btn btn-primary btn-send"
+            (click)="sendMessage()"
+            [disabled]="!newMessage.trim() || sendingMessage"
+          >
+            {{ sendingMessage ? 'Envoi...' : 'Envoyer' }}
+          </button>
+        </div>
+
+        <div *ngIf="selectedConversation.status === 'closed'" class="closed-banner">
+          Cette conversation est fermee. Creez-en une nouvelle pour continuer.
+        </div>
+      </ng-container>
+    </main>
+  </div>
+</div>
+
+<ng-template #authTemplate>
+  <div class="auth-page">
+    <div class="auth-card">
+      <div class="auth-header">
+        <h1>Messagerie Client</h1>
+        <p>Connectez-vous ou creez un compte pour contacter notre equipe</p>
+      </div>
+
+      <div class="auth-tabs">
+        <button
+          class="tab"
+          [class.active]="authMode === 'login'"
+          (click)="switchAuthMode('login')"
+        >Connexion</button>
+        <button
+          class="tab"
+          [class.active]="authMode === 'register'"
+          (click)="switchAuthMode('register')"
+        >Inscription</button>
+      </div>
+
+      <form *ngIf="authMode === 'login'" (ngSubmit)="onLogin()" class="auth-form">
+        <div class="form-group">
+          <label>Email</label>
+          <input
+            type="email"
+            [(ngModel)]="authEmail"
+            name="email"
+            placeholder="votre@email.com"
+            required
+          />
+        </div>
+        <div class="form-group">
+          <label>Mot de passe</label>
+          <input
+            type="password"
+            [(ngModel)]="authPassword"
+            name="password"
+            placeholder="Votre mot de passe"
+            required
+          />
+        </div>
+        <div class="auth-error" *ngIf="authError">{{ authError }}</div>
+        <button type="submit" class="btn btn-primary btn-block" [disabled]="authLoading">
+          {{ authLoading ? 'Connexion...' : 'Se connecter' }}
+        </button>
+      </form>
+
+      <form *ngIf="authMode === 'register'" (ngSubmit)="onRegister()" class="auth-form">
+        <div class="form-group">
+          <label>Nom complet</label>
+          <input
+            type="text"
+            [(ngModel)]="authName"
+            name="name"
+            placeholder="Votre nom"
+            required
+          />
+        </div>
+        <div class="form-group">
+          <label>Email</label>
+          <input
+            type="email"
+            [(ngModel)]="authEmail"
+            name="email"
+            placeholder="votre@email.com"
+            required
+          />
+        </div>
+        <div class="form-group">
+          <label>Telephone</label>
+          <input
+            type="tel"
+            [(ngModel)]="authPhone"
+            name="phone"
+            placeholder="+228 XX XX XX XX"
+          />
+        </div>
+        <div class="form-group">
+          <label>Mot de passe</label>
+          <input
+            type="password"
+            [(ngModel)]="authPassword"
+            name="password"
+            placeholder="Minimum 6 caracteres"
+            required
+          />
+        </div>
+        <div class="auth-error" *ngIf="authError">{{ authError }}</div>
+        <button type="submit" class="btn btn-primary btn-block" [disabled]="authLoading">
+          {{ authLoading ? 'Inscription...' : 'Creer mon compte' }}
+        </button>
+      </form>
+
+      <div class="auth-footer">
+        <a routerLink="/shop">&larr; Retour a la boutique</a>
+      </div>
+    </div>
+  </div>
+</ng-template>

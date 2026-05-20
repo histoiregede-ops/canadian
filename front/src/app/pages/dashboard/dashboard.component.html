@@ -1,0 +1,158 @@
+<div class="dashboard">
+  <div class="welcome-header">
+    <h1>Tableau de bord</h1>
+    <p class="text-muted">Aperçu de l'activité aujourd'hui</p>
+  </div>
+
+  <!-- Stats Grid -->
+  <div class="stats-grid">
+    <div class="stat-card gold">
+      <div class="stat-info">
+        <span class="label">Chiffre d'affaires</span>
+        <h2 class="value">{{ stats.dailyIncome | number }} FCFA</h2>
+        <span class="trend positive">Aujourd'hui</span>
+      </div>
+      <div class="stat-icon">💰</div>
+    </div>
+
+    <div class="stat-card blue">
+      <div class="stat-info">
+        <span class="label">Ventes du jour</span>
+        <h2 class="value">{{ stats.dailyOrders }}</h2>
+        <span class="trend">Aujourd'hui</span>
+      </div>
+      <div class="stat-icon">🛒</div>
+    </div>
+
+    <div class="stat-card orange">
+      <div class="stat-info">
+        <span class="label">Réparations</span>
+        <h2 class="value">{{ stats.activeRepairs }}</h2>
+        <span class="trend">En cours</span>
+      </div>
+      <div class="stat-icon">🔧</div>
+    </div>
+
+    <div class="stat-card green">
+      <div class="stat-info">
+        <span class="label">Installations</span>
+        <h2 class="value">{{ stats.plannedInstallations }}</h2>
+        <span class="trend">Prévues</span>
+      </div>
+      <div class="stat-icon">🏗️</div>
+    </div>
+  </div>
+
+  <!-- Main Content Grid -->
+  <div class="dashboard-grid">
+    <!-- Left Column -->
+    <div class="grid-col-2">
+      <div class="card">
+        <div class="card-header">
+          <h3>Dernières Commandes</h3>
+          <button class="btn-link">Voir tout</button>
+        </div>
+        <table>
+          <thead>
+            <tr>
+              <th>Client</th>
+              <th>Produit</th>
+              <th>Montant</th>
+              <th>Statut</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Jean Dupont</td>
+              <td>Panneau Solaire 400W</td>
+              <td>150 000 FCFA</td>
+              <td><span class="badge badge-success">Payé</span></td>
+            </tr>
+            <tr>
+              <td>Marie Koné</td>
+              <td>Batterie Lithium 100Ah</td>
+              <td>350 000 FCFA</td>
+              <td><span class="badge badge-warning">En attente</span></td>
+            </tr>
+            <tr>
+              <td>Société ABC</td>
+              <td>Kit Solaire Complet</td>
+              <td>850 000 FCFA</td>
+              <td><span class="badge badge-success">Payé</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="card mt-4">
+        <div class="card-header">
+          <h3>Réparations Urgentes</h3>
+        </div>
+        <div class="repair-list">
+          <div class="repair-item">
+            <div class="repair-icon">📱</div>
+            <div class="repair-details">
+              <span class="device">iPhone 13 - Écran cassé</span>
+              <span class="client">M. Traoré</span>
+            </div>
+            <span class="badge badge-danger">Urgent</span>
+          </div>
+          <div class="repair-item">
+            <div class="repair-icon">💻</div>
+            <div class="repair-details">
+              <span class="device">MacBook Air - Batterie</span>
+              <span class="client">Mme Sako</span>
+            </div>
+            <span class="badge badge-warning">En diagnostic</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right Column -->
+    <div class="grid-col-1">
+      <div class="card alert-card">
+        <div class="card-header">
+          <h3>Alertes Stock</h3>
+        </div>
+        <div class="alert-list">
+          <div class="alert-item danger" *ngIf="stats.lowStockProducts > 0">
+            <span class="alert-icon">⚠️</span>
+            <div class="alert-content">
+              <span class="title">Produits en alerte</span>
+              <p>{{ stats.lowStockProducts }} produits sont sous le seuil critique.</p>
+            </div>
+          </div>
+          <div class="alert-item success" *ngIf="stats.lowStockProducts === 0">
+            <span class="alert-icon">✅</span>
+            <div class="alert-content">
+              <span class="title">Stock OK</span>
+              <p>Tous les produits sont bien approvisionnés.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card mt-4">
+        <div class="card-header">
+          <h3>Caisse du Jour</h3>
+        </div>
+        <div class="cash-summary">
+          <div class="cash-row">
+            <span>Ventes</span>
+            <span class="income">+ {{ stats.dailyIncome | number }} FCFA</span>
+          </div>
+          <div class="cash-row">
+            <span>Dépenses</span>
+            <span class="expense">- {{ stats.dailyExpense | number }} FCFA</span>
+          </div>
+          <div class="divider"></div>
+          <div class="cash-row total">
+            <span>Solde Net</span>
+            <span>{{ (stats.dailyIncome - stats.dailyExpense) | number }} FCFA</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

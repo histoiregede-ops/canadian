@@ -1,0 +1,84 @@
+<div class="user-management-page">
+  <div class="page-header">
+    <div class="title-section">
+      <h1>Gestion des Utilisateurs</h1>
+      <p class="text-muted">Créer et gérer les comptes caissiers, techniciens et administrateurs</p>
+    </div>
+    <button class="btn-primary" (click)="openModal()">
+      <span>➕</span> <span>Nouvel Utilisateur</span>
+    </button>
+  </div>
+
+  <div class="stats-row">
+    <div class="stat-item">
+      <span class="stat-icon total">👥</span>
+      <div>
+        <span class="stat-num">{{ users.length }}</span>
+        <span class="stat-label">Utilisateurs</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="table-wrapper" *ngIf="!loading">
+    <table class="user-table">
+      <thead>
+        <tr>
+          <th>Nom d'utilisateur</th>
+          <th>Nom complet</th>
+          <th>Email</th>
+          <th>Rôle</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let user of users">
+          <td>{{ user.username }}</td>
+          <td>{{ user.fullName || '—' }}</td>
+          <td>{{ user.email || '—' }}</td>
+          <td><span class="role-badge" [class.admin]="user.role === 'admin'" [class.cashier]="user.role === 'cashier'" [class.technician]="user.role === 'technician'">{{ user.role }}</span></td>
+        </tr>
+        <tr *ngIf="users.length === 0">
+          <td colspan="4" class="empty-cell">Aucun utilisateur</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="loading-state" *ngIf="loading">Chargement...</div>
+
+  <div class="modal-overlay" *ngIf="showModal">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h2>Nouvel Utilisateur</h2>
+        <button class="close-btn" (click)="showModal = false">×</button>
+      </div>
+      <form (submit)="save()" class="modal-form">
+        <div class="form-group">
+          <label>Nom d'utilisateur</label>
+          <input type="text" [(ngModel)]="form.username" name="username" required placeholder="ex: jean.dupont">
+        </div>
+        <div class="form-group">
+          <label>Mot de passe</label>
+          <input type="password" [(ngModel)]="form.password" name="password" required placeholder="••••••••">
+        </div>
+        <div class="form-group">
+          <label>Nom complet</label>
+          <input type="text" [(ngModel)]="form.fullName" name="fullName" placeholder="Jean Dupont">
+        </div>
+        <div class="form-group">
+          <label>Email</label>
+          <input type="email" [(ngModel)]="form.email" name="email" placeholder="jean@exemple.com">
+        </div>
+        <div class="form-group">
+          <label>Rôle</label>
+          <select [(ngModel)]="form.role" name="role">
+            <option *ngFor="let r of roles" [value]="r">{{ r }}</option>
+          </select>
+        </div>
+        <div class="modal-actions">
+          <button type="button" class="btn-secondary" (click)="showModal = false">Annuler</button>
+          <button type="submit" class="btn-primary">Créer</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>

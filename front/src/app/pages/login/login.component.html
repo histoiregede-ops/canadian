@@ -1,0 +1,60 @@
+<div class="login-split-page">
+  <!-- Left Side: Full Image -->
+  <div class="brand-side">
+    <div class="brand-content">
+      <img src="/logo_electro_canadien.ico" alt="Logo" class="floating-logo">
+      <div class="brand-text">
+        <h1>ELECTRO CANADIEN</h1>
+        <p>L'expertise au service de votre énergie</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Right Side: Login Form -->
+  <div class="form-side">
+    <div class="form-container">
+      <div class="form-header">
+        <h2>Bienvenue</h2>
+        <p>Veuillez vous connecter à votre compte</p>
+      </div>
+
+      <form (submit)="onSubmit($event)" class="login-form">
+        <div class="input-group">
+          <label for="username">Nom d'utilisateur</label>
+          <div class="input-field">
+            <span class="icon">👤</span>
+            <input type="text" id="username" name="username" [(ngModel)]="username" placeholder="Identifiant" required>
+          </div>
+        </div>
+
+        <div class="input-group">
+          <label for="password">Mot de passe</label>
+          <div class="input-field">
+            <span class="icon">🔒</span>
+            <input type="password" id="password" name="password" [(ngModel)]="password" placeholder="••••••••" required>
+          </div>
+        </div>
+
+        <div class="options">
+          <label class="remember">
+            <input type="checkbox"> Se souvenir de moi
+          </label>
+          <a href="#" class="forgot">Besoin d'aide ?</a>
+        </div>
+
+        <button type="submit" class="btn-submit" [disabled]="loading">
+          <span *ngIf="!loading">CONNEXION</span>
+          <span *ngIf="loading" class="spinner"></span>
+        </button>
+
+        <div class="error-msg" *ngIf="errorMessage">
+          {{ errorMessage }}
+        </div>
+      </form>
+
+      <div class="form-footer">
+        <p>&copy; 2026 Electro Canadien - Togo</p>
+      </div>
+    </div>
+  </div>
+</div>

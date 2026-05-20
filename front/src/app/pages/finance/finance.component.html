@@ -1,0 +1,248 @@
+<div class="finance-page">
+  <div class="page-header">
+    <div class="title-section">
+      <h1 class="text-3xl font-extrabold text-slate-800">Finance & Performance</h1>
+      <p class="text-slate-500 mt-1">Analyse des revenus et répartition des flux monétaires</p>
+    </div>
+    <div class="header-actions">
+      <button class="btn btn-secondary" (click)="openReportModal()">📋 Rapport Journalier</button>
+      <button class="btn btn-primary" (click)="openAddModal()">➕ Nouvelle Opération</button>
+    </div>
+  </div>
+
+  <div class="stats-grid mb-8">
+    <div class="stat-card">
+      <div class="stat-icon revenue">💰</div>
+      <div class="stat-content">
+        <p class="stat-label">Total Encaissements</p>
+        <h3 class="stat-value text-green-600">{{ stats?.revenue | number }} FCFA</h3>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon expense">💸</div>
+      <div class="stat-content">
+        <p class="stat-label">Total Décaissements</p>
+        <h3 class="stat-value text-red-600">{{ stats?.expense | number }} FCFA</h3>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon balance">📊</div>
+      <div class="stat-content">
+        <p class="stat-label">Solde Net</p>
+        <h3 class="stat-value" [class.text-green-600]="(stats?.balance || 0) >= 0" [class.text-red-600]="(stats?.balance || 0) < 0">{{ stats?.balance | number }} FCFA</h3>
+      </div>
+    </div>
+  </div>
+
+  <div class="charts-grid mb-8">
+    <div class="finance-card">
+      <div class="card-header">
+        <h3 class="card-title">Évolution Mensuelle</h3>
+      </div>
+      <div class="chart-container">
+        <canvas #revenueChart></canvas>
+      </div>
+    </div>
+    <div class="finance-card">
+      <div class="card-header">
+        <h3 class="card-title">Répartition par Flux</h3>
+      </div>
+      <div class="chart-container">
+        <canvas #categoryChart></canvas>
+      </div>
+    </div>
+  </div>
+
+  <div class="finance-card">
+    <div class="card-header">
+      <h3 class="card-title">Journal des Transactions</h3>
+    </div>
+    <div class="table-responsive">
+      <table class="transaction-table">
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Détails</th>
+            <th>Type</th>
+            <th>Montant</th>
+            <th>Statut</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let t of transactions">
+            <td data-label="Date">{{ t.date | date:'dd/MM/yyyy' }}</td>
+            <td data-label="Détails">{{ t.description }}</td>
+            <td data-label="Type">{{ t.type === 'income' ? 'Encaissement' : 'Décaissement' }}</td>
+            <td data-label="Montant" class="stat-value" style="font-size: 1.1rem;"
+              [class.text-green-600]="t.type === 'income'" [class.text-red-600]="t.type === 'expense'">
+              {{ (t.type === 'income' ? '+' : '-') }} {{ t.amount | number }} FCFA
+            </td>
+            <td data-label="Statut">
+              <span [ngClass]="getStatusClass(t.status || 'paid')">{{ getStatusLabel(t.status || 'paid') }}</span>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Modal Nouvelle Opération -->
+  <div class="modal-overlay" *ngIf="showModal">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h2>Nouvelle Opération</h2>
+        <button class="close-btn" (click)="closeModal()">×</button>
+      </div>
+      <form (submit)="saveTransaction()" class="modal-form">
+        <div class="form-row">
+          <div class="form-group">
+            <label>Type</label>
+            <select [(ngModel)]="newTransaction.type" name="type" required>
+              <option value="income">Encaissement</option>
+              <option value="expense">Décaissement</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Montant (FCFA)</label>
+            <input type="number" [(ngModel)]="newTransaction.amount" name="amount" required min="0" step="0.01">
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Description</label>
+          <input type="text" [(ngModel)]="newTransaction.description" name="description" required
+            placeholder="Ex: Vente panneaux solaires">
+        </div>
+        <div class="form-group">
+          <label>Client</label>
+          <select [(ngModel)]="newTransaction.customerId" name="customerId" (change)="updateCustomerName($event)">
+            <option value="">Sélectionner un client</option>
+            <option *ngFor="let c of customers" [value]="c.id">{{ c.fullName || c.name }}</option>
+          </select>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Catégorie</label>
+            <select [(ngModel)]="newTransaction.category" name="category">
+              <option value="">Sélectionner</option>
+              <option value="Ventes">Ventes</option>
+              <option value="Achats">Achats</option>
+              <option value="Salaires">Salaires</option>
+              <option value="Transport">Transport</option>
+              <option value="Maintenance">Maintenance</option>
+              <option value="Autre">Autre</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Date</label>
+            <input type="date" [(ngModel)]="newTransaction.date" name="date" required>
+          </div>
+        </div>
+        <div class="modal-actions">
+          <button type="button" class="btn btn-secondary" (click)="closeModal()">Annuler</button>
+          <button type="submit" class="btn btn-primary">Enregistrer</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal Rapport Flux Journalier -->
+  <div class="modal-overlay" *ngIf="showReportModal">
+    <div class="modal-card flux-modal">
+      <div class="modal-header">
+        <h2>Rapport Flux Journalier</h2>
+        <button class="close-btn" (click)="closeReportModal()">×</button>
+      </div>
+
+      <div class="flux-datepicker">
+        <div class="form-row">
+          <div class="form-group">
+            <label>Du</label>
+            <input type="date" [(ngModel)]="selectedStart" name="startDate">
+          </div>
+          <div class="form-group">
+            <label>Au</label>
+            <input type="date" [(ngModel)]="selectedEnd" name="endDate">
+          </div>
+          <div class="form-group flux-search-btn">
+            <label>&nbsp;</label>
+            <button class="btn btn-primary" (click)="loadFlux()">🔍</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="flux-totals" *ngIf="fluxData">
+        <div class="flux-total-card income">
+          <span class="total-label">Entrées</span>
+          <span class="total-value">+{{ fluxData.income | number }} FCFA</span>
+        </div>
+        <div class="flux-total-card expense">
+          <span class="total-label">Sorties</span>
+          <span class="total-value">-{{ fluxData.expense | number }} FCFA</span>
+        </div>
+        <div class="flux-total-card balance" [class.positive]="fluxData.balance >= 0" [class.negative]="fluxData.balance < 0">
+          <span class="total-label">Solde</span>
+          <span class="total-value">{{ fluxData.balance | number }} FCFA</span>
+        </div>
+      </div>
+
+      <div class="flux-table-wrap" *ngIf="fluxData">
+        <table class="flux-table">
+          <thead>
+            <tr>
+              <th>Heure</th>
+              <th>Client</th>
+              <th>Description</th>
+              <th>Type</th>
+              <th>Montant</th>
+              <th>Commentaire</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let t of fluxData.transactions">
+              <td data-label="Heure">{{ t.time || '-' }}</td>
+              <td data-label="Client">{{ t.customerName || '-' }}</td>
+              <td data-label="Description">{{ t.description }}</td>
+              <td data-label="Type">{{ t.type === 'income' ? 'Entrée' : 'Sortie' }}</td>
+              <td data-label="Montant" [class.text-green-600]="t.type === 'income'" [class.text-red-600]="t.type === 'expense'">
+                {{ (t.type === 'income' ? '+' : '-') }} {{ t.amount | number }} FCFA
+              </td>
+              <td data-label="Commentaire">
+                <span class="comment-text">{{ t.comment || '' }}</span>
+                <button class="comment-btn" (click)="openCommentPopup(t)" title="Ajouter/modifier commentaire">💬</button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+        <div class="flux-empty" *ngIf="fluxData.transactions.length === 0">
+          Aucune transaction trouvée pour cette période.
+        </div>
+      </div>
+
+      <div class="flux-export" *ngIf="fluxData && fluxData.transactions.length > 0">
+        <button class="btn btn-secondary" (click)="exportPDF()">📄 Exporter PDF</button>
+        <button class="btn btn-secondary" (click)="exportXLSX()">📊 Exporter XLSX</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Popup Commentaire -->
+  <div class="modal-overlay" *ngIf="showCommentPopup">
+    <div class="modal-card comment-popup-card">
+      <div class="modal-header">
+        <h2>Commentaire</h2>
+        <button class="close-btn" (click)="closeCommentPopup()">×</button>
+      </div>
+      <div class="comment-popup-body">
+        <p class="comment-transaction-ref">
+          <strong>Transaction:</strong> {{ editingTransaction?.description }}
+          <span *ngIf="editingTransaction?.customerName"> — {{ editingTransaction?.customerName }}</span>
+        </p>
+        <textarea [(ngModel)]="editingComment" class="comment-textarea" placeholder="Ajouter un commentaire..." rows="4"></textarea>
+      </div>
+      <div class="modal-actions">
+        <button class="btn btn-secondary" (click)="closeCommentPopup()">Annuler</button>
+        <button class="btn btn-primary" (click)="saveComment()">Enregistrer</button>
+      </div>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,142 @@
+<div class="customers-page">
+  <div class="page-header">
+    <div class="title-section">
+      <h1>Annuaire Clients</h1>
+      <p class="text-muted">Gérez vos relations clients et l'historique des contacts</p>
+    </div>
+    <button class="btn-primary" (click)="openAddModal()">
+      <span>➕</span> <span>Nouveau Client</span>
+    </button>
+  </div>
+
+  <!-- Stats Row -->
+  <div class="stats-row">
+    <div class="stat-item">
+      <span class="stat-icon total">👥</span>
+      <div>
+        <span class="stat-num">{{ customers.length }}</span>
+        <span class="stat-label">Total clients</span>
+      </div>
+    </div>
+    <div class="stat-item">
+      <span class="stat-icon email">📧</span>
+      <div>
+        <span class="stat-num">{{ getWithEmail() }}</span>
+        <span class="stat-label">Avec email</span>
+      </div>
+    </div>
+    <div class="stat-item">
+      <span class="stat-icon phone">📞</span>
+      <div>
+        <span class="stat-num">{{ getWithPhone() }}</span>
+        <span class="stat-label">Avec téléphone</span>
+      </div>
+    </div>
+    <div class="stat-item">
+      <span class="stat-icon city">📍</span>
+      <div>
+        <span class="stat-num">{{ getUniqueCities() }}</span>
+        <span class="stat-label">Villes</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Filter Bar -->
+  <div class="filter-bar">
+    <div class="search-box">
+      <span>🔍</span>
+      <input type="text" placeholder="Rechercher par nom, téléphone ou email..." [(ngModel)]="searchQuery" />
+    </div>
+  </div>
+
+  <!-- Customer Grid -->
+  <div class="customers-grid" *ngIf="!loading">
+    <div class="customer-card" *ngFor="let customer of filteredCustomers">
+      <div class="card-top">
+        <div class="avatar">{{ getInitials(customer) }}</div>
+        <div class="customer-main">
+          <h3>{{ customer.fullName || customer.name }}</h3>
+          <span class="customer-city" *ngIf="customer.city">{{ customer.city }}</span>
+        </div>
+      </div>
+
+      <div class="contact-info">
+        <div class="contact-item" *ngIf="customer.phone">
+          <span class="contact-icon">📞</span>
+          <span>{{ customer.phone }}</span>
+        </div>
+        <div class="contact-item" *ngIf="customer.email">
+          <span class="contact-icon">✉️</span>
+          <span>{{ customer.email }}</span>
+        </div>
+        <div class="contact-item" *ngIf="customer.address">
+          <span class="contact-icon">📍</span>
+          <span>{{ customer.address }}</span>
+        </div>
+        <div class="contact-item muted" *ngIf="!customer.phone && !customer.email && !customer.address">
+          <span>Aucun contact renseigné</span>
+        </div>
+      </div>
+
+      <div class="card-footer">
+        <div class="footer-actions">
+          <button class="btn-icon" (click)="openEditModal(customer)" title="Modifier">✏️</button>
+          <button class="btn-icon danger" (click)="deleteCustomer(customer.id!)" title="Supprimer">🗑️</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Empty State -->
+  <div class="empty-state" *ngIf="!loading && filteredCustomers.length === 0">
+    <span class="empty-icon">👥</span>
+    <h3>{{ searchQuery ? 'Aucun résultat' : 'Aucun client enregistré' }}</h3>
+    <p>{{ searchQuery ? 'Aucun client ne correspond à votre recherche.' : 'Cliquez sur "Nouveau Client" pour ajouter votre premier client.' }}</p>
+  </div>
+
+  <div class="loading-state" *ngIf="loading">Chargement des clients...</div>
+
+  <!-- Modal for Add/Edit Customer -->
+  <div class="modal-overlay" *ngIf="showModal">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h2>{{ isEditing ? 'Modifier le Client' : 'Nouveau Client' }}</h2>
+        <button class="close-btn" (click)="showModal = false">×</button>
+      </div>
+      <form (submit)="saveCustomer()" class="modal-form">
+        <div class="form-group">
+          <label>Nom Complet</label>
+          <input type="text" [(ngModel)]="currentCustomer.fullName" name="fullName" required placeholder="Ex: Jean Dupont">
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Téléphone</label>
+            <input type="text" [(ngModel)]="currentCustomer.phone" name="phone" placeholder="+228 90 00 00 00">
+          </div>
+          <div class="form-group">
+            <label>Email</label>
+            <input type="email" [(ngModel)]="currentCustomer.email" name="email" placeholder="client@example.com">
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Ville</label>
+            <input type="text" [(ngModel)]="currentCustomer.city" name="city" placeholder="Ex: Lomé">
+          </div>
+          <div class="form-group">
+            <label>Pays</label>
+            <input type="text" [(ngModel)]="currentCustomer.country" name="country" placeholder="Ex: Togo">
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Adresse</label>
+          <textarea [(ngModel)]="currentCustomer.address" name="address" rows="2" placeholder="Lomé, Togo"></textarea>
+        </div>
+        <div class="modal-actions">
+          <button type="button" class="btn-secondary" (click)="showModal = false">Annuler</button>
+          <button type="submit" class="btn-primary">{{ isEditing ? 'Mettre à jour' : 'Enregistrer' }}</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,162 @@
+import { Injectable } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
+import { Observable, BehaviorSubject } from 'rxjs';
+import { tap } from 'rxjs/operators';
+import { environment } from '../../environments/environment';
+
+
+export interface Customer {
+  id?: string;
+  name: string;
+  email: string;
+  phone?: string;
+  address?: string;
+  city?: string;
+  country?: string;
+  createdAt?: Date;
+  points?: number;
+  loyaltyLevel?: 'bronze' | 'silver' | 'gold' | 'platinum';
+}
+
+export interface AuthResponse {
+  success: boolean;
+  customer: Customer;
+  token?: string;
+  message?: string;
+}
+
+@Injectable({
+  providedIn: 'root'
+})
+export class CustomerAuthService {
+  private apiUrl = `${environment.apiUrl}/api/customers`;
+  private currentCustomerSubject = new BehaviorSubject<Customer | null>(null);
+  public currentCustomer$ = this.currentCustomerSubject.asObservable();
+
+  constructor(private http: HttpClient) {
+    // Load customer from localStorage on service initialization
+    const savedCustomer = localStorage.getItem('customer');
+    if (savedCustomer) {
+      this.currentCustomerSubject.next(JSON.parse(savedCustomer));
+    }
+  }
+
+  // Register customer
+  register(customerData: Omit<Customer, 'id' | 'createdAt' | 'points' | 'loyaltyLevel'>): Observable<AuthResponse> {
+    return this.http.post<AuthResponse>(`${this.apiUrl}/register`, customerData)
+      .pipe(
+        tap(response => {
+          if (response.success && response.customer && response.token) {
+            this.setCurrentCustomer(response.customer);
+            this.setCustomerToken(response.token);
+          }
+        })
+      );
+  }
+
+  // Login customer
+  login(email: string, password: string): Observable<AuthResponse> {
+    return this.http.post<AuthResponse>(`${this.apiUrl}/login`, { email, password })
+      .pipe(
+        tap(response => {
+          if (response.success && response.customer && response.token) {
+            this.setCurrentCustomer(response.customer);
+            this.setCustomerToken(response.token);
+          }
+        })
+      );
+  }
+
+  // Quick registration during checkout (minimal data)
+  quickRegister(customerData: { name: string; email: string; phone?: string }): Observable<AuthResponse> {
+    return this.http.post<AuthResponse>(`${this.apiUrl}/quick-register`, customerData)
+      .pipe(
+        tap(response => {
+          if (response.success && response.customer) {
+            this.setCurrentCustomer(response.customer);
+          }
+        })
+      );
+  }
+
+  // Update own profile (customer self)
+  updateProfile(customerData: Partial<Customer>): Observable<Customer> {
+    const token = this.getCustomerToken();
+    const headers: Record<string, string> = {};
+    if (token) headers['Authorization'] = `Bearer ${token}`;
+
+    return this.http.put<Customer>(`${this.apiUrl}/profile/me`, customerData, { headers })
+      .pipe(
+        tap(updatedCustomer => {
+          this.setCurrentCustomer(updatedCustomer);
+        })
+      );
+  }
+
+  // Get own profile (customer self)
+  getOwnProfile(): Observable<Customer> {
+    const token = this.getCustomerToken();
+    const headers: Record<string, string> = {};
+    if (token) headers['Authorization'] = `Bearer ${token}`;
+
+    return this.http.get<Customer>(`${this.apiUrl}/profile/me`, { headers });
+  }
+
+  // Get customer by ID (admin)
+  getCustomer(customerId: string): Observable<Customer> {
+    return this.http.get<Customer>(`${this.apiUrl}/${customerId}`);
+  }
+
+  // Logout
+  logout(): void {
+    localStorage.removeItem('customer');
+    localStorage.removeItem('customer_token');
+    this.currentCustomerSubject.next(null);
+  }
+
+  // Get current customer
+  getCurrentCustomer(): Customer | null {
+    return this.currentCustomerSubject.value;
+  }
+
+  // Check if customer is authenticated
+  isAuthenticated(): boolean {
+    return this.getCurrentCustomer() !== null;
+  }
+
+  // Set current customer
+  setCurrentCustomer(customer: Customer): void {
+    localStorage.setItem('customer', JSON.stringify(customer));
+    this.currentCustomerSubject.next(customer);
+  }
+
+  // Store customer JWT token for REST API calls
+  private setCustomerToken(token: string): void {
+    localStorage.setItem('customer_token', token);
+  }
+
+  // Get customer token
+  getCustomerToken(): string | null {
+    return localStorage.getItem('customer_token');
+  }
+
+  // Get customer orders (for dashboard)
+  getCustomerOrders(customerId: string): Observable<any[]> {
+    return this.http.get<any[]>(`${this.apiUrl}/${customerId}/orders`);
+  }
+
+  // Get customer loyalty points
+  getLoyaltyPoints(customerId: string): Observable<{ points: number; level: string; nextLevelPoints: number }> {
+    return this.http.get<{ points: number; level: string; nextLevelPoints: number }>(`${this.apiUrl}/${customerId}/loyalty`);
+  }
+
+  // Add loyalty points
+  addLoyaltyPoints(customerId: string, points: number, reason: string): Observable<Customer> {
+    return this.http.post<Customer>(`${this.apiUrl}/${customerId}/loyalty`, { points, reason })
+      .pipe(
+        tap(updatedCustomer => {
+          this.setCurrentCustomer(updatedCustomer);
+        })
+      );
+  }
+}

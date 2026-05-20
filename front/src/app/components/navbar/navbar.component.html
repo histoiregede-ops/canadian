@@ -1,0 +1,22 @@
+<header class="navbar">
+  <div class="search-bar">
+    <span class="search-icon">🔍</span>
+    <input type="text" placeholder="Recherche globale (produits, clients, commandes...)" />
+  </div>
+
+  <div class="nav-actions">
+    <button class="action-btn" title="Notifications">
+      <span class="icon">🔔</span>
+      <span class="badge">3</span>
+    </button>
+    <button class="action-btn" title="Aide">
+      <span class="icon">❓</span>
+    </button>
+    <div class="date-display">
+      <span class="today">{{ today | date:'fullDate':'':'fr-FR' }}</span>
+    </div>
+    <button class="btn btn-primary" routerLink="/sales">
+      <span class="icon">➕</span> Nouvel Achat
+    </button>
+  </div>
+</header>

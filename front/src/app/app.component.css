@@ -1,0 +1,36 @@
+.app-container {
+  display: flex;
+  min-height: 100vh;
+}
+
+.main-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  margin-left: var(--sidebar-width);
+  transition: margin 0.3s ease;
+}
+
+.main-content.no-sidebar {
+  margin-left: 0;
+}
+
+.main-content.no-sidebar,
+.main-content.no-sidebar .page-content {
+  margin-left: 0;
+  padding-left: 0;
+  width: 100%;
+}
+
+
+.content-body {
+  padding: 24px;
+  flex: 1;
+  background-color: var(--bg-color);
+}
+
+@media (max-width: 768px) {
+  .main-content {
+    margin-left: 0;
+  }
+}

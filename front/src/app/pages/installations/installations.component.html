@@ -1,0 +1,121 @@
+<div class="installations-page">
+  <div class="page-header">
+    <div class="title-section">
+      <h1>Chantiers & Installations</h1>
+      <p class="text-muted">Projets solaires en cours et planification</p>
+    </div>
+    <button class="btn btn-primary" (click)="openAddModal()">➕ Nouveau Projet</button>
+  </div>
+
+  <div class="install-grid mt-4">
+    <div class="install-card card" *ngFor="let install of sortedInstallations" [class.urgent]="getUrgencyBadge(install) === 'urgent'">
+      <div class="install-status" [class]="install.status">
+        {{ getStatusLabel(install.status) }}
+      </div>
+      <span class="priority-badge" [class]="getUrgencyBadge(install)" *ngIf="install.status !== 'completed' && install.status !== 'cancelled'">
+        {{ getUrgencyBadge(install) === 'urgent' ? 'URGENT' : getUrgencyBadge(install) === 'high' ? 'HAUTE' : getUrgencyBadge(install) === 'normal' ? 'NORMAL' : '' }}
+      </span>
+
+      <div class="location-section">
+        <div class="map-icon">📍</div>
+        <div>
+          <h3>{{ install.location }}</h3>
+          <span class="gps" *ngIf="install.gpsCoordinates">{{ install.gpsCoordinates }}</span>
+        </div>
+      </div>
+
+      <div class="kit-details mt-3">
+        <div class="kit-name">{{ install.kitType }} ({{ install.powerCapacity }})</div>
+        <div class="roof" *ngIf="install.roofType">🏠 Type de toit: {{ install.roofType }}</div>
+      </div>
+
+      <div class="components-list mt-3" *ngIf="install.components">
+        <span class="comp-tag" *ngFor="let comp of install.components">{{ comp }}</span>
+      </div>
+
+      <div class="tech-assignment mt-3" *ngIf="install.Technician">
+        <img src="https://ui-avatars.com/api/?name={{ install.Technician.fullName }}&background=fbbf24&color=0f172a" class="avatar">
+        <div>
+          <div class="tech-label">Technicien assigné</div>
+          <div class="tech-name">{{ install.Technician.fullName }}</div>
+        </div>
+      </div>
+
+      <div class="install-footer mt-4">
+        <div class="date-info">
+          <span class="label">Date prévue</span>
+          <span class="date">{{ install.scheduledDate | date:'dd MMM yyyy' }}</span>
+        </div>
+        <div class="actions">
+          <button class="btn-icon" (click)="openEditModal(install)">✏️</button>
+          <button class="btn-icon danger" (click)="deleteInstallation(install.id!)">🗑️</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="loading-state" *ngIf="loading">Chargement des chantiers...</div>
+
+  <!-- Modal for Add/Edit Installation -->
+  <div class="modal-overlay" *ngIf="showModal">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h2>{{ isEditing ? 'Modifier le Projet' : 'Nouveau Projet Solaire' }}</h2>
+        <button class="close-btn" (click)="showModal = false">×</button>
+      </div>
+      <form (submit)="saveInstallation()" class="modal-form">
+        <div class="form-group">
+          <label>Emplacement / Adresse</label>
+          <input type="text" [(ngModel)]="currentInstallation.location" name="location" required placeholder="Ex: Quartier Adidogomé, Lomé">
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Type de Kit</label>
+            <input type="text" [(ngModel)]="currentInstallation.kitType" name="kitType" required placeholder="Ex: Kit Résidentiel 3KW">
+          </div>
+          <div class="form-group">
+            <label>Capacité (KVA/HP)</label>
+            <input type="text" [(ngModel)]="currentInstallation.powerCapacity" name="powerCapacity" placeholder="Ex: 5 KVA">
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Client</label>
+            <select [(ngModel)]="currentInstallation.customerId" name="customerId" required>
+              <option value="">Sélectionner un client</option>
+              <option *ngFor="let client of customers" [value]="client.id">{{ client.fullName }}</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Technicien</label>
+            <select [(ngModel)]="currentInstallation.technicianId" name="technicianId" required>
+              <option value="">Assigner un technicien</option>
+              <option *ngFor="let tech of technicians" [value]="tech.id">{{ tech.fullName }}</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Date Prévue</label>
+            <input type="date" [(ngModel)]="currentInstallation.scheduledDate" name="scheduledDate" required>
+          </div>
+          <div class="form-group">
+            <label>Statut</label>
+            <select [(ngModel)]="currentInstallation.status" name="status">
+              <option value="survey">Étude</option>
+              <option value="planned">Planifié</option>
+              <option value="in_progress">En cours</option>
+              <option value="testing">Tests</option>
+              <option value="completed">Terminé</option>
+              <option value="cancelled">Annulé</option>
+            </select>
+          </div>
+        </div>
+        <div class="modal-actions">
+          <button type="button" class="btn btn-secondary" (click)="showModal = false">Annuler</button>
+          <button type="submit" class="btn btn-primary">{{ isEditing ? 'Mettre à jour' : 'Enregistrer' }}</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>

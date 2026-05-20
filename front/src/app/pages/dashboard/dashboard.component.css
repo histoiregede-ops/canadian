@@ -1,0 +1,175 @@
+.dashboard {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.welcome-header h1 {
+  font-size: 1.875rem;
+  margin-bottom: 4px;
+}
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 20px;
+}
+
+.stat-card {
+  background: white;
+  padding: 24px;
+  border-radius: 16px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+  border: 1px solid var(--border-color);
+  transition: transform 0.2s ease;
+}
+
+.stat-card:hover {
+  transform: translateY(-4px);
+}
+
+.stat-card.gold { border-left: 6px solid var(--secondary-color); }
+.stat-card.blue { border-left: 6px solid var(--accent-color); }
+.stat-card.orange { border-left: 6px solid #f97316; }
+.stat-card.green { border-left: 6px solid var(--success); }
+
+.stat-info .label {
+  font-size: 0.875rem;
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+.stat-info .value {
+  font-size: 1.5rem;
+  margin: 8px 0;
+}
+
+.trend {
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.trend.positive { color: var(--success); }
+
+.stat-icon {
+  font-size: 2rem;
+  background: #f8fafc;
+  width: 56px;
+  height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12px;
+}
+
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 24px;
+}
+
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.btn-link {
+  background: none;
+  color: var(--accent-color);
+  font-weight: 600;
+  font-size: 0.875rem;
+}
+
+.repair-list, .alert-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.repair-item {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 12px;
+  background: #f8fafc;
+  border-radius: 10px;
+}
+
+.repair-icon {
+  font-size: 1.25rem;
+}
+
+.repair-details {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.repair-details .device {
+  font-weight: 600;
+  font-size: 0.875rem;
+}
+
+.repair-details .client {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+.alert-item {
+  display: flex;
+  gap: 12px;
+  padding: 12px;
+  border-radius: 10px;
+}
+
+.alert-item.danger { background: #fee2e2; color: #991b1b; }
+.alert-item.warning { background: #fef9c3; color: #854d0e; }
+
+.alert-content .title {
+  font-weight: 700;
+  font-size: 0.875rem;
+}
+
+.alert-content p {
+  font-size: 0.75rem;
+}
+
+.cash-summary {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.cash-row {
+  display: flex;
+  justify-content: space-between;
+  font-weight: 500;
+}
+
+.cash-row.total {
+  font-weight: 700;
+  font-size: 1.125rem;
+  color: var(--primary-color);
+}
+
+.income { color: var(--success); }
+.expense { color: var(--danger); }
+
+.divider {
+  height: 1px;
+  background: var(--border-color);
+  margin: 4px 0;
+}
+
+.mt-4 { margin-top: 1rem; }
+
+@media (max-width: 1024px) {
+  .dashboard-grid {
+    grid-template-columns: 1fr;
+  }
+}

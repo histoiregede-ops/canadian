@@ -1,0 +1,100 @@
+<div class="technicians-page">
+  <div class="page-header">
+    <div class="title-section">
+      <h1>Techniciens</h1>
+      <p class="text-muted">Gestion des techniciens et assignations</p>
+    </div>
+    <button class="btn-primary" (click)="openAddModal()">
+      <span>➕</span> <span>Ajouter un technicien</span>
+    </button>
+  </div>
+
+  <!-- Stats Row -->
+  <div class="stats-row">
+    <div class="stat-item">
+      <span class="stat-icon total">👨‍🔧</span>
+      <div>
+        <span class="stat-num">{{ technicians.length }}</span>
+        <span class="stat-label">Techniciens</span>
+      </div>
+    </div>
+    <div class="stat-item">
+      <span class="stat-icon email">📧</span>
+      <div>
+        <span class="stat-num">{{ getWithEmail() }}</span>
+        <span class="stat-label">Avec email</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Search -->
+  <div class="filter-bar">
+    <div class="search-box">
+      <span>🔍</span>
+      <input type="text" placeholder="Rechercher par nom ou email..." [(ngModel)]="searchQuery" />
+    </div>
+  </div>
+
+  <!-- Technicians Grid -->
+  <div class="tech-grid" *ngIf="!loading">
+    <div class="tech-card" *ngFor="let tech of filteredTechnicians">
+      <div class="card-top">
+        <div class="avatar">{{ getInitials(tech.fullName || '') }}</div>
+        <div class="tech-info">
+          <h3>{{ tech.fullName }}</h3>
+          <span class="tech-email">{{ tech.email }}</span>
+        </div>
+      </div>
+      <div class="card-footer">
+        <div class="tech-role">
+          <span class="role-badge">{{ tech.role }}</span>
+        </div>
+        <div class="footer-actions">
+          <button class="btn-icon" (click)="openEditModal(tech)" title="Modifier">✏️</button>
+          <button class="btn-icon danger" (click)="deleteTechnician(tech.id)" title="Supprimer">🗑️</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Empty State -->
+  <div class="empty-state" *ngIf="!loading && filteredTechnicians.length === 0">
+    <span class="empty-icon">👨‍🔧</span>
+    <h3>{{ searchQuery ? 'Aucun résultat' : 'Aucun technicien' }}</h3>
+    <p>{{ searchQuery ? 'Aucun technicien ne correspond à votre recherche.' : 'Cliquez sur "Ajouter un technicien" pour en créer un.' }}</p>
+  </div>
+
+  <div class="loading-state" *ngIf="loading">Chargement des techniciens...</div>
+
+  <!-- Modal -->
+  <div class="modal-overlay" *ngIf="showModal">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h2>{{ isEditing ? 'Modifier le technicien' : 'Ajouter un technicien' }}</h2>
+        <button class="close-btn" (click)="showModal = false">×</button>
+      </div>
+      <form (submit)="saveTechnician()" class="modal-form">
+        <div class="form-group">
+          <label>Nom complet</label>
+          <input type="text" [(ngModel)]="currentTechnician.fullName" name="fullName" required placeholder="Ex: Koffi Amégnigan">
+        </div>
+        <div class="form-group">
+          <label>Email</label>
+          <input type="email" [(ngModel)]="currentTechnician.email" name="email" required placeholder="tech@solartech.ma">
+        </div>
+        <div class="form-group" *ngIf="!isEditing">
+          <label>Nom d'utilisateur</label>
+          <input type="text" [(ngModel)]="currentTechnician.username" name="username" required placeholder="koffi.amegnigan">
+        </div>
+        <div class="form-group" *ngIf="!isEditing">
+          <label>Mot de passe</label>
+          <input type="password" [(ngModel)]="currentTechnician.password" name="password" required placeholder="••••••••">
+        </div>
+        <div class="modal-actions">
+          <button type="button" class="btn-secondary" (click)="showModal = false">Annuler</button>
+          <button type="submit" class="btn-primary">{{ isEditing ? 'Mettre à jour' : 'Enregistrer' }}</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>

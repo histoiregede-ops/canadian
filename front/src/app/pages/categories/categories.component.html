@@ -1,0 +1,98 @@
+<div class="categories-page">
+  <div class="page-header">
+    <div class="header-content">
+      <h1>📁 Catégories de Produits</h1>
+      <p class="subtitle">Organisez vos articles en catégories</p>
+    </div>
+    <button class="btn btn-primary btn-add" (click)="openAddModal()">➕ Nouvelle Catégorie</button>
+  </div>
+
+  <div *ngIf="loading" class="loading-state">
+    <div class="spinner"></div>
+    <p>Chargement des catégories...</p>
+  </div>
+
+  <div *ngIf="!loading && categories.length === 0" class="empty-state">
+    <div class="empty-icon">📂</div>
+    <h2>Aucune catégorie créée</h2>
+    <p>Commencez par créer une première catégorie pour organiser vos produits.</p>
+    <button class="btn btn-primary" (click)="openAddModal()">Créer une catégorie</button>
+  </div>
+
+  <div *ngIf="!loading && categories.length > 0" class="categories-container">
+    <div class="categories-grid">
+      <div class="category-card" *ngFor="let category of categories">
+        <div class="card-header">
+          <div class="category-icon">{{ getCategoryIcon(category.type) }}</div>
+          <div class="category-header-info">
+            <h3>{{ category.name }}</h3>
+            <p class="category-type">{{ getCategoryTypeLabel(category.type) }}</p>
+          </div>
+        </div>
+
+        <div class="card-meta">
+          <span class="meta-item">
+            <span class="meta-icon">📊</span>
+            <span class="meta-value">{{ getProductCount(category.id) }} produits</span>
+          </span>
+        </div>
+
+        <div class="card-actions">
+          <button class="btn-action edit" (click)="openEditModal(category)" title="Modifier">
+            <span>✏️</span> Modifier
+          </button>
+          <button class="btn-action delete" (click)="deleteCategory(category)" title="Supprimer">
+            <span>🗑️</span> Supprimer
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal -->
+  <div class="modal-backdrop" *ngIf="showModal">
+    <div class="modal" role="dialog" aria-modal="true">
+      <div class="modal-header">
+        <h2>{{ isEditing ? '✏️ Modifier la catégorie' : '➕ Nouvelle catégorie' }}</h2>
+        <button class="close" (click)="closeModal()" aria-label="Fermer">×</button>
+      </div>
+
+      <div class="modal-body">
+        <div *ngIf="errorMessage" class="error-alert">
+          <span class="error-icon">⚠️</span>
+          <span>{{ errorMessage }}</span>
+        </div>
+
+        <form (ngSubmit)="saveCategory()" class="form">
+          <label class="form-field">
+            <span class="field-label">Nom de la catégorie</span>
+            <input 
+              type="text"
+              [(ngModel)]="currentCategory.name" 
+              name="name" 
+              placeholder="Ex: Panneaux Solaires"
+              required 
+              class="field-input"
+            />
+          </label>
+
+          <label class="form-field">
+            <span class="field-label">Type de catégorie</span>
+            <select [(ngModel)]="currentCategory.type" name="type" class="field-select">
+              <option value="solar">☀️ Solaire</option>
+              <option value="electronics">🔌 Électronique</option>
+              <option value="accessory">🔧 Accessoires</option>
+              <option value="other">📦 Autre</option>
+            </select>
+          </label>
+
+          <div class="modal-actions">
+            <button type="button" class="btn btn-secondary" (click)="closeModal()">Annuler</button>
+            <button type="submit" class="btn btn-primary">{{ isEditing ? 'Enregistrer' : 'Créer' }}</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+

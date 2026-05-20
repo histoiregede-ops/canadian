@@ -1,0 +1,260 @@
+<div class="settings-page">
+  <div class="page-header">
+    <h1>⚙️ Paramètres</h1>
+    <p>Configurez votre système et vos préférences</p>
+  </div>
+
+  <div class="settings-container">
+    <div class="settings-sidebar">
+      <div class="sidebar-header">Configuration</div>
+      <button class="tab-link" [class.active]="activeTab === 'general'" (click)="activeTab = 'general'">
+        <i class="icon">🏢</i>
+        <span>Entreprise</span>
+      </button>
+      <button class="tab-link" [class.active]="activeTab === 'security'" (click)="activeTab = 'security'">
+        <i class="icon">🔒</i>
+        <span>Sécurité</span>
+      </button>
+      <button class="tab-link" [class.active]="activeTab === 'notifications'" (click)="activeTab = 'notifications'">
+        <i class="icon">🔔</i>
+        <span>Notifications</span>
+      </button>
+      <button class="tab-link" [class.active]="activeTab === 'appearance'" (click)="activeTab = 'appearance'">
+        <i class="icon">🎨</i>
+        <span>Apparence</span>
+      </button>
+
+      <div class="sidebar-header mt-8">Données</div>
+      <button class="tab-link" [class.active]="activeTab === 'data'" (click)="activeTab = 'data'">
+        <i class="icon">📊</i>
+        <span>Gestion Données</span>
+      </button>
+      <button class="tab-link" [class.active]="activeTab === 'backup'" (click)="activeTab = 'backup'">
+        <i class="icon">💾</i>
+        <span>Sauvegarde</span>
+      </button>
+
+      <div class="sidebar-header mt-8">Support</div>
+      <button class="tab-link" [class.active]="activeTab === 'help'" (click)="activeTab = 'help'">
+        <i class="icon">❓</i>
+        <span>Aide</span>
+      </button>
+      <button class="tab-link" [class.active]="activeTab === 'about'" (click)="activeTab = 'about'">
+        <i class="icon">ℹ️</i>
+        <span>À propos</span>
+      </button>
+    </div>
+
+    <div class="settings-content">
+      <div *ngIf="activeTab === 'general'" class="settings-section">
+        <div class="section-header">
+          <h2>Informations Entreprise</h2>
+          <p>Détails généraux de votre organisation</p>
+        </div>
+        <div class="form-grid">
+          <div class="form-group">
+            <label>Nom de l'entreprise</label>
+            <input type="text" [(ngModel)]="companyName" placeholder="Votre entreprise">
+          </div>
+          <div class="form-group">
+            <label>Devise</label>
+            <select [(ngModel)]="currency">
+              <option value="FCFA">FCFA (₣)</option>
+              <option value="EUR">EUR (€)</option>
+              <option value="USD">USD ($)</option>
+              <option value="XOF">XOF</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Numéro de téléphone</label>
+            <input type="tel" placeholder="+228 XX XX XX XX">
+          </div>
+          <div class="form-group">
+            <label>Email principal</label>
+            <input type="email" placeholder="contact@entreprise.com">
+          </div>
+          <div class="form-group full-width">
+            <label>Adresse</label>
+            <textarea rows="3" placeholder="Adresse complète">Lomé, Togo, Avenue de la Paix</textarea>
+          </div>
+        </div>
+        <button class="btn btn-primary" (click)="saveGeneral()">💾 Enregistrer</button>
+      </div>
+
+      <div *ngIf="activeTab === 'security'" class="settings-section">
+        <div class="section-header">
+          <h2>Sécurité</h2>
+          <p>Gérez votre compte et vos données sensibles</p>
+        </div>
+        <div class="info-card">
+          <span class="badge">Connecté</span>
+          <strong>{{ user?.fullName || 'Utilisateur' }}</strong>
+          <small>{{ user?.role || 'Admin' }}</small>
+        </div>
+        <div class="form-grid">
+          <div class="form-group">
+            <label>Mot de passe actuel</label>
+            <input type="password" placeholder="••••••••">
+          </div>
+          <div class="form-group">
+            <label>Nouveau mot de passe</label>
+            <input type="password" placeholder="••••••••">
+          </div>
+          <div class="form-group">
+            <label>Confirmer le mot de passe</label>
+            <input type="password" placeholder="••••••••">
+          </div>
+        </div>
+        <button class="btn btn-primary" (click)="changePassword()">🔄 Changer le mot de passe</button>
+        <div class="info-card mt-6 danger-card">
+          <strong>Zone de danger</strong>
+          <p>Déconnexion de tous les appareils</p>
+          <button class="btn btn-outline" (click)="logoutAll()">Déconnecter partout</button>
+        </div>
+      </div>
+
+      <div *ngIf="activeTab === 'notifications'" class="settings-section">
+        <div class="section-header">
+          <h2>Notifications</h2>
+          <p>Configurez vos préférences de notification</p>
+        </div>
+        <div class="toggle-group">
+          <div class="toggle-item">
+            <div>
+              <strong>Commandes</strong>
+              <p>Notifications pour nouvelles commandes</p>
+            </div>
+            <input type="checkbox" [(ngModel)]="notifications.orders" class="toggle">
+          </div>
+          <div class="toggle-item">
+            <div>
+              <strong>Paiements</strong>
+              <p>Alertes de paiement reçues</p>
+            </div>
+            <input type="checkbox" [(ngModel)]="notifications.payments" class="toggle">
+          </div>
+          <div class="toggle-item">
+            <div>
+              <strong>Stocks bas</strong>
+              <p>Produits sous le seuil minimum</p>
+            </div>
+            <input type="checkbox" [(ngModel)]="notifications.lowStock" class="toggle">
+          </div>
+          <div class="toggle-item">
+            <div>
+              <strong>Messages</strong>
+              <p>Nouveaux messages clients</p>
+            </div>
+            <input type="checkbox" [(ngModel)]="notifications.messages" class="toggle">
+          </div>
+        </div>
+        <button class="btn btn-primary" (click)="saveNotifications()">💾 Enregistrer</button>
+      </div>
+
+      <div *ngIf="activeTab === 'appearance'" class="settings-section">
+        <div class="section-header">
+          <h2>Apparence</h2>
+          <p>Personnalisez votre interface</p>
+        </div>
+        <div class="appearance-options">
+          <div class="option-card">
+            <h3>Thème</h3>
+            <div class="radio-group">
+              <label><input type="radio" name="theme" value="dark" [(ngModel)]="theme"> 🌙 Sombre</label>
+              <label><input type="radio" name="theme" value="light" [(ngModel)]="theme"> ☀️ Clair</label>
+              <label><input type="radio" name="theme" value="auto" [(ngModel)]="theme"> 🔄 Auto</label>
+            </div>
+          </div>
+          <div class="option-card">
+            <h3>Taille de police</h3>
+            <div class="radio-group">
+              <label><input type="radio" name="fontSize" value="small" [(ngModel)]="fontSize"> 🔤 Petite</label>
+              <label><input type="radio" name="fontSize" value="normal" [(ngModel)]="fontSize"> 📝 Normal</label>
+              <label><input type="radio" name="fontSize" value="large" [(ngModel)]="fontSize"> 📊 Grande</label>
+            </div>
+          </div>
+        </div>
+        <button class="btn btn-primary" (click)="saveAppearance()">💾 Appliquer</button>
+      </div>
+
+      <div *ngIf="activeTab === 'data'" class="settings-section">
+        <div class="section-header">
+          <h2>Gestion des Données</h2>
+          <p>Contrôlez vos données personnelles</p>
+        </div>
+        <div class="data-card">
+          <h3>📥 Télécharger vos données</h3>
+          <p>Exportez tous vos données en format JSON</p>
+          <button class="btn btn-outline" (click)="downloadData()">Télécharger</button>
+        </div>
+      </div>
+
+      <div *ngIf="activeTab === 'backup'" class="settings-section">
+        <div class="section-header">
+          <h2>Sauvegarde</h2>
+          <p>Gérez les sauvegardes de votre système</p>
+        </div>
+        <div class="backup-status">
+          <span class="status-badge success">✅ Dernière sauvegarde: il y a 2 heures</span>
+        </div>
+        <div class="backup-actions">
+          <button class="btn btn-primary" (click)="backupNow()">💾 Sauvegarde maintenant</button>
+          <button class="btn btn-outline" (click)="restoreBackup()">🔄 Restaurer</button>
+        </div>
+      </div>
+
+      <div *ngIf="activeTab === 'help'" class="settings-section">
+        <div class="section-header">
+          <h2>Aide & Support</h2>
+          <p>Trouvez des ressources et contactez le support</p>
+        </div>
+        <div class="help-cards">
+          <div class="help-card">
+            <h3>📖 Documentation</h3>
+            <p>Consultez nos guides d'utilisation complets</p>
+            <a href="#" class="link">Voir la documentation →</a>
+          </div>
+          <div class="help-card">
+            <h3>🎥 Tutoriels</h3>
+            <p>Regardez des vidéos explicatives</p>
+            <a href="#" class="link">Voir les tutoriels →</a>
+          </div>
+          <div class="help-card">
+            <h3>💬 Contact</h3>
+            <p>Besoin d'aide? Contactez notre équipe</p>
+            <a href="mailto:support@solar-tech.com" class="link">support@solar-tech.com →</a>
+          </div>
+        </div>
+      </div>
+
+      <div *ngIf="activeTab === 'about'" class="settings-section">
+        <div class="section-header">
+          <h2>À propos</h2>
+          <p>Informations sur le système</p>
+        </div>
+        <div class="about-info">
+          <div class="info-item">
+            <span>Nom du système</span>
+            <strong>Solar & Electronics ERP</strong>
+          </div>
+          <div class="info-item">
+            <span>Version</span>
+            <strong>1.0.0</strong>
+          </div>
+          <div class="info-item">
+            <span>Année</span>
+            <strong>2026</strong>
+          </div>
+          <div class="info-item">
+            <span>Développé par</span>
+            <strong>TepITech Corporation</strong>
+          </div>
+          <div class="info-item">
+            <span>Licence</span>
+            <strong>Propriétaire</strong>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
