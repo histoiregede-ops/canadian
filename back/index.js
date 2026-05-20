@@ -86,6 +86,7 @@ const messagingRoutes = require('./routes/messagingRoutes');
 const productReviewsRoutes = require('./routes/productReviews');
 const configRoutes = require('./routes/configRoutes');
 const reportsRoutes = require('./routes/reportsRoutes');
+const seedRoutes = require('./routes/seedRoutes');
 
 app.use('/api/auth', authRoutes);
 app.use('/api/products', productRoutes);
@@ -103,6 +104,7 @@ app.use('/api/reviews', productReviewsRoutes);
 app.use('/api/contact', contactRoutes);
 app.use('/api/config', configRoutes);
 app.use('/api/reports', reportsRoutes);
+app.use('/api', seedRoutes);
 
 // Servir les fichiers statiques du dossier public
 app.use('/public', express.static(path.join(__dirname, 'public')));
@@ -125,18 +127,9 @@ app.use((err, req, res, next) => {
 sequelize.sync()
   .then(() => {
     console.log('Database synced successfully.');
-    const server = app.listen(PORT, async () => {
+    const server = app.listen(PORT, () => {
       console.log(`Server is running on port ${PORT}`);
-      try {
-        const userCount = await models.User.count();
-        if (userCount === 0) {
-          await models.User.create({ username: 'admin', password: 'admin123', role: 'admin', fullName: 'Administrateur' });
-          await models.User.create({ username: 'cashier1', password: 'cashier123', role: 'cashier', fullName: 'Caissier Principal' });
-          console.log('Default users created (admin/admin123, cashier1/cashier123)');
-        }
-      } catch (err) {
-        console.error('Error creating default users:', err.message);
-      }
+      console.log('Visit /api/seed to initialize the database');
     });
 
     // Initialize messaging tables
