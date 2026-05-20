@@ -125,20 +125,16 @@ app.use((err, req, res, next) => {
 
 // Database Sync and Server Start
 sequelize.sync()
-  .then(() => {
+  .then(async () => {
     console.log('Database synced successfully.');
+    const count = await models.User.count();
+    if (count === 0) {
+      const seed = require('./seeders/202605200001-default-data');
+      await seed.up(sequelize.getQueryInterface());
+      console.log('Seed data inserted.');
+    }
     const server = app.listen(PORT, async () => {
       console.log(`Server is running on port ${PORT}`);
-      try {
-        const count = await models.User.count();
-        if (count === 0) {
-          await models.User.create({ username: 'admin', password: 'admin123', role: 'admin', fullName: 'Administrateur' });
-          await models.User.create({ username: 'cashier1', password: 'cashier123', role: 'cashier', fullName: 'Caissier Principal' });
-          console.log('Default users created');
-        }
-      } catch (err) {
-        console.error('Auto-seed error:', err.message);
-      }
     });
 
     // Initialize messaging tables
@@ -150,11 +146,11 @@ sequelize.sync()
         customerPhone VARCHAR(50),
         customerEmail VARCHAR(255),
         subject VARCHAR(255) NOT NULL,
-        status ENUM('open', 'pending', 'closed') DEFAULT 'open',
+        status VARCHAR(20) DEFAULT 'open',
         lastMessage TEXT,
         unreadCount INT DEFAULT 0,
         createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
-        updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+        updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP
       )
     `).catch(err => console.error('Error creating app_conversations table:', err));
 
@@ -170,7 +166,7 @@ sequelize.sync()
         conversationId VARCHAR(64) NOT NULL,
         senderId VARCHAR(255) NOT NULL,
         senderName VARCHAR(255) NOT NULL,
-        senderRole ENUM('customer', 'admin', 'support') NOT NULL DEFAULT 'customer',
+        senderRole VARCHAR(20) NOT NULL DEFAULT 'customer',
         content TEXT NOT NULL,
         attachmentUrl VARCHAR(500),
         readAt DATETIME NULL,
@@ -180,7 +176,7 @@ sequelize.sync()
 
     sequelize.query(`
       CREATE TABLE IF NOT EXISTS stock_movements (
-        id INT AUTO_INCREMENT PRIMARY KEY,
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
         productId VARCHAR(255) NOT NULL,
         previousQuantity INT NOT NULL DEFAULT 0,
         newQuantity INT NOT NULL DEFAULT 0,
