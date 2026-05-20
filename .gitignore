@@ -22,3 +22,5 @@ Thumbs.db
 # Ignore nested git backup metadata
 front/.git_nested_backup/
 
+
+.vercel
