@@ -122,9 +122,9 @@ app.use((err, req, res, next) => {
 });
 
 // Database Sync and Server Start
-// sequelize.sync({ alter: false }) // Disabled due to existing data conflicts
-//   .then(() => {
-//     console.log('Database synced successfully.');
+sequelize.sync({ alter: true })
+  .then(() => {
+    console.log('Database synced successfully.');
     const server = app.listen(PORT, async () => {
       console.log(`Server is running on port ${PORT}`);
       try {
@@ -336,10 +336,10 @@ app.use((err, req, res, next) => {
       }
       process.exit(1);
     });
-//   })
-//   .catch(err => {
-//     console.error('Error syncing database:', err);
-//   });
+  })
+  .catch(err => {
+    console.error('Error syncing database:', err);
+  });
 
 process.on('unhandledRejection', (reason, promise) => {
   console.error('Unhandled Rejection at:', promise, 'reason:', reason);
