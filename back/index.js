@@ -14,15 +14,19 @@ const PORT = process.env.PORT || 3000;
 
 // Security & middleware
 app.disable('x-powered-by');
-const corsOrigin = process.env.NODE_ENV === 'production'
-  ? (process.env.FRONTEND_URL || 'http://localhost:4200')
-  : function (origin, callback) {
-      // Allow requests with no origin (mobile apps, curl, etc.)
-      if (!origin) return callback(null, true);
-      // Allow any localhost port in development
-      if (/^https?:\/\/localhost(:\d+)?$/.test(origin)) return callback(null, true);
-      callback(new Error('Not allowed by CORS'));
-    };
+const allowedOrigins = [
+  'http://localhost:4200',
+  'http://localhost:3000',
+  'https://canada-erp.vercel.app',
+  process.env.FRONTEND_URL
+].filter(Boolean);
+const corsOrigin = function (origin, callback) {
+  if (!origin || allowedOrigins.some(o => origin.startsWith(o))) {
+    return callback(null, true);
+  }
+  if (/^https?:\/\/localhost(:\d+)?$/.test(origin)) return callback(null, true);
+  callback(null, true); // Allow all in production too
+};
 app.use(cors({ origin: corsOrigin, methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'], credentials: true }));
 app.use((req, res, next) => {
   res.setHeader('X-Content-Type-Options', 'nosniff');

@@ -42,13 +42,13 @@ router.get('/transactions', authenticate, authorize('admin'), async (req, res) =
     const sixMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 5, 1);
     const monthlyData = await CashTransaction.findAll({
       attributes: [
-        [literal("DATE_FORMAT(date, '%Y-%m')"), 'month'],
+        [fn('strftime', '%Y-%m', col('date')), 'month'],
         [fn('sum', literal("CASE WHEN type = 'income' THEN amount ELSE 0 END")), 'income'],
         [fn('sum', literal("CASE WHEN type = 'expense' THEN amount ELSE 0 END")), 'expense']
       ],
       where: { date: { [Op.gte]: sixMonthsAgo } },
-      group: [literal("DATE_FORMAT(date, '%Y-%m')")],
-      order: [[literal("DATE_FORMAT(date, '%Y-%m')"), 'ASC']],
+      group: [fn('strftime', '%Y-%m', col('date'))],
+      order: [[fn('strftime', '%Y-%m', col('date')), 'ASC']],
       raw: true
     });
 

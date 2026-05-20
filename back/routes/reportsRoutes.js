@@ -41,7 +41,7 @@ router.get('/dashboard', authenticate, authorize('admin', 'cashier'), async (req
 
     const monthlyRevenue = await Order.findAll({
       attributes: [
-        [sequelize.fn('DATE_FORMAT', sequelize.col('createdAt'), '%Y-%m'), 'month'],
+        [sequelize.fn('strftime', '%Y-%m', sequelize.col('createdAt')), 'month'],
         [sequelize.fn('SUM', sequelize.col('totalAmount')), 'revenue'],
         [sequelize.fn('COUNT', sequelize.col('Order.id')), 'orderCount']
       ],
