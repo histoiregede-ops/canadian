@@ -127,9 +127,18 @@ app.use((err, req, res, next) => {
 sequelize.sync()
   .then(() => {
     console.log('Database synced successfully.');
-    const server = app.listen(PORT, () => {
+    const server = app.listen(PORT, async () => {
       console.log(`Server is running on port ${PORT}`);
-      console.log('Visit /api/seed to initialize the database');
+      try {
+        const count = await models.User.count();
+        if (count === 0) {
+          await models.User.create({ username: 'admin', password: 'admin123', role: 'admin', fullName: 'Administrateur' });
+          await models.User.create({ username: 'cashier1', password: 'cashier123', role: 'cashier', fullName: 'Caissier Principal' });
+          console.log('Default users created');
+        }
+      } catch (err) {
+        console.error('Auto-seed error:', err.message);
+      }
     });
 
     // Initialize messaging tables
