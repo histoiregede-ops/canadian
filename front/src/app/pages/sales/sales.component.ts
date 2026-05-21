@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ProductService, Product } from '../../services/product';
@@ -44,8 +44,20 @@ export class SalesComponent implements OnInit {
   ) { }
 
   ngOnInit(): void {
+    if (window.innerWidth <= 1200) {
+      this.isCartCollapsed = true;
+    }
     this.loadConfig();
     this.loadProducts();
+  }
+
+  @HostListener('window:resize')
+  onResize(): void {
+    if (window.innerWidth <= 1200) {
+      this.isCartCollapsed = true;
+    } else {
+      this.isCartCollapsed = false;
+    }
   }
 
   private loadConfig() {

@@ -5,7 +5,11 @@
   "main": "index.js",
   "scripts": {
     "start": "node index.js",
-    "test": "node tests/routes.test.js"
+    "test": "node tests/routes.test.js",
+    "db:migrate": "npx sequelize-cli db:migrate --env production",
+    "db:seed": "npx sequelize-cli db:seed:all --env production",
+    "db:setup": "npx sequelize-cli db:migrate --env production && npx sequelize-cli db:seed:all --env production",
+    "db:reset": "npx sequelize-cli db:migrate:undo:all --env production && npx sequelize-cli db:migrate --env production && npx sequelize-cli db:seed:all --env production"
   },
   "keywords": [],
   "author": "",

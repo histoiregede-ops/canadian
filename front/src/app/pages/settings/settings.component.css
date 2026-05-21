@@ -413,3 +413,30 @@
 .info-item strong {
   color: #f1f5f9;
 }
+
+@media (max-width: 768px) {
+  .settings-page {
+    padding: 16px;
+  }
+  .settings-container {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+  .settings-sidebar {
+    position: static;
+    width: 100%;
+  }
+  .settings-content {
+    padding: 20px;
+  }
+  .form-grid {
+    grid-template-columns: 1fr;
+  }
+  .backup-actions {
+    flex-direction: column;
+    gap: 10px;
+  }
+  .backup-actions button {
+    width: 100%;
+  }
+}

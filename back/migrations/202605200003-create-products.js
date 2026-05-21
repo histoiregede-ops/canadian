@@ -27,6 +27,14 @@ module.exports = {
         type: Sequelize.ENUM('available', 'out_of_stock', 'on_order'),
         defaultValue: 'available'
       },
+      isFeatured: {
+        type: Sequelize.BOOLEAN,
+        defaultValue: false
+      },
+      lowStockThreshold: {
+        type: Sequelize.INTEGER,
+        defaultValue: 5
+      },
       photo: {
         type: Sequelize.STRING
       },

@@ -1,3 +1,8 @@
+:root {
+  --sidebar-width: 260px;
+  --sidebar-collapsed-width: 68px;
+}
+
 .app-container {
   display: flex;
   min-height: 100vh;
@@ -8,7 +13,11 @@
   display: flex;
   flex-direction: column;
   margin-left: var(--sidebar-width);
-  transition: margin 0.3s ease;
+  transition: margin-left 0.3s ease;
+}
+
+.main-content.sidebar-collapsed {
+  margin-left: var(--sidebar-collapsed-width);
 }
 
 .main-content.no-sidebar {
@@ -34,6 +43,10 @@
 
 @media (max-width: 768px) {
   .main-content {
+    margin-left: 0;
+  }
+
+  .main-content.sidebar-collapsed {
     margin-left: 0;
   }
 

@@ -76,7 +76,7 @@
   background: var(--bg-card);
   border: 1px solid var(--border);
   border-radius: 16px;
-  overflow: hidden;
+  overflow-x: auto;
 }
 
 .user-table {
@@ -237,3 +237,19 @@
 }
 
 .btn-secondary:hover { background: rgba(255, 255, 255, 0.06); }
+
+@media (max-width: 768px) {
+  .user-management-page {
+    padding: 16px;
+  }
+  .stats-row {
+    flex-direction: column;
+    gap: 12px;
+  }
+  .stat-item {
+    width: 100%;
+  }
+  .modal-card {
+    padding: 20px;
+  }
+}

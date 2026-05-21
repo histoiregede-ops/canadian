@@ -5,24 +5,28 @@
     <span class="hamburger-line"></span>
   </button>
 
+  <button class="collapse-toggle" (click)="onToggle()" title="Réduire/Agrandir le menu">
+    <span class="collapse-icon">&#x2630;</span>
+  </button>
+
   <div class="search-bar">
-    <span class="search-icon">🔍</span>
+    <span class="search-icon">&#x1F50D;</span>
     <input type="text" placeholder="Recherche globale (produits, clients, commandes...)" />
   </div>
 
   <div class="nav-actions">
     <button class="action-btn" title="Notifications">
-      <span class="icon">🔔</span>
+      <span class="icon">&#x1F514;</span>
       <span class="badge">3</span>
     </button>
     <button class="action-btn" title="Aide">
-      <span class="icon">❓</span>
+      <span class="icon">&#x2753;</span>
     </button>
     <div class="date-display">
       <span class="today">{{ today | date:'fullDate':'':'fr-FR' }}</span>
     </div>
     <button class="btn btn-primary" routerLink="/sales">
-      <span class="icon">➕</span> Nouvel Achat
+      <span class="icon">&#x2795;</span> Nouvel Achat
     </button>
   </div>
 </header>

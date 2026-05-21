@@ -1,11 +1,11 @@
 <div class="app-container" [class.no-sidebar]="isPublicPage">
-  <app-sidebar *ngIf="!isPublicPage" [isOpen]="sidebarOpen" (closeSidebar)="closeSidebar()"></app-sidebar>
+  <app-sidebar *ngIf="!isPublicPage" [isOpen]="sidebarOpen" [isCollapsed]="sidebarCollapsed" (closeSidebar)="closeSidebar()"></app-sidebar>
 
   <div class="sidebar-overlay" *ngIf="!isPublicPage && sidebarOpen" (click)="closeSidebar()"></div>
-  
-  <div class="main-content" [class.no-sidebar]="isPublicPage">
+
+  <div class="main-content" [class.no-sidebar]="isPublicPage" [class.sidebar-collapsed]="sidebarCollapsed && !isPublicPage">
     <app-navbar *ngIf="!isPublicPage" (toggleSidebar)="toggleSidebar()"></app-navbar>
-    
+
     <div class="page-content" [class.no-sidebar]="isPublicPage">
       <router-outlet></router-outlet>
     </div>

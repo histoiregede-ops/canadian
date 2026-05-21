@@ -12,6 +12,7 @@ import { AuthService } from '../../services/auth';
 })
 export class SidebarComponent implements OnInit {
   @Input() isOpen = false;
+  @Input() isCollapsed = false;
   @Output() closeSidebar = new EventEmitter<void>();
 
   user: any = null;

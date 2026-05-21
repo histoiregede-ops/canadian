@@ -15,6 +15,7 @@ import { filter } from 'rxjs';
 export class AppComponent {
   isPublicPage = false;
   sidebarOpen = false;
+  sidebarCollapsed = false;
 
   private sidebarHiddenRoutes = ['/login', '/contact', '/shop', '/cart', '/checkout', '/client-messages'];
 
@@ -23,12 +24,18 @@ export class AppComponent {
       filter(event => event instanceof NavigationEnd)
     ).subscribe((event: any) => {
       this.isPublicPage = this.sidebarHiddenRoutes.some(route => event.url.startsWith(route));
-      this.closeSidebar();
+      if (window.innerWidth <= 768) {
+        this.closeSidebar();
+      }
     });
   }
 
   toggleSidebar(): void {
-    this.sidebarOpen = !this.sidebarOpen;
+    if (window.innerWidth <= 768) {
+      this.sidebarOpen = !this.sidebarOpen;
+    } else {
+      this.sidebarCollapsed = !this.sidebarCollapsed;
+    }
   }
 
   closeSidebar(): void {
