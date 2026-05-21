@@ -228,6 +228,18 @@
   border-color: rgba(59, 130, 246, 0.3);
 }
 
+.nav-link.login-link {
+  background: rgba(59, 130, 246, 0.2);
+  color: #93c5fd;
+  border-color: rgba(59, 130, 246, 0.3);
+  margin-left: auto;
+}
+
+.nav-link.login-link:hover {
+  background: rgba(59, 130, 246, 0.3);
+  color: #bfdbfe;
+}
+
 /* Product Reviews Styles */
 .product-reviews {
   margin: 12px 0;

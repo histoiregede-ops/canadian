@@ -24,7 +24,7 @@ import { ProfileEditComponent } from './pages/profile-edit/profile-edit.componen
 import { ReportsComponent } from './pages/reports/reports.component';
 
 export const routes: Routes = [
-  { path: '', redirectTo: 'login', pathMatch: 'full' },
+  { path: '', redirectTo: 'shop', pathMatch: 'full' },
   // Admin / Internal Routes
   { path: 'dashboard', component: DashboardComponent, canActivate: [RoleGuard], data: { roles: ['admin', 'cashier'] } },
   { path: 'inventory', component: InventoryComponent, canActivate: [RoleGuard], data: { roles: ['admin', 'cashier'] } },
