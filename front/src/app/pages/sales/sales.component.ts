@@ -192,7 +192,7 @@ export class SalesComponent implements OnInit, OnDestroy {
           this.paymentService.initiatePayment({
             orderId: res.id,
             amount: this.total,
-            paymentMethod: this.paymentMethod,
+            paymentMethod: this.paymentMethod as PaymentMethod,
             phoneNumber: this.payerPhone
           }).subscribe({
             next: (initResult) => {
