@@ -202,10 +202,8 @@ export class InventoryComponent implements OnInit, OnDestroy, AfterViewInit {
   // Résout l'URL de l'image pour l'affichage
   getProductImage(photo: string): string {
     if (!photo) return '';
-    // Si c'est du base64 (en cours d'ajout), on l'affiche directement
     if (photo.startsWith('data:image')) return photo;
-    // Sinon, on pointe vers le dossier public du backend
-    // On suppose que le backend renvoie un chemin relatif type 'public/uploads/nom.jpg'
+    if (photo.includes('cloudinary.com')) return photo;
     const baseUrl = environment.apiUrl;
     return photo.startsWith('/') ? `${baseUrl}${photo}` : `${baseUrl}/${photo}`;
   }

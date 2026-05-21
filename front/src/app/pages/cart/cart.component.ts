@@ -87,6 +87,7 @@ export class CartComponent implements OnInit, OnDestroy {
   getProductImage(photo: string): string {
     if (!photo) return '';
     if (photo.startsWith('data:image')) return photo;
+    if (photo.includes('cloudinary.com')) return photo;
     const baseUrl = environment.apiUrl;
     return photo.startsWith('/') ? `${baseUrl}${photo}` : `${baseUrl}/${photo}`;
   }
