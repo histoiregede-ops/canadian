@@ -4,12 +4,16 @@
     <p class="text-muted">Aperçu de l'activité aujourd'hui</p>
   </div>
 
-  <!-- Stats Grid -->
-  <div class="stats-grid">
+  <div class="loading-spinner" *ngIf="loading">
+    <div class="spinner"></div>
+    <p>Chargement des statistiques...</p>
+  </div>
+
+  <div class="stats-grid" *ngIf="!loading">
     <div class="stat-card gold">
       <div class="stat-info">
         <span class="label">Chiffre d'affaires</span>
-        <h2 class="value">{{ stats.dailyIncome | number }} FCFA</h2>
+        <h2 class="value">{{ stats.dailyIncome | number:'1.0-0' }} FCFA</h2>
         <span class="trend positive">Aujourd'hui</span>
       </div>
       <div class="stat-icon">💰</div>
@@ -43,73 +47,79 @@
     </div>
   </div>
 
-  <!-- Main Content Grid -->
   <div class="dashboard-grid">
-    <!-- Left Column -->
     <div class="grid-col-2">
       <div class="card">
         <div class="card-header">
           <h3>Dernières Commandes</h3>
-          <button class="btn-link">Voir tout</button>
+          <button class="btn-link" routerLink="/sales">Voir tout</button>
         </div>
-        <table>
-          <thead>
-            <tr>
-              <th>Client</th>
-              <th>Produit</th>
-              <th>Montant</th>
-              <th>Statut</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td>Jean Dupont</td>
-              <td>Panneau Solaire 400W</td>
-              <td>150 000 FCFA</td>
-              <td><span class="badge badge-success">Payé</span></td>
-            </tr>
-            <tr>
-              <td>Marie Koné</td>
-              <td>Batterie Lithium 100Ah</td>
-              <td>350 000 FCFA</td>
-              <td><span class="badge badge-warning">En attente</span></td>
-            </tr>
-            <tr>
-              <td>Société ABC</td>
-              <td>Kit Solaire Complet</td>
-              <td>850 000 FCFA</td>
-              <td><span class="badge badge-success">Payé</span></td>
-            </tr>
-          </tbody>
-        </table>
+
+        <div class="loading-spinner" *ngIf="ordersLoading">
+          <div class="spinner spinner-sm"></div>
+        </div>
+
+        <div class="empty-state" *ngIf="!ordersLoading && recentOrders.length === 0">
+          <span class="empty-icon">📦</span>
+          <p>Aucune commande pour le moment</p>
+        </div>
+
+        <div class="table-responsive" *ngIf="!ordersLoading && recentOrders.length > 0">
+          <table>
+            <thead>
+              <tr>
+                <th>N°</th>
+                <th>Client</th>
+                <th>Produit</th>
+                <th>Montant</th>
+                <th>Statut</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let order of recentOrders">
+                <td class="order-number">{{ order.orderNumber }}</td>
+                <td>{{ order.customerName }}</td>
+                <td>{{ order.productName }}</td>
+                <td class="amount">{{ formatAmount(order.totalAmount) }} FCFA</td>
+                <td><span class="badge" [class]="getStatusBadge(order.status)">{{ getStatusLabel(order.status) }}</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
       </div>
 
       <div class="card mt-4">
         <div class="card-header">
-          <h3>Réparations Urgentes</h3>
+          <h3>Réparations en cours</h3>
+          <button class="btn-link" routerLink="/repairs">Voir tout</button>
         </div>
-        <div class="repair-list">
-          <div class="repair-item">
-            <div class="repair-icon">📱</div>
+
+        <div class="loading-spinner" *ngIf="repairsLoading">
+          <div class="spinner spinner-sm"></div>
+        </div>
+
+        <div class="empty-state" *ngIf="!repairsLoading && urgentRepairs.length === 0">
+          <span class="empty-icon">🔧</span>
+          <p>Aucune réparation en cours</p>
+        </div>
+
+        <div class="repair-list" *ngIf="!repairsLoading && urgentRepairs.length > 0">
+          <div class="repair-item" *ngFor="let repair of urgentRepairs">
+            <div class="repair-icon">{{ getDeviceIcon(repair.deviceType) }}</div>
             <div class="repair-details">
-              <span class="device">iPhone 13 - Écran cassé</span>
-              <span class="client">M. Traoré</span>
+              <span class="device">{{ repair.deviceType }}{{ repair.brand ? ' - ' + repair.brand : '' }}</span>
+              <span class="client">{{ repair.customerName }}</span>
+              <span class="issue">{{ repair.reportedIssue }}</span>
             </div>
-            <span class="badge badge-danger">Urgent</span>
-          </div>
-          <div class="repair-item">
-            <div class="repair-icon">💻</div>
-            <div class="repair-details">
-              <span class="device">MacBook Air - Batterie</span>
-              <span class="client">Mme Sako</span>
+            <div class="repair-badges">
+              <span class="badge" [class]="getPriorityBadge(repair.priority)">{{ getPriorityLabel(repair.priority) }}</span>
+              <span class="badge" [class]="getRepairStatusBadge(repair.status)">{{ getRepairStatusLabel(repair.status) }}</span>
             </div>
-            <span class="badge badge-warning">En diagnostic</span>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- Right Column -->
     <div class="grid-col-1">
       <div class="card alert-card">
         <div class="card-header">
@@ -140,16 +150,16 @@
         <div class="cash-summary">
           <div class="cash-row">
             <span>Ventes</span>
-            <span class="income">+ {{ stats.dailyIncome | number }} FCFA</span>
+            <span class="income">+ {{ stats.dailyIncome | number:'1.0-0' }} FCFA</span>
           </div>
           <div class="cash-row">
             <span>Dépenses</span>
-            <span class="expense">- {{ stats.dailyExpense | number }} FCFA</span>
+            <span class="expense">- {{ stats.dailyExpense | number:'1.0-0' }} FCFA</span>
           </div>
           <div class="divider"></div>
           <div class="cash-row total">
             <span>Solde Net</span>
-            <span>{{ (stats.dailyIncome - stats.dailyExpense) | number }} FCFA</span>
+            <span>{{ (stats.dailyIncome - stats.dailyExpense) | number:'1.0-0' }} FCFA</span>
           </div>
         </div>
       </div>
