@@ -17,7 +17,7 @@ export class AppComponent {
   sidebarOpen = false;
   sidebarCollapsed = false;
 
-  private sidebarHiddenRoutes = ['/login', '/contact', '/shop', '/cart', '/checkout', '/client-messages'];
+  private sidebarHiddenRoutes = ['/login', '/contact', '/shop', '/cart', '/checkout', '/client-messages', '/client'];
 
   constructor(private router: Router) {
     this.checkPublicRoute(this.router.url);

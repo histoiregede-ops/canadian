@@ -1,0 +1,87 @@
+<div class="client-login-page">
+  <div class="brand-side">
+    <div class="brand-content">
+      <img src="/logo_electro_canadien.ico" alt="Logo" class="floating-logo">
+      <div class="brand-text">
+        <h1>ELECTRO CANADIEN</h1>
+        <p>Votre espace client personnel</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="form-side">
+    <div class="form-container">
+      <div class="form-header">
+        <h2>{{ isRegisterMode ? 'Cr\u00e9er un compte' : 'Bienvenue' }}</h2>
+        <p>{{ isRegisterMode ? 'Inscrivez-vous pour acc\u00e9der \u00e0 votre espace' : 'Connectez-vous \u00e0 votre espace client' }}</p>
+      </div>
+
+      <div class="mode-toggle">
+        <button
+          type="button"
+          class="toggle-btn"
+          [class.active]="!isRegisterMode"
+          (click)="toggleMode()"
+        >
+          Connexion
+        </button>
+        <button
+          type="button"
+          class="toggle-btn"
+          [class.active]="isRegisterMode"
+          (click)="toggleMode()"
+        >
+          Inscription
+        </button>
+      </div>
+
+      <form (submit)="onSubmit($event)" class="client-form">
+        <div class="input-group" *ngIf="isRegisterMode">
+          <label for="name">Nom complet</label>
+          <div class="input-field">
+            <span class="icon">&#128100;</span>
+            <input type="text" id="name" name="name" [(ngModel)]="name" placeholder="Votre nom" required>
+          </div>
+        </div>
+
+        <div class="input-group">
+          <label for="email">Adresse email</label>
+          <div class="input-field">
+            <span class="icon">&#9993;</span>
+            <input type="email" id="email" name="email" [(ngModel)]="email" placeholder="votre@email.com" required>
+          </div>
+        </div>
+
+        <div class="input-group">
+          <label for="password">Mot de passe</label>
+          <div class="input-field">
+            <span class="icon">&#128274;</span>
+            <input type="password" id="password" name="password" [(ngModel)]="password" placeholder="&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;" required>
+          </div>
+        </div>
+
+        <button type="submit" class="btn-submit" [disabled]="loading">
+          <span *ngIf="!loading">{{ isRegisterMode ? 'CR\u00c9ER MON COMPTE' : 'CONNEXION' }}</span>
+          <span *ngIf="loading" class="spinner"></span>
+        </button>
+
+        <div class="error-msg" *ngIf="errorMessage">
+          {{ errorMessage }}
+        </div>
+      </form>
+
+      <div class="form-footer">
+        <p *ngIf="!isRegisterMode">
+          Pas encore de compte ? <a (click)="toggleMode()">Cr\u00e9er un compte</a>
+        </p>
+        <p *ngIf="isRegisterMode">
+          D\u00e9j\u00e0 un compte ? <a (click)="toggleMode()">Se connecter</a>
+        </p>
+        <p class="back-to-shop">
+          <a routerLink="/shop">&#8592; Retour \u00e0 la boutique</a>
+        </p>
+        <p>&copy; 2026 Electro Canadien - Togo</p>
+      </div>
+    </div>
+  </div>
+</div>
