@@ -22,7 +22,6 @@ import { ClientDashboardComponent } from './pages/client-dashboard/client-dashbo
 import { OrderDetailComponent } from './pages/order-detail/order-detail.component';
 import { ProfileEditComponent } from './pages/profile-edit/profile-edit.component';
 import { ReportsComponent } from './pages/reports/reports.component';
-import { ClientLoginComponent } from './pages/client-login/client-login.component';
 
 export const routes: Routes = [
   { path: '', redirectTo: 'login', pathMatch: 'full' },
@@ -41,7 +40,6 @@ export const routes: Routes = [
   { path: 'users', component: UserManagementComponent, canActivate: [RoleGuard], data: { roles: ['admin'] } },
   // Client Routes
   { path: 'client', children: [
-    { path: 'login', component: ClientLoginComponent },
     { path: 'dashboard', component: ClientDashboardComponent },
     { path: 'orders/:id', component: OrderDetailComponent },
     { path: 'profile', component: ProfileEditComponent }
