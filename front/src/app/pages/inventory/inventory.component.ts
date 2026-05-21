@@ -9,6 +9,7 @@ import { environment } from '../../../environments/environment';
 import { Category, CategoryService } from '../../services/category';
 import { Product, StockMovement, ProductService } from '../../services/product';
 import { WebSocketService } from '../../services/websocket';
+import { RefreshService } from '../../services/refresh.service';
 
 Chart.register(...registerables);
 
@@ -79,24 +80,29 @@ export class InventoryComponent implements OnInit, OnDestroy, AfterViewInit {
 
   // Notification subscription
   private wsSub: Subscription | null = null;
+  private refreshSub: Subscription | null = null;
 
-  // Form Model
   currentProduct: Product = this.initProduct();
 
   constructor(
     private productService: ProductService,
     private categoryService: CategoryService,
-    private wsService: WebSocketService
+    private wsService: WebSocketService,
+    private refreshService: RefreshService
   ) { }
 
   ngOnInit(): void {
     this.loadProducts();
     this.loadCategories();
     this.listenNotifications();
+    this.refreshSub = this.refreshService.refresh$.subscribe(() => {
+      this.loadProducts();
+    });
   }
 
   ngOnDestroy(): void {
     this.wsSub?.unsubscribe();
+    this.refreshSub?.unsubscribe();
     if (this.toastTimeout) clearTimeout(this.toastTimeout);
   }
 

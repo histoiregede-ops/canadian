@@ -6,6 +6,7 @@ import { OrderService, OrderData } from '../../services/order';
 import { PdfService } from '../../services/pdf';
 import { PaymentService, PaymentMethod } from '../../services/payment';
 import { ConfigService, PaymentMethod as ConfigPaymentMethod } from '../../services/config';
+import { RefreshService } from '../../services/refresh.service';
 import { environment } from '../../../environments/environment';
 
 interface CartItem {
@@ -40,7 +41,8 @@ export class SalesComponent implements OnInit {
     private orderService: OrderService,
     private pdfService: PdfService,
     private paymentService: PaymentService,
-    private configService: ConfigService
+    private configService: ConfigService,
+    private refreshService: RefreshService
   ) { }
 
   ngOnInit(): void {
@@ -207,6 +209,8 @@ export class SalesComponent implements OnInit {
   }
 
   private afterCheckout(orderData: OrderData, res: any): void {
+    this.refreshService.triggerRefresh();
+
     if (this.isMobileMoney) {
       const label = this.paymentLabels[this.paymentMethod]?.name || this.paymentMethod;
       if (confirm(`💬 Envoyer la confirmation ${label} par WhatsApp ?`)) {
