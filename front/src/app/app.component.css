@@ -58,3 +58,7 @@
     z-index: 99;
   }
 }
+
+.app-container.no-sidebar .main-content {
+  margin-left: 0 !important;
+}

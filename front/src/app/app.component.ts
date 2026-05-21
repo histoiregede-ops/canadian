@@ -20,14 +20,19 @@ export class AppComponent {
   private sidebarHiddenRoutes = ['/login', '/contact', '/shop', '/cart', '/checkout', '/client-messages'];
 
   constructor(private router: Router) {
+    this.checkPublicRoute(this.router.url);
     this.router.events.pipe(
       filter(event => event instanceof NavigationEnd)
     ).subscribe((event: any) => {
-      this.isPublicPage = this.sidebarHiddenRoutes.some(route => event.url.startsWith(route));
+      this.checkPublicRoute(event.url);
       if (window.innerWidth <= 768) {
         this.closeSidebar();
       }
     });
+  }
+
+  private checkPublicRoute(url: string): void {
+    this.isPublicPage = this.sidebarHiddenRoutes.some(route => url.startsWith(route));
   }
 
   toggleSidebar(): void {
