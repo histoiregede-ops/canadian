@@ -1,4 +1,4 @@
-import { Component, OnInit, HostListener } from '@angular/core';
+import { Component, OnInit, HostListener, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ProductService, Product } from '../../services/product';
@@ -21,7 +21,7 @@ interface CartItem {
   templateUrl: './sales.component.html',
   styleUrls: ['./sales.component.css']
 })
-export class SalesComponent implements OnInit {
+export class SalesComponent implements OnInit, OnDestroy {
   products: Product[] = [];
   cart: CartItem[] = [];
   searchQuery: string = '';
@@ -35,6 +35,11 @@ export class SalesComponent implements OnInit {
   paymentMethodsList: ConfigPaymentMethod[] = [];
   paymentLabels: Record<string, { name: string; icon: string; operator: string }> = {};
   mobileMoneyMethods: string[] = [];
+
+  paymentStatus = '';
+  paymentProcessing = false;
+  paymentErrorMessage = '';
+  private statusInterval: any;
 
   constructor(
     private productService: ProductService,
@@ -51,6 +56,10 @@ export class SalesComponent implements OnInit {
     }
     this.loadConfig();
     this.loadProducts();
+  }
+
+  ngOnDestroy(): void {
+    if (this.statusInterval) clearInterval(this.statusInterval);
   }
 
   @HostListener('window:resize')
@@ -152,11 +161,121 @@ export class SalesComponent implements OnInit {
   checkout(): void {
     if (this.cart.length === 0) return;
 
-    if (this.isMobileMoney) {
-      const label = this.paymentLabels[this.paymentMethod];
-      const payerNum = this.payerPhone || 'le numéro client';
-      if (!confirm(`📱 Paiement ${label?.name || this.paymentMethod}\n\nMontant: ${this.total.toLocaleString()} FCFA via ${label?.operator || ''}\nTél: ${payerNum}\n\nCliquez sur OK pour initier le paiement.`)) return;
+    if (this.isMobileMoney && !this.payerPhone.trim()) {
+      alert('Veuillez entrer le numéro de téléphone du client.');
+      return;
     }
+
+    this.paymentProcessing = true;
+    this.paymentStatus = '';
+    this.paymentErrorMessage = '';
+
+    const orderData: OrderData = {
+      items: this.cart.map(item => ({
+        productId: item.product.id!,
+        quantity: item.quantity,
+        unitPrice: item.product.price
+      })),
+      paymentMethod: this.paymentMethod,
+      discount: Number(this.discount) || 0,
+      tax: Number(this.tax) || 0,
+      subtotal: this.subtotal,
+      totalAmount: this.total,
+      paidAmount: this.paymentMethod === 'cash' ? this.total : 0
+    };
+
+    this.orderService.createOrder(orderData).subscribe({
+      next: (res) => {
+        this.lastOrderRef = res.orderNumber || res.id;
+
+        if (this.isMobileMoney) {
+          this.paymentService.initiatePayment({
+            orderId: res.id,
+            amount: this.total,
+            paymentMethod: this.paymentMethod,
+            phoneNumber: this.payerPhone
+          }).subscribe({
+            next: (initResult) => {
+              if (initResult.success) {
+                this.paymentStatus = 'initiated';
+                this.startPaymentStatusPolling(initResult.depositId, res.id);
+              } else {
+                this.paymentStatus = 'failed';
+                this.paymentErrorMessage = `Paiement échoué: ${initResult.message}`;
+                this.paymentProcessing = false;
+              }
+            },
+            error: (err) => {
+              console.error('Payment initiation error:', err);
+              this.paymentStatus = 'failed';
+              this.paymentErrorMessage = 'Erreur lors de l\'initiation du paiement. Utilisez WhatsApp.';
+              this.paymentProcessing = false;
+            }
+          });
+          return;
+        }
+
+        if (this.paymentMethod === 'cash') {
+          this.paymentService.processPayment({
+            orderId: res.id!, amount: this.total, paymentMethod: 'cash', status: 'completed'
+          } as any).subscribe({
+            next: () => {
+              this.paymentStatus = 'completed';
+              this.afterCheckout(orderData, res);
+            },
+            error: () => { this.paymentErrorMessage = 'Erreur lors du paiement.'; this.paymentProcessing = false; }
+          });
+          return;
+        }
+
+        this.paymentStatus = 'completed';
+        this.afterCheckout(orderData, res);
+      },
+      error: (err) => {
+        console.error('Checkout error:', err);
+        this.paymentErrorMessage = 'Erreur lors de la vente.';
+        this.paymentProcessing = false;
+      }
+    });
+  }
+
+  private startPaymentStatusPolling(depositId: string, orderId: string): void {
+    this.statusInterval = setInterval(() => {
+      this.paymentService.checkPaymentStatus(depositId).subscribe({
+        next: (status) => {
+          if (status.status === 'COMPLETED') {
+            this.paymentStatus = 'completed';
+            this.paymentProcessing = false;
+            clearInterval(this.statusInterval);
+            this.paymentService.processPayment({
+              orderId, amount: this.total, paymentMethod: this.paymentMethod as PaymentMethod, status: 'completed'
+            } as any).subscribe({
+              next: () => {
+                const orderData: OrderData = {
+                  items: this.cart.map(item => ({ productId: item.product.id!, quantity: item.quantity, unitPrice: item.product.price })),
+                  paymentMethod: this.paymentMethod,
+                  discount: Number(this.discount) || 0,
+                  tax: Number(this.tax) || 0,
+                  subtotal: this.subtotal,
+                  totalAmount: this.total,
+                  paidAmount: this.total
+                };
+                this.afterCheckout(orderData, { id: orderId, orderNumber: this.lastOrderRef });
+              }
+            });
+          } else if (status.status === 'FAILED') {
+            this.paymentStatus = 'failed';
+            this.paymentErrorMessage = 'Le paiement a échoué. Réessayez ou utilisez WhatsApp.';
+            this.paymentProcessing = false;
+            clearInterval(this.statusInterval);
+          }
+        },
+        error: () => {
+          console.error('Status check error');
+        }
+      });
+    }, 5000);
+  }
 
     const orderData: OrderData = {
       items: this.cart.map(item => ({

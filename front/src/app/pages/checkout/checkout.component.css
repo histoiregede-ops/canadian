@@ -418,25 +418,319 @@
 }
 
 @media (max-width: 768px) {
-  .checkout-container {
-    grid-template-columns: 1fr;
-  }
-
-  .form-row {
-    grid-template-columns: 1fr;
-  }
-
-  .order-summary {
-    position: static;
+  .checkout-page {
+    padding: 16px;
+    gap: 16px;
+    border-radius: 16px;
   }
 
   .page-header {
     flex-direction: column;
     align-items: flex-start;
+    gap: 12px;
   }
 
   .page-header h1 {
-    width: 100%;
+    font-size: 1.5rem;
+  }
+
+  .checkout-container {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+
+  .checkout-form,
+  .order-summary {
+    padding: 20px;
+    border-radius: 16px;
+  }
+
+  .form-section {
+    margin-bottom: 24px;
+  }
+
+  .form-section h2 {
+    font-size: 1rem;
+    margin-bottom: 16px;
+    padding-bottom: 12px;
+  }
+
+  .form-row {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .form-group input {
+    padding: 12px 14px;
+    font-size: 0.95rem;
+  }
+
+  .payment-option {
+    padding: 14px;
+    border-radius: 14px;
+  }
+
+  .option-icon {
+    font-size: 1.25rem;
+  }
+
+  .option-name {
+    font-size: 0.9rem;
+  }
+
+  .option-desc {
+    font-size: 0.8rem;
+  }
+
+  .mobile-money-info {
+    padding: 16px;
+    border-radius: 14px;
+  }
+
+  .phone-input {
+    padding: 12px 14px;
+    font-size: 1rem;
+  }
+
+  .btn-submit {
+    padding: 14px 16px;
+    font-size: 1rem;
+    border-radius: 14px;
+  }
+
+  .order-summary h2 {
+    font-size: 1.15rem;
+    margin-bottom: 16px;
+    padding-bottom: 12px;
+  }
+
+  .items-list {
+    max-height: 180px;
+    gap: 8px;
+  }
+
+  .item {
+    padding: 8px 0;
+    gap: 8px;
+  }
+
+  .item-name {
+    font-size: 0.85rem;
+  }
+
+  .item-qty {
+    font-size: 0.75rem;
+  }
+
+  .item-price {
+    font-size: 0.85rem;
+  }
+
+  .pricing-row {
+    padding: 8px 0;
+    font-size: 0.9rem;
+  }
+
+  .pricing-row.total {
+    padding: 14px 10px;
+    font-size: 1.1rem;
+    border-radius: 14px;
+  }
+
+  .security-info {
+    padding: 12px;
+    border-radius: 14px;
+  }
+
+  .security-info p {
+    font-size: 0.8rem;
+  }
+
+  .info-cards {
+    gap: 8px;
+  }
+
+  .info-card {
+    padding: 12px;
+    border-radius: 14px;
+  }
+
+  .info-card .icon {
+    font-size: 1.25rem;
+  }
+
+  .info-card p {
+    font-size: 0.8rem;
+  }
+
+  .info-card small {
+    font-size: 0.7rem;
+  }
+
+  .alert {
+    padding: 12px 16px;
+    border-radius: 14px;
+    font-size: 0.9rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .checkout-page {
+    padding: 12px;
+    gap: 12px;
+  }
+
+  .page-header h1 {
+    font-size: 1.25rem;
+  }
+
+  .back-btn {
+    padding: 8px 12px;
+    font-size: 0.85rem;
+    border-radius: 10px;
+  }
+
+  .checkout-form,
+  .order-summary {
+    padding: 16px;
+    border-radius: 12px;
+  }
+
+  .form-section {
+    margin-bottom: 20px;
+  }
+
+  .form-section h2 {
+    font-size: 0.9rem;
+    margin-bottom: 12px;
+    padding-bottom: 10px;
+  }
+
+  .form-group label {
+    font-size: 0.8rem;
+  }
+
+  .form-group input {
+    padding: 10px 12px;
+    font-size: 0.9rem;
+    border-radius: 12px;
+  }
+
+  .payment-option {
+    padding: 12px;
+    border-radius: 12px;
+  }
+
+  .option-label {
+    gap: 8px;
+  }
+
+  .option-icon {
+    font-size: 1.1rem;
+  }
+
+  .option-name {
+    font-size: 0.85rem;
+  }
+
+  .option-desc {
+    font-size: 0.75rem;
+  }
+
+  .mobile-money-info {
+    padding: 12px;
+  }
+
+  .phone-label {
+    font-size: 0.75rem;
+  }
+
+  .phone-input {
+    padding: 10px 12px;
+    font-size: 0.95rem;
+  }
+
+  .phone-hint {
+    font-size: 0.7rem;
+  }
+
+  .whatsapp-btn {
+    padding: 10px 16px;
+    font-size: 0.85rem;
+    border-radius: 10px;
+  }
+
+  .btn-submit {
+    padding: 12px 14px;
+    font-size: 0.9rem;
+    border-radius: 12px;
+  }
+
+  .order-summary h2 {
+    font-size: 1rem;
+  }
+
+  .item {
+    grid-template-columns: 1fr auto;
+    gap: 4px;
+  }
+
+  .item-name {
+    font-size: 0.8rem;
+  }
+
+  .item-qty {
+    grid-column: 1 / -1;
+    text-align: left;
+  }
+
+  .pricing-row {
+    padding: 6px 0;
+    font-size: 0.85rem;
+  }
+
+  .pricing-row.total {
+    padding: 12px 8px;
+    font-size: 1rem;
+  }
+
+  .security-info {
+    padding: 10px;
+    gap: 8px;
+  }
+
+  .security-icon {
+    font-size: 1rem;
+  }
+
+  .security-info p {
+    font-size: 0.75rem;
+  }
+
+  .info-card {
+    padding: 10px;
+    gap: 8px;
+  }
+
+  .info-card .icon {
+    font-size: 1.1rem;
+  }
+
+  .info-card p {
+    font-size: 0.75rem;
+  }
+
+  .info-card small {
+    font-size: 0.65rem;
+  }
+
+  .alert {
+    padding: 10px 12px;
+    font-size: 0.8rem;
+  }
+
+  .alert-icon {
+    font-size: 1rem;
   }
 }
 

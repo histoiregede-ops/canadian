@@ -102,8 +102,26 @@
         </div>
       </div>
 
-      <button class="btn btn-solar btn-block btn-large" (click)="checkout()" [disabled]="cart.length === 0">
-        ENCAISSER ET IMPRIMER
+      <div class="payment-status" *ngIf="paymentStatus === 'initiated'">
+        <div class="spinner-sm"></div>
+        <p>Paiement en cours de traitement... Confirmez sur votre téléphone.</p>
+      </div>
+
+      <div class="payment-status success" *ngIf="paymentStatus === 'completed'">
+        <span class="status-icon">✅</span>
+        <p>Paiement confirmé ! Commande {{ lastOrderRef }}</p>
+      </div>
+
+      <div class="payment-status error" *ngIf="paymentStatus === 'failed'">
+        <span class="status-icon">❌</span>
+        <p>{{ paymentErrorMessage }}</p>
+        <a [href]="getWhatsAppLink(total, lastOrderRef)" target="_blank" class="whatsapp-fallback" *ngIf="lastOrderRef">
+          💬 WhatsApp (fallback)
+        </a>
+      </div>
+
+      <button class="btn btn-solar btn-block btn-large" (click)="checkout()" [disabled]="cart.length === 0 || paymentProcessing">
+        {{ paymentProcessing ? 'Traitement...' : 'ENCAISSER ET IMPRIMER' }}
       </button>
     </div>
   </div>
