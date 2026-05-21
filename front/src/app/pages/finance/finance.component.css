@@ -493,7 +493,83 @@
   box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.1);
 }
 
+@media (max-width: 1024px) {
+  .charts-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .chart-container {
+    height: 300px !important;
+  }
+}
+
 @media (max-width: 768px) {
+  .finance-page {
+    padding: 16px;
+    gap: 16px;
+  }
+
+  .page-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .page-header h1 {
+    font-size: 1.5rem;
+  }
+
+  .header-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    width: 100%;
+  }
+
+  .header-actions .btn {
+    flex: 1;
+    min-width: 0;
+    padding: 10px 16px;
+    font-size: 0.85rem;
+  }
+
+  .stats-grid {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .stat-card {
+    padding: 20px;
+    border-radius: 16px;
+  }
+
+  .stat-icon {
+    width: 48px;
+    height: 48px;
+    font-size: 1.25rem;
+  }
+
+  .stat-value {
+    font-size: 1.1rem;
+  }
+
+  .finance-card {
+    padding: 20px;
+    border-radius: 16px !important;
+  }
+
+  .card-title {
+    font-size: 0.9rem;
+  }
+
+  .chart-container {
+    height: 250px !important;
+  }
+
+  .transaction-table {
+    font-size: 0.9rem;
+  }
+
   .transaction-table thead {
     display: none;
   }
@@ -513,7 +589,7 @@
     padding: 8px 0;
     border-bottom: none;
     text-align: right;
-    font-size: 1.25rem;
+    font-size: 0.95rem;
   }
 
   .transaction-table td::before {
@@ -523,7 +599,53 @@
     text-align: left;
     flex-shrink: 0;
     margin-right: 10px;
-    font-size: 1rem;
+    font-size: 0.85rem;
+  }
+
+  .modal-card {
+    width: 95%;
+    max-width: 95%;
+    padding: 24px 16px;
+    border-radius: 16px;
+  }
+
+  .modal-header {
+    margin-bottom: 20px;
+  }
+
+  .modal-header h2 {
+    font-size: 1.25rem;
+  }
+
+  .modal-form {
+    gap: 16px;
+  }
+
+  .form-row {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+
+  .form-group input,
+  .form-group select,
+  .form-group textarea {
+    padding: 10px 12px;
+    font-size: 0.9rem;
+  }
+
+  .modal-actions {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .modal-actions .btn {
+    flex: 1;
+    min-width: 120px;
+  }
+
+  .btn {
+    padding: 10px 16px;
+    font-size: 0.85rem;
   }
 
   .flux-modal {
@@ -580,5 +702,159 @@
 
   .flux-export .btn {
     width: 100%;
+  }
+
+  .comment-popup-card {
+    width: 95%;
+    max-width: 95%;
+    padding: 20px 16px;
+  }
+}
+
+@media (max-width: 480px) {
+  .finance-page {
+    padding: 12px;
+    gap: 12px;
+  }
+
+  .page-header h1 {
+    font-size: 1.25rem;
+  }
+
+  .page-header p {
+    font-size: 0.8rem;
+  }
+
+  .header-actions {
+    flex-direction: column;
+  }
+
+  .header-actions .btn {
+    width: 100%;
+    text-align: center;
+  }
+
+  .stats-grid {
+    gap: 8px;
+  }
+
+  .stat-card {
+    padding: 14px;
+    border-radius: 12px;
+    gap: 12px;
+  }
+
+  .stat-icon {
+    width: 40px;
+    height: 40px;
+    font-size: 1.1rem;
+    border-radius: 10px;
+  }
+
+  .stat-label {
+    font-size: 0.75rem;
+  }
+
+  .stat-value {
+    font-size: 1rem;
+  }
+
+  .finance-card {
+    padding: 14px;
+    border-radius: 12px !important;
+  }
+
+  .card-title {
+    font-size: 0.8rem;
+  }
+
+  .chart-container {
+    height: 200px !important;
+  }
+
+  .transaction-table tr {
+    padding: 12px;
+    margin-bottom: 10px;
+  }
+
+  .transaction-table td {
+    font-size: 0.85rem;
+    padding: 6px 0;
+  }
+
+  .transaction-table td::before {
+    font-size: 0.75rem;
+  }
+
+  .modal-card {
+    padding: 20px 12px;
+    border-radius: 12px;
+  }
+
+  .modal-header h2 {
+    font-size: 1.1rem;
+  }
+
+  .close-btn {
+    font-size: 1.5rem;
+  }
+
+  .form-group label {
+    font-size: 0.8rem;
+  }
+
+  .form-group input,
+  .form-group select,
+  .form-group textarea {
+    padding: 8px 10px;
+    font-size: 0.85rem;
+  }
+
+  .flux-modal {
+    padding: 16px !important;
+    margin: 8px;
+  }
+
+  .flux-datepicker .form-row {
+    grid-template-columns: 1fr;
+  }
+
+  .flux-search-btn {
+    grid-column: auto;
+  }
+
+  .flux-total-card {
+    padding: 12px 16px;
+    border-radius: 12px;
+  }
+
+  .flux-total-card .total-label {
+    font-size: 0.7rem;
+  }
+
+  .flux-total-card .total-value {
+    font-size: 1rem;
+  }
+
+  .flux-table tr {
+    padding: 10px;
+  }
+
+  .flux-table td {
+    font-size: 0.8rem;
+    padding: 4px 0;
+  }
+
+  .flux-table td::before {
+    font-size: 0.7rem;
+  }
+
+  .comment-textarea {
+    padding: 10px 12px;
+    font-size: 0.9rem;
+  }
+
+  .comment-transaction-ref {
+    font-size: 0.8rem;
   }
 }
