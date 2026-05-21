@@ -277,56 +277,6 @@ export class SalesComponent implements OnInit, OnDestroy {
     }, 5000);
   }
 
-    const orderData: OrderData = {
-      items: this.cart.map(item => ({
-        productId: item.product.id!,
-        quantity: item.quantity,
-        unitPrice: item.product.price
-      })),
-      paymentMethod: this.paymentMethod,
-      discount: Number(this.discount) || 0,
-      tax: Number(this.tax) || 0,
-      subtotal: this.subtotal,
-      totalAmount: this.total,
-      paidAmount: this.paymentMethod === 'cash' ? this.total : 0
-    };
-
-    this.orderService.createOrder(orderData).subscribe({
-      next: (res) => {
-        this.lastOrderRef = res.orderNumber || res.id;
-
-        if (this.isMobileMoney) {
-          this.paymentService.initiatePayment({
-            orderId: res.id,
-            amount: this.total,
-            paymentMethod: this.paymentMethod as any,
-            phoneNumber: this.payerPhone
-          }).subscribe({
-            next: (initResult) => {
-              if (initResult.success) {
-                alert(`✅ Paiement ${this.paymentLabels[this.paymentMethod]?.name || this.paymentMethod} initié !\n\nConfirmez sur votre téléphone ${this.payerPhone}`);
-              } else {
-                alert(`✅ Vente enregistrée. Initier le paiement manuellement.`);
-              }
-              this.afterCheckout(orderData, res);
-            },
-            error: () => {
-              alert(`✅ Vente enregistrée. Initier le paiement manuellement.`);
-              this.afterCheckout(orderData, res);
-            }
-          });
-        } else {
-          alert(`✅ Vente enregistrée avec succès !\n\nCommande: ${this.lastOrderRef}`);
-          this.afterCheckout(orderData, res);
-        }
-      },
-      error: (err) => {
-        console.error('Checkout error:', err);
-        alert('Erreur lors de la vente.');
-      }
-    });
-  }
-
   private afterCheckout(orderData: OrderData, res: any): void {
     this.refreshService.triggerRefresh();
 
