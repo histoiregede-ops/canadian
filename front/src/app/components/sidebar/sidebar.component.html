@@ -28,6 +28,11 @@
       <span class="label" [class.hide]="isCollapsed">Ventes (POS)</span>
       <span class="tooltip" *ngIf="isCollapsed">Ventes (POS)</span>
     </a>
+    <a routerLink="/shop" routerLinkActive="active" class="nav-item" (click)="onNavClick()" [class.collapsed]="isCollapsed">
+      <span class="icon">&#x1F3EA;</span>
+      <span class="label" [class.hide]="isCollapsed">Boutique en ligne</span>
+      <span class="tooltip" *ngIf="isCollapsed">Boutique en ligne</span>
+    </a>
     <a *ngIf="user?.role === 'admin' || user?.role === 'technician'" routerLink="/repairs" routerLinkActive="active" class="nav-item" (click)="onNavClick()" [class.collapsed]="isCollapsed">
       <span class="icon">&#x1F527;</span>
       <span class="label" [class.hide]="isCollapsed">Réparations</span>
