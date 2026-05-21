@@ -253,7 +253,7 @@ export class SalesComponent implements OnInit, OnDestroy {
               next: () => {
                 const orderData: OrderData = {
                   items: this.cart.map(item => ({ productId: item.product.id!, quantity: item.quantity, unitPrice: item.product.price })),
-                  paymentMethod: this.paymentMethod,
+            paymentMethod: this.paymentMethod as PaymentMethod,
                   discount: Number(this.discount) || 0,
                   tax: Number(this.tax) || 0,
                   subtotal: this.subtotal,
