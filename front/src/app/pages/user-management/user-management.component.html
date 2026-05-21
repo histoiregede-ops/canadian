@@ -31,10 +31,10 @@
       </thead>
       <tbody>
         <tr *ngFor="let user of users">
-          <td>{{ user.username }}</td>
-          <td>{{ user.fullName || '—' }}</td>
-          <td>{{ user.email || '—' }}</td>
-          <td><span class="role-badge" [class.admin]="user.role === 'admin'" [class.cashier]="user.role === 'cashier'" [class.technician]="user.role === 'technician'">{{ user.role }}</span></td>
+          <td data-label="Utilisateur">{{ user.username }}</td>
+          <td data-label="Nom">{{ user.fullName || '—' }}</td>
+          <td data-label="Email">{{ user.email || '—' }}</td>
+          <td><span class="role-badge" [class.admin]="user.role === 'admin'" [class.cashier]="user.role === 'cashier'" [class.technician]="user.role === 'technician'" [class.delivery]="user.role === 'delivery'" [class.seller]="user.role === 'seller'">{{ user.role }}</span></td>
         </tr>
         <tr *ngIf="users.length === 0">
           <td colspan="4" class="empty-cell">Aucun utilisateur</td>
