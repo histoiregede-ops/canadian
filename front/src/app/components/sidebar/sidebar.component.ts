@@ -17,7 +17,7 @@ export class SidebarComponent implements OnInit, OnDestroy {
   @Output() closeSidebar = new EventEmitter<void>();
 
   user: any = null;
-  private sub: Subscription;
+  private sub!: Subscription;
 
   constructor(
     private authService: AuthService,
