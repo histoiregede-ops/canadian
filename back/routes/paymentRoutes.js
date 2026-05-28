@@ -142,7 +142,7 @@ router.get('/:id', authenticate, async (req, res) => {
 });
 
 router.get('/order/:orderId', authenticate, async (req, res) => {
-  const payments = await Payment.findAll({ where: { orderId: req.params.id } });
+  const payments = await Payment.findAll({ where: { orderId: req.params.orderId } });
   res.json(payments);
 });
 
@@ -169,8 +169,24 @@ router.post('/:id/refund', authenticate, async (req, res) => {
 });
 
 router.post('/verify-mobile-money', authenticate, async (req, res) => {
-  const { transactionId, phoneNumber } = req.body;
-  res.json({ success: true, transactionId, phoneNumber, status: 'verified', timestamp: new Date() });
+  try {
+    const { transactionId, phoneNumber } = req.body;
+    if (!transactionId) return res.status(400).json({ error: 'transactionId requis' });
+
+    const payment = await Payment.findOne({ where: { transactionId } });
+    if (!payment) return res.status(404).json({ error: 'Paiement introuvable', success: false });
+
+    res.json({
+      success: payment.status === 'completed',
+      transactionId: payment.transactionId,
+      phoneNumber,
+      status: payment.status,
+      amount: payment.amount,
+      timestamp: payment.updatedAt
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
 });
 
 module.exports = router;
