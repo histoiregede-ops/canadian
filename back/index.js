@@ -262,6 +262,10 @@ sequelize.sync()
     // Function to handle sending messages - save to DB + broadcast in real-time
     async function handleSendMessage(messageData, senderId) {
       try {
+        // Fallback: use senderId from messageData if socket wasn't authenticated
+        if (!senderId && messageData.senderId) {
+          senderId = messageData.senderId;
+        }
         const { conversationId, senderName, senderRole, content } = messageData;
         const id = 'msg_' + Date.now();
 

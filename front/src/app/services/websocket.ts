@@ -28,6 +28,16 @@ export class WebSocketService {
   constructor(private customerAuth: CustomerAuthService) {
     this.requestNotificationPermission();
     this.connect();
+    // Re-send auth whenever customer logs in/out
+    this.customerAuth.currentCustomer$.subscribe(customer => {
+      if (this.isConnected()) {
+        if (customer?.id) {
+          this.send('auth', { customerId: customer.id });
+        } else {
+          this.send('auth', { customerId: null });
+        }
+      }
+    });
   }
 
   private connect(): void {

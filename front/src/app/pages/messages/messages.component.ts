@@ -135,6 +135,9 @@ export class MessagesComponent implements OnInit, OnDestroy {
       error: (err) => {
         console.error('Error sending message:', err);
         this.sendingMessage = false;
+        this.notificationMessage = 'Erreur lors de l\'envoi du message. Veuillez réessayer.';
+        this.showNotificationBanner = true;
+        setTimeout(() => this.showNotificationBanner = false, 6000);
       }
     });
   }
@@ -184,7 +187,12 @@ export class MessagesComponent implements OnInit, OnDestroy {
           this.selectedConversation.status = 'closed';
         }
       },
-      error: (err) => console.error('Error closing conversation:', err)
+      error: (err) => {
+        console.error('Error closing conversation:', err);
+        this.notificationMessage = 'Erreur lors de la fermeture de la conversation.';
+        this.showNotificationBanner = true;
+        setTimeout(() => this.showNotificationBanner = false, 6000);
+      }
     });
   }
 

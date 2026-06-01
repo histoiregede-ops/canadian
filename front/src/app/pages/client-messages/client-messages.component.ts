@@ -217,7 +217,7 @@ export class ClientMessagesComponent implements OnInit, OnDestroy {
 
     const message: Omit<Message, 'id' | 'createdAt'> = {
       conversationId: this.selectedConversation.id!,
-      senderId: this.customer.id!,
+      senderId: this.customer.id || localStorage.getItem('customerId') || 'unknown',
       senderName: this.customer.name,
       senderRole: 'customer',
       content: this.newMessage
@@ -235,6 +235,9 @@ export class ClientMessagesComponent implements OnInit, OnDestroy {
       error: (err) => {
         console.error('Error sending message:', err);
         this.sendingMessage = false;
+        this.notificationMessage = 'Erreur lors de l\'envoi du message. Veuillez réessayer.';
+        this.showNotificationBanner = true;
+        setTimeout(() => { this.showNotificationBanner = false; }, 6000);
       }
     });
   }
@@ -272,7 +275,9 @@ export class ClientMessagesComponent implements OnInit, OnDestroy {
       },
       error: (err) => {
         console.error('Error creating conversation:', err);
-        this.authError = err.error?.error || err.error?.message || 'Erreur lors de la création de la conversation';
+        this.notificationMessage = err.error?.error || err.error?.message || 'Erreur lors de la création de la conversation';
+        this.showNotificationBanner = true;
+        setTimeout(() => { this.showNotificationBanner = false; }, 6000);
       }
     });
   }
@@ -284,7 +289,12 @@ export class ClientMessagesComponent implements OnInit, OnDestroy {
       next: (updated) => {
         this.selectedConversation!.status = 'closed';
       },
-      error: (err) => console.error('Error closing conversation:', err)
+      error: (err) => {
+        console.error('Error closing conversation:', err);
+        this.notificationMessage = 'Erreur lors de la fermeture de la conversation.';
+        this.showNotificationBanner = true;
+        setTimeout(() => { this.showNotificationBanner = false; }, 6000);
+      }
     });
   }
 
