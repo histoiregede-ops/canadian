@@ -132,15 +132,10 @@ sequelize.sync()
   .then(async () => {
     console.log('Database synced successfully.');
     const count = await models.User.count();
-    if (count === 0 && process.env.NODE_ENV !== 'production') {
+    if (count === 0) {
       const seed = require('./seeders/202605200001-default-data');
       await seed.up(sequelize.getQueryInterface());
-      console.log('Seed data inserted.');
-    }
-    if (count === 0 && process.env.NODE_ENV === 'production' && process.env.AUTO_SEED === 'true') {
-      const seed = require('./seeders/202605200001-default-data');
-      await seed.up(sequelize.getQueryInterface());
-      console.log('Seed data inserted in production environment with AUTO_SEED=true.');
+      console.log('Seed data inserted automatically.');
     }
     const server = app.listen(PORT, async () => {
       console.log(`Server is running on port ${PORT}`);
