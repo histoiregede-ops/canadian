@@ -128,7 +128,7 @@
             (click)="sendMessage()"
             [disabled]="!newMessage.trim() || sendingMessage"
           >
-            {{ sendingMessage ? 'Envoi...' : 'Envoyer' }}
+            <span style="font-size:1.2rem">{{ sendingMessage ? '...' : '→' }}</span>
           </button>
         </div>
 
