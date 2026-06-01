@@ -108,9 +108,7 @@ app.use('/api/contact', contactRoutes);
 app.use('/api/config', configRoutes);
 app.use('/api/reports', reportsRoutes);
 
-if (process.env.NODE_ENV !== 'production') {
-  app.use('/api', seedRoutes);
-}
+app.use('/api', seedRoutes);
 
 // Servir les fichiers statiques du dossier public
 app.use('/public', express.static(path.join(__dirname, 'public')));

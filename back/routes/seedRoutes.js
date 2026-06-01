@@ -1,18 +1,48 @@
 const express = require('express');
 const router = express.Router();
 const sequelize = require('../config/database');
-const models = require('../models');
+const path = require('path');
 
 router.get('/seed', async (req, res) => {
   try {
     await sequelize.sync({ force: true });
-    await models.User.create({ username: 'admin', password: 'admin123', role: 'admin', fullName: 'Administrateur' });
-    await models.User.create({ username: 'cashier1', password: 'cashier123', role: 'cashier', fullName: 'Caissier Principal' });
-    await models.User.create({ username: 'tech1', password: 'password', role: 'technician', fullName: 'Amadou Diallo' });
-    const catSolar = await models.Category.create({ name: 'Solaire', type: 'solar' });
-    await models.Product.create({ name: 'Panneau Solaire 400W Monocristallin', description: 'Haute efficacité', price: 150000, stockQuantity: 15, status: 'available', categoryId: catSolar.id });
-    await models.Product.create({ name: 'Batterie Lithium LiFePO4 12V 100Ah', description: '6000 cycles', price: 450000, stockQuantity: 5, status: 'available', categoryId: catSolar.id });
-    res.json({ message: 'Base de données initialisée', users: 'admin/admin123, cashier1/cashier123, tech1/password' });
+    const seeders = [
+      '202605200001-default-data',
+    ];
+    for (const seeder of seeders) {
+      const seed = require(path.join(__dirname, '..', 'seeders', seeder));
+      await seed.up(sequelize.getQueryInterface());
+    }
+    res.json({ message: 'Base de données initialisée avec les données de base', users: 'admin/admin123, cashier1/cashier123, tech1/password' });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+router.get('/seed-all', async (req, res) => {
+  try {
+    await sequelize.sync({ force: true });
+    const seedFiles = [
+      '20260520000001-users',
+      '20260520000002-categories',
+      '20260520000003-products',
+      '20260520000004-customers',
+      '20260520000005-orders',
+      '20260520000006-repairs',
+      '20260520000007-installations',
+      '20260520000008-transactions',
+      '20260520000009-reviews',
+      '20260520000010-payments',
+    ];
+    for (const file of seedFiles) {
+      const seed = require(path.join(__dirname, '..', 'seeders', file));
+      await seed.up(sequelize.getQueryInterface());
+    }
+    res.json({
+      message: 'Base de données initialisée avec toutes les données de démonstration',
+      users: 'admin/admin123, caissier1/caisse123, amadou/tech123, jean/tech123, sarah/tech123',
+      count: { users: 5, categories: 4, products: 20, customers: 5, orders: 3, repairs: 3, installations: 3, transactions: 5, reviews: 6, payments: 3 }
+    });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
