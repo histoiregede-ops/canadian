@@ -144,6 +144,7 @@ interface LoyaltyInfo {
       border-radius: 15px;
       margin-bottom: 30px;
       text-align: center;
+      min-height: auto;
     }
 
     .dashboard-header h1 {
@@ -459,11 +460,12 @@ interface LoyaltyInfo {
 
     @media (max-width: 768px) {
       .dashboard-container {
-        padding: 14px;
+        padding: 12px;
       }
 
       .dashboard-header {
-        padding: 20px;
+        padding: 20px 18px;
+        text-align: left;
       }
 
       .dashboard-header h1 {
@@ -474,13 +476,21 @@ interface LoyaltyInfo {
         font-size: 0.95rem;
       }
 
+      .header-top {
+        flex-direction: row;
+        align-items: center;
+      }
+
       .mobile-menu-toggle {
         display: flex;
       }
 
+      .mobile-menu-panel {
+        width: 100%;
+      }
+
       .quick-actions {
-        display: none;
-        grid-template-columns: 1fr;
+        display: none !important;
       }
 
       .loyalty-card,
@@ -496,7 +506,6 @@ interface LoyaltyInfo {
         flex-direction: column;
         align-items: flex-start;
       }
-
 
       .action-btn {
         width: 100%;
