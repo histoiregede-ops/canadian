@@ -1,7 +1,7 @@
 import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { Router } from '@angular/router';
+import { Router, ActivatedRoute } from '@angular/router';
 import { AuthService } from '../../services/auth';
 import { CustomerAuthService } from '../../services/customer-auth';
 
@@ -21,17 +21,21 @@ export class LoginComponent {
   password = '';
   loading = false;
   errorMessage = '';
+  returnUrl = '';
 
   constructor(
     private authService: AuthService,
     private customerAuth: CustomerAuthService,
-    private router: Router
+    private router: Router,
+    private route: ActivatedRoute
   ) {
+    this.returnUrl = this.route.snapshot.queryParamMap.get('returnUrl') || '';
+
     if (this.authService.isLoggedIn()) {
       this.router.navigate([this.getDefaultStaffRoute()]);
     }
     if (this.customerAuth.isAuthenticated()) {
-      this.router.navigate(['/shop']);
+      this.router.navigate([this.returnUrl || '/shop']);
     }
   }
 
@@ -70,7 +74,7 @@ export class LoginComponent {
       this.authService.login({ username: this.username, password: this.password }).subscribe({
         next: () => {
           this.loading = false;
-          this.router.navigate([this.getDefaultStaffRoute()]);
+          this.router.navigate([this.returnUrl || this.getDefaultStaffRoute()]);
         },
         error: () => {
           this.loading = false;
@@ -90,7 +94,7 @@ export class LoginComponent {
       } as any).subscribe({
         next: () => {
           this.loading = false;
-          this.router.navigate(['/shop']);
+          this.router.navigate([this.returnUrl || '/shop']);
         },
         error: (err) => {
           this.loading = false;
@@ -105,7 +109,7 @@ export class LoginComponent {
       this.customerAuth.login(this.email.trim(), this.password).subscribe({
         next: () => {
           this.loading = false;
-          this.router.navigate(['/shop']);
+          this.router.navigate([this.returnUrl || '/shop']);
         },
         error: () => {
           this.loading = false;

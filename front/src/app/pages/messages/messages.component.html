@@ -7,6 +7,9 @@
   </header>
 
   <div class="messaging-body">
+    <div *ngIf="showNotificationBanner" class="notification-banner">
+      {{ notificationMessage }}
+    </div>
     <aside class="conversations-panel" [class.open]="sidebarOpen">
       <div class="panel-header">
         <h2>Conversations</h2>

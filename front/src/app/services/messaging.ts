@@ -24,6 +24,9 @@ export interface Conversation {
   customerPhone?: string;
   customerEmail?: string;
   subject: string;
+  productId?: string;
+  productName?: string;
+  productPrice?: number;
   status: 'open' | 'pending' | 'closed';
   lastMessage?: string;
   unreadCount: number;
@@ -45,6 +48,8 @@ export class MessagingService {
 
   private pollingInterval = 30000; // 30 seconds fallback polling
   private currentConversationId: string | null = null;
+
+  public notification$ = this.wsService.notification$;
 
   constructor(
     private http: HttpClient,
@@ -98,7 +103,7 @@ export class MessagingService {
 
   // Get conversation by ID
   getConversation(conversationId: string): Observable<Conversation> {
-    return this.http.get<Conversation>(`${this.apiUrl}/conversations/${conversationId}`);
+    return this.http.get<Conversation>(`${this.apiUrl}/conversations/${conversationId}/details`);
   }
 
   // Create new conversation

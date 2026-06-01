@@ -31,6 +31,8 @@ export class MessagesComponent implements OnInit, OnDestroy {
 
   isAdmin = false;
   currentUser: any = null;
+  notificationMessage = '';
+  showNotificationBanner = false;
   private subscriptions = new Subscription();
   private pollInterval: Subscription | null = null;
 
@@ -195,6 +197,14 @@ export class MessagesComponent implements OnInit, OnDestroy {
       })
     );
 
+    this.subscriptions.add(
+      this.messagingService.notification$.subscribe(notification => {
+        if (notification) {
+          this.displayNotification(notification);
+        }
+      })
+    );
+
     // Listen for typing indicators
     this.subscriptions.add(
       this.messagingService.typing$.subscribe(data => {
@@ -214,6 +224,14 @@ export class MessagesComponent implements OnInit, OnDestroy {
         this.loadConversations();
       })
     );
+  }
+
+  private displayNotification(notification: { title: string; body: string; type: string }): void {
+    this.notificationMessage = `${notification.title} — ${notification.body}`;
+    this.showNotificationBanner = true;
+    setTimeout(() => {
+      this.showNotificationBanner = false;
+    }, 6000);
   }
 
   private scrollToBottom(): void {

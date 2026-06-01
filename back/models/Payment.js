@@ -21,7 +21,7 @@ const Payment = sequelize.define('Payment', {
   },
   currency: {
     type: DataTypes.STRING,
-    defaultValue: 'FCFA'
+    defaultValue: 'XOF'
   },
   status: {
     type: DataTypes.ENUM('pending', 'completed', 'refunded', 'partially_refunded', 'failed'),

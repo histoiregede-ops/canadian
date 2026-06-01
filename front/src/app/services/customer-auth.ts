@@ -4,6 +4,10 @@ import { Observable, BehaviorSubject } from 'rxjs';
 import { tap } from 'rxjs/operators';
 import { environment } from '../../environments/environment';
 
+const CUSTOMER_TOKEN_TTL_MS = 24 * 60 * 60 * 1000; // 24 heures
+const CUSTOMER_KEY = 'customer';
+const CUSTOMER_TOKEN_KEY = 'customer_token';
+const CUSTOMER_TOKEN_EXPIRY_KEY = 'customer_token_expiry';
 
 export interface Customer {
   id?: string;
@@ -34,9 +38,8 @@ export class CustomerAuthService {
   public currentCustomer$ = this.currentCustomerSubject.asObservable();
 
   constructor(private http: HttpClient) {
-    // Load customer from localStorage on service initialization
-    const savedCustomer = localStorage.getItem('customer');
-    if (savedCustomer) {
+    const savedCustomer = localStorage.getItem(CUSTOMER_KEY);
+    if (savedCustomer && this.getCustomerToken()) {
       this.currentCustomerSubject.next(JSON.parse(savedCustomer));
     }
   }
@@ -74,6 +77,9 @@ export class CustomerAuthService {
         tap(response => {
           if (response.success && response.customer) {
             this.setCurrentCustomer(response.customer);
+            if (response.token) {
+              this.setCustomerToken(response.token);
+            }
           }
         })
       );
@@ -109,13 +115,15 @@ export class CustomerAuthService {
 
   // Logout
   logout(): void {
-    localStorage.removeItem('customer');
-    localStorage.removeItem('customer_token');
-    this.currentCustomerSubject.next(null);
+    this.clearCustomerAuth();
   }
 
   // Get current customer
   getCurrentCustomer(): Customer | null {
+    if (!this.getCustomerToken()) {
+      this.clearCustomerAuth();
+      return null;
+    }
     return this.currentCustomerSubject.value;
   }
 
@@ -126,18 +134,40 @@ export class CustomerAuthService {
 
   // Set current customer
   setCurrentCustomer(customer: Customer): void {
-    localStorage.setItem('customer', JSON.stringify(customer));
+    localStorage.setItem(CUSTOMER_KEY, JSON.stringify(customer));
     this.currentCustomerSubject.next(customer);
   }
 
   // Store customer JWT token for REST API calls
   private setCustomerToken(token: string): void {
-    localStorage.setItem('customer_token', token);
+    localStorage.setItem(CUSTOMER_TOKEN_KEY, token);
+    localStorage.setItem(CUSTOMER_TOKEN_EXPIRY_KEY, String(Date.now() + CUSTOMER_TOKEN_TTL_MS));
   }
 
   // Get customer token
   getCustomerToken(): string | null {
-    return localStorage.getItem('customer_token');
+    if (this.isCustomerTokenExpired()) {
+      this.clearCustomerAuth();
+      return null;
+    }
+    return localStorage.getItem(CUSTOMER_TOKEN_KEY);
+  }
+
+  private getCustomerTokenExpiry(): number | null {
+    const expiry = localStorage.getItem(CUSTOMER_TOKEN_EXPIRY_KEY);
+    return expiry ? Number(expiry) : null;
+  }
+
+  private isCustomerTokenExpired(): boolean {
+    const expiry = this.getCustomerTokenExpiry();
+    return expiry !== null && Date.now() >= expiry;
+  }
+
+  private clearCustomerAuth(): void {
+    localStorage.removeItem(CUSTOMER_KEY);
+    localStorage.removeItem(CUSTOMER_TOKEN_KEY);
+    localStorage.removeItem(CUSTOMER_TOKEN_EXPIRY_KEY);
+    this.currentCustomerSubject.next(null);
   }
 
   // Get customer orders (for dashboard)

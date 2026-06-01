@@ -22,9 +22,12 @@ import { ClientDashboardComponent } from './pages/client-dashboard/client-dashbo
 import { OrderDetailComponent } from './pages/order-detail/order-detail.component';
 import { ProfileEditComponent } from './pages/profile-edit/profile-edit.component';
 import { ReportsComponent } from './pages/reports/reports.component';
+import { HomeRedirectComponent } from './pages/home-redirect/home-redirect.component';
+import { ClientAuthGuard } from './services/client-auth.guard';
 
 export const routes: Routes = [
-  { path: '', redirectTo: 'login', pathMatch: 'full' },
+  { path: '', component: HomeRedirectComponent },
+  { path: 'admin', redirectTo: 'dashboard', pathMatch: 'full' },
   // Admin / Internal Routes
   { path: 'dashboard', component: DashboardComponent, canActivate: [RoleGuard], data: { roles: ['admin', 'cashier'] } },
   { path: 'inventory', component: InventoryComponent, canActivate: [RoleGuard], data: { roles: ['admin', 'cashier'] } },
@@ -39,7 +42,7 @@ export const routes: Routes = [
   { path: 'settings', component: SettingsComponent, canActivate: [RoleGuard], data: { roles: ['admin'] } },
   { path: 'users', component: UserManagementComponent, canActivate: [RoleGuard], data: { roles: ['admin'] } },
   // Client Routes
-  { path: 'client', children: [
+  { path: 'client', canActivate: [ClientAuthGuard], children: [
     { path: 'dashboard', component: ClientDashboardComponent },
     { path: 'orders/:id', component: OrderDetailComponent },
     { path: 'profile', component: ProfileEditComponent }
@@ -49,9 +52,9 @@ export const routes: Routes = [
   { path: 'products', redirectTo: 'shop', pathMatch: 'full' },
   { path: 'produits', redirectTo: 'shop', pathMatch: 'full' },
   { path: 'cart', component: CartComponent },
-  { path: 'checkout', component: CheckoutComponent },
+  { path: 'checkout', component: CheckoutComponent, canActivate: [ClientAuthGuard] },
   { path: 'messages', component: MessagesComponent },
-  { path: 'client-messages', component: ClientMessagesComponent },
+  { path: 'client-messages', component: ClientMessagesComponent, canActivate: [ClientAuthGuard] },
   { path: 'contact', component: ContactComponent },
   // Auth
   { path: 'login', component: LoginComponent },

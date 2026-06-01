@@ -37,6 +37,16 @@ export class SidebarComponent implements OnInit, OnDestroy {
     if (this.sub) this.sub.unsubscribe();
   }
 
+  onNavClick(): void {
+    if (window.innerWidth <= 768) {
+      this.closeSidebar.emit();
+    }
+  }
+
+  ngOnDestroy(): void {
+    if (this.sub) this.sub.unsubscribe();
+  }
+
   logout(): void {
     this.authService.logout();
     this.router.navigate(['/login']);

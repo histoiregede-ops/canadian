@@ -4,23 +4,42 @@ const { Order, CashTransaction, Payment } = require('../models');
 const sequelize = require('../config/database');
 const { authenticate } = require('../utils/auth');
 const pawaPay = require('../services/paymentProvider');
+const PAWAPAY_WEBHOOK_SECRET = process.env.PAWAPAY_WEBHOOK_SECRET;
+
+const validateWebhookSecret = (req) => {
+  if (!PAWAPAY_WEBHOOK_SECRET) return true;
+  const incomingSecret = req.headers['x-pawapay-signature'] || req.headers['x-webhook-secret'] || req.headers.authorization?.split(' ')[1];
+  return incomingSecret === PAWAPAY_WEBHOOK_SECRET;
+};
 
 // Initiate a mobile money payment via PawaPay
-router.post('/initiate', async (req, res) => {
+router.post('/initiate', authenticate, async (req, res) => {
   try {
     const { orderId, amount, paymentMethod, phoneNumber, customerId } = req.body;
 
-    if (!amount || amount <= 0) return res.status(400).json({ error: 'Montant invalide' });
+    if (!orderId) return res.status(400).json({ error: 'orderId requis' });
+    const order = await Order.findByPk(orderId);
+    if (!order) return res.status(404).json({ error: 'Commande introuvable' });
+
+    const requestedAmount = Number(amount);
+    const expectedAmount = Number(order.totalAmount);
+    if (isNaN(requestedAmount) || requestedAmount <= 0) {
+      return res.status(400).json({ error: 'Montant invalide' });
+    }
+    if (requestedAmount !== expectedAmount) {
+      return res.status(400).json({ error: 'Montant de paiement différent du total de la commande' });
+    }
+
     if (!phoneNumber) return res.status(400).json({ error: 'Numéro de téléphone requis' });
     if (!['orange_money', 'moov_money', 'wave'].includes(paymentMethod)) {
       return res.status(400).json({ error: 'Moyen de paiement invalide' });
     }
 
     const result = await pawaPay.initiateDeposit({
-      amount,
+      amount: requestedAmount,
       phoneNumber,
       providerMethod: paymentMethod,
-      orderId: orderId || '',
+      orderId: orderId,
       customerId: customerId || ''
     });
 
@@ -56,6 +75,10 @@ router.post('/initiate', async (req, res) => {
 // Webhook pour les notifications PawaPay
 router.post('/webhook', express.raw({ type: 'application/json' }), async (req, res) => {
   try {
+    if (!validateWebhookSecret(req)) {
+      return res.status(403).json({ error: 'Webhook non autorisé' });
+    }
+
     const body = typeof req.body === 'string' ? JSON.parse(req.body) : req.body;
     const { depositId, status, metadata } = body;
 
@@ -97,7 +120,7 @@ router.post('/webhook', express.raw({ type: 'application/json' }), async (req, r
 });
 
 // Vérifier le statut d'un paiement
-router.get('/status/:depositId', async (req, res) => {
+router.get('/status/:depositId', authenticate, async (req, res) => {
   try {
     const { depositId } = req.params;
     const status = await pawaPay.checkDepositStatus(depositId);
@@ -112,21 +135,34 @@ router.post('/', authenticate, async (req, res) => {
   const t = await sequelize.transaction();
   try {
     const { orderId, amount, paymentMethod, currency = 'XOF', status = 'pending', notes } = req.body;
+    if (!orderId) {
+      await t.rollback();
+      return res.status(400).json({ error: 'orderId requis' });
+    }
+    const order = await Order.findByPk(orderId, { transaction: t });
+    if (!order) {
+      await t.rollback();
+      return res.status(404).json({ error: 'Commande introuvable' });
+    }
+
+    const requestedAmount = Number(amount);
+    if (isNaN(requestedAmount) || requestedAmount <= 0) {
+      await t.rollback();
+      return res.status(400).json({ error: 'Montant invalide' });
+    }
+
     const transactionId = `txn_${Date.now()}`;
 
     const payment = await Payment.create({
-      orderId, amount, paymentMethod, currency, status, transactionId, notes
+      orderId, amount: requestedAmount, paymentMethod, currency, status, transactionId, notes
     }, { transaction: t });
 
-    const order = await Order.findByPk(orderId, { transaction: t });
-    if (order) {
-      await order.update({ status: 'paid', paidAmount: amount }, { transaction: t });
-      await CashTransaction.create({
-        type: 'income', amount,
-        description: `Paiement ${order.orderNumber}`,
-        category: 'Sales', date: new Date()
-      }, { transaction: t });
-    }
+    await order.update({ status: 'paid', paidAmount: requestedAmount }, { transaction: t });
+    await CashTransaction.create({
+      type: 'income', amount: requestedAmount,
+      description: `Paiement ${order.orderNumber}`,
+      category: 'Sales', date: new Date()
+    }, { transaction: t });
 
     await t.commit();
     res.json(payment);

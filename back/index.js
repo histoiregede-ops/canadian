@@ -22,11 +22,14 @@ const allowedOrigins = [
   process.env.FRONTEND_URL
 ].filter(Boolean);
 const corsOrigin = function (origin, callback) {
-  if (!origin || allowedOrigins.some(o => origin.startsWith(o))) {
+  if (!origin) {
+    return callback(null, true);
+  }
+  if (allowedOrigins.some(o => origin.startsWith(o))) {
     return callback(null, true);
   }
   if (/^https?:\/\/localhost(:\d+)?$/.test(origin)) return callback(null, true);
-  callback(null, true); // Allow all in production too
+  return callback(new Error('Origin non autorisée par CORS'), false);
 };
 app.use(cors({ origin: corsOrigin, methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'], credentials: true }));
 app.use((req, res, next) => {
@@ -35,7 +38,7 @@ app.use((req, res, next) => {
   res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
   res.setHeader('Permissions-Policy', 'geolocation=(), camera=(), microphone=()');
   res.setHeader('Cross-Origin-Resource-Policy', 'same-site');
-  res.setHeader('Content-Security-Policy', "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://res.cloudinary.com; font-src 'self'; connect-src 'self' ws: wss:; frame-ancestors 'none'");
+  res.setHeader('Content-Security-Policy', "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data: blob: https://res.cloudinary.com; font-src 'self'; connect-src 'self' ws: wss:; frame-ancestors 'none'");
   next();
 });
 
@@ -104,7 +107,10 @@ app.use('/api/reviews', productReviewsRoutes);
 app.use('/api/contact', contactRoutes);
 app.use('/api/config', configRoutes);
 app.use('/api/reports', reportsRoutes);
-app.use('/api', seedRoutes);
+
+if (process.env.NODE_ENV !== 'production') {
+  app.use('/api', seedRoutes);
+}
 
 // Servir les fichiers statiques du dossier public
 app.use('/public', express.static(path.join(__dirname, 'public')));
@@ -128,10 +134,15 @@ sequelize.sync()
   .then(async () => {
     console.log('Database synced successfully.');
     const count = await models.User.count();
-    if (count === 0) {
+    if (count === 0 && process.env.NODE_ENV !== 'production') {
       const seed = require('./seeders/202605200001-default-data');
       await seed.up(sequelize.getQueryInterface());
       console.log('Seed data inserted.');
+    }
+    if (count === 0 && process.env.NODE_ENV === 'production' && process.env.AUTO_SEED === 'true') {
+      const seed = require('./seeders/202605200001-default-data');
+      await seed.up(sequelize.getQueryInterface());
+      console.log('Seed data inserted in production environment with AUTO_SEED=true.');
     }
     const server = app.listen(PORT, async () => {
       console.log(`Server is running on port ${PORT}`);
@@ -146,6 +157,9 @@ sequelize.sync()
         customerPhone VARCHAR(50),
         customerEmail VARCHAR(255),
         subject VARCHAR(255) NOT NULL,
+        productId VARCHAR(255),
+        productName VARCHAR(255),
+        productPrice DECIMAL(10, 2),
         status VARCHAR(20) DEFAULT 'open',
         lastMessage TEXT,
         unreadCount INT DEFAULT 0,
@@ -158,6 +172,12 @@ sequelize.sync()
     sequelize.query(`ALTER TABLE app_conversations ADD COLUMN customerPhone VARCHAR(50) AFTER customerName`)
       .catch(() => {});
     sequelize.query(`ALTER TABLE app_conversations ADD COLUMN customerEmail VARCHAR(255) AFTER customerPhone`)
+      .catch(() => {});
+    sequelize.query(`ALTER TABLE app_conversations ADD COLUMN productId VARCHAR(255) AFTER customerEmail`)
+      .catch(() => {});
+    sequelize.query(`ALTER TABLE app_conversations ADD COLUMN productName VARCHAR(255) AFTER productId`)
+      .catch(() => {});
+    sequelize.query(`ALTER TABLE app_conversations ADD COLUMN productPrice DECIMAL(10, 2) AFTER productName`)
       .catch(() => {});
 
     sequelize.query(`

@@ -7,7 +7,7 @@
     <button class="sidebar-close" (click)="closeSidebar.emit()" title="Fermer">&#x2715;</button>
   </div>
 
-  <nav class="nav-menu">
+  <nav class="nav-menu" (click)="onNavClick()">
     <a *ngIf="user?.role === 'admin' || user?.role === 'cashier'" routerLink="/dashboard" routerLinkActive="active" class="nav-item" [class.collapsed]="isCollapsed">
       <span class="icon">&#x1F4CA;</span>
       <span class="label" [class.hide]="isCollapsed">Tableau de bord</span>

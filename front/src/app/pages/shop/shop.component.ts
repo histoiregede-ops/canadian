@@ -28,12 +28,30 @@ export interface ProductWithReviews extends Product {
 export class ShopComponent implements OnInit {
   products: ProductWithReviews[] = [];
   categories: Category[] = [];
-
+  
   searchQuery = '';
   selectedCategoryId = '';
   sortBy: 'name' | 'price-low' | 'price-high' | 'rating' = 'name';
 
   loading = true;
+
+  sections = [
+    { 
+      image: '/installation pano maison.png', 
+      title: 'Installation Pano Maison', 
+      desc: 'Solutions d\'énergie solaire pour votre maison'
+    },
+    { 
+      image: '/installation pano.png', 
+      title: 'Installation Pano', 
+      desc: 'Panneaux solaires haute performance'
+    },
+    { 
+      image: '/vente installation electroménagrs.png', 
+      title: 'Vente Installation Électroménagers', 
+      desc: 'Électroménagers de qualité premium'
+    }
+  ];
 
   whatsappNumber = '+22879803856';
 
@@ -45,14 +63,45 @@ export class ShopComponent implements OnInit {
     private router: Router
   ) {}
 
-  getWhatsAppLink(product: Product): string {
-    const message = `Bonjour, je suis intéressé par le produit ${product.name}. Pouvez-vous m'envoyer plus d'informations ?`;
-    return `https://wa.me/${this.whatsappNumber.replace(/\D/g, '')}?text=${encodeURIComponent(message)}`;
-  }
-
   ngOnInit(): void {
     this.loadProducts();
     this.loadCategories();
+  }
+
+  negotiateProduct(product: Product): void {
+    this.router.navigate(['/client-messages'], {
+      queryParams: {
+        productId: product.id,
+        productName: product.name,
+        productPrice: product.price,
+        subject: `Négociation prix - ${product.name}`
+      }
+    });
+  }
+
+  openNegotiation(): void {
+    this.router.navigate(['/client-messages'], {
+      queryParams: {
+        subject: 'Je souhaite négocier un produit'
+      }
+    });
+  }
+
+  goToShop(): void {
+    this.router.navigate(['/shop']);
+  }
+
+  goToCart(): void {
+    this.router.navigate(['/cart']);
+  }
+
+  goToCheckout(): void {
+    this.router.navigate(['/checkout']);
+  }
+
+  getWhatsAppLink(product: Product): string {
+    const message = `Bonjour, je suis intéressé par le produit ${product.name}. Pouvez-vous m'envoyer plus d'informations ?`;
+    return `https://wa.me/${this.whatsappNumber.replace(/\D/g, '')}?text=${encodeURIComponent(message)}`;
   }
 
   loadProducts(): void {
@@ -62,6 +111,11 @@ export class ShopComponent implements OnInit {
         this.products = data
           .filter((p) => p.status === 'available')
           .map((p) => ({ ...p, showReviews: false }));
+
+        // Extract featured products: those with stock > 5
+        this.featuredProducts = this.products
+          .filter(p => p.stockQuantity > 5)
+          .slice(0, 6);
 
         this.applySorting();
         this.loading = false;

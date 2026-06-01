@@ -26,6 +26,7 @@ export class WebSocketService {
   public notification$ = this.notificationSubject.asObservable();
 
   constructor(private customerAuth: CustomerAuthService) {
+    this.requestNotificationPermission();
     this.connect();
   }
 
@@ -89,6 +90,11 @@ export class WebSocketService {
     switch (data.type) {
       case 'new_message':
         this.newMessageSubject.next(data.message);
+        this.showNotification({
+          title: 'Nouveau message',
+          body: `${data.message.senderName}: ${this.truncate(data.message.content, 90)}`,
+          type: 'message'
+        });
         break;
       case 'typing':
         this.typingSubject.next(data);
@@ -107,6 +113,35 @@ export class WebSocketService {
     if (this.ws && this.ws.readyState === WebSocket.OPEN) {
       this.ws.send(JSON.stringify({ type, ...payload }));
     }
+  }
+
+  private requestNotificationPermission(): void {
+    if (!('Notification' in window)) return;
+    if (Notification.permission === 'default') {
+      Notification.requestPermission().catch(() => {});
+    }
+  }
+
+  private playSound(): void {
+    try {
+      const audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
+      const oscillator = audioCtx.createOscillator();
+      const gainNode = audioCtx.createGain();
+      oscillator.type = 'sine';
+      oscillator.frequency.setValueAtTime(440, audioCtx.currentTime);
+      oscillator.connect(gainNode);
+      gainNode.connect(audioCtx.destination);
+      gainNode.gain.setValueAtTime(0.1, audioCtx.currentTime);
+      oscillator.start();
+      oscillator.stop(audioCtx.currentTime + 0.15);
+    } catch (error) {
+      console.error('Notification sound failed:', error);
+    }
+  }
+
+  private truncate(text: string, maxLength: number): string {
+    if (!text) return '';
+    return text.length <= maxLength ? text : `${text.slice(0, maxLength)}...`;
   }
 
   // Public methods
@@ -132,6 +167,7 @@ export class WebSocketService {
 
   private showNotification(notification: any): void {
     this.notificationSubject.next(notification);
+    this.playSound();
     if ('Notification' in window && Notification.permission === 'granted') {
       new Notification(notification.title, {
         body: notification.body,

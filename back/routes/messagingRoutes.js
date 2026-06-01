@@ -63,18 +63,52 @@ router.get('/conversations/:conversationId/details', authenticateAny, async (req
 // Create new conversation
 router.post('/conversations', authenticateAny, async (req, res) => {
   try {
-    const { customerId, customerName, customerPhone, customerEmail, subject, status = 'open' } = req.body;
+    const {
+      customerId,
+      customerName,
+      customerPhone,
+      customerEmail,
+      subject,
+      productId,
+      productName,
+      productPrice,
+      status = 'open'
+    } = req.body;
     const id = `conv_${Date.now()}`;
 
     await sequelize.query(
-      'INSERT INTO app_conversations (id, customerId, customerName, customerPhone, customerEmail, subject, status, unreadCount, createdAt, updatedAt) VALUES (?, ?, ?, ?, ?, ?, ?, 0, NOW(), NOW())',
-      { replacements: [id, customerId, customerName, customerPhone || null, customerEmail || null, subject, status] }
+      'INSERT INTO app_conversations (id, customerId, customerName, customerPhone, customerEmail, subject, productId, productName, productPrice, status, unreadCount, createdAt, updatedAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, NOW(), NOW())',
+      {
+        replacements: [
+          id,
+          customerId,
+          customerName,
+          customerPhone || null,
+          customerEmail || null,
+          subject,
+          productId || null,
+          productName || null,
+          productPrice || null,
+          status
+        ]
+      }
     );
 
     const conversation = {
-      id, customerId, customerName, customerPhone, customerEmail, subject, status,
-      lastMessage: null, unreadCount: 0,
-      createdAt: new Date(), updatedAt: new Date()
+      id,
+      customerId,
+      customerName,
+      customerPhone,
+      customerEmail,
+      subject,
+      productId,
+      productName,
+      productPrice,
+      status,
+      lastMessage: null,
+      unreadCount: 0,
+      createdAt: new Date(),
+      updatedAt: new Date()
     };
 
     res.json(conversation);

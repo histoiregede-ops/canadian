@@ -174,12 +174,12 @@ export class CheckoutComponent implements OnInit, OnDestroy {
                     this.successMessage = `✅ Paiement ${PAYMENT_LABELS[this.paymentMethod].name} initié ! Confirmez sur votre téléphone.`;
                     this.startStatusPolling(initResult.depositId);
                   } else {
-                    this.successMessage = `✅ Commande créée. Veuillez envoyer le paiement via WhatsApp.`;
+                    this.errorMessage = initResult.message || 'Le paiement mobile n’a pas pu être initié. Réessayez.';
                     this.processing = false;
                   }
                 },
-                error: () => {
-                  this.successMessage = `✅ Commande créée. Veuillez envoyer le paiement via WhatsApp.`;
+                error: (error) => {
+                  this.errorMessage = error?.error?.message || 'Impossible d’initier le paiement. Vérifiez votre connexion et réessayez.';
                   this.processing = false;
                 }
               });

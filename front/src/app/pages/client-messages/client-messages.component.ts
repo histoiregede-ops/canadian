@@ -1,7 +1,7 @@
 import { Component, OnInit, OnDestroy, ViewChild, ElementRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { RouterModule } from '@angular/router';
+import { RouterModule, ActivatedRoute } from '@angular/router';
 import { Subscription } from 'rxjs';
 import { MessagingService, Conversation, Message } from '../../services/messaging';
 import { CustomerAuthService, Customer } from '../../services/customer-auth';
@@ -30,6 +30,13 @@ export class ClientMessagesComponent implements OnInit, OnDestroy {
   @ViewChild('messagesContainer') messagesContainer!: ElementRef;
 
   customer: Customer | null = null;
+  productId?: string;
+  productName?: string;
+  productPrice?: number;
+  productImage?: string;
+  productMessagePlaceholder = '';
+  notificationMessage = '';
+  showNotificationBanner = false;
   authMode: 'login' | 'register' = 'login';
   authEmail = '';
   authPassword = '';
@@ -42,10 +49,25 @@ export class ClientMessagesComponent implements OnInit, OnDestroy {
 
   constructor(
     private messagingService: MessagingService,
-    private customerAuth: CustomerAuthService
+    private customerAuth: CustomerAuthService,
+    private route: ActivatedRoute
   ) {}
 
   ngOnInit(): void {
+    this.route.queryParamMap.subscribe((params) => {
+      this.productId = params.get('productId') || undefined;
+      this.productName = params.get('productName') || undefined;
+      this.productImage = params.get('productImage') || undefined;
+      this.productPrice = params.get('productPrice') ? parseFloat(params.get('productPrice') as string) : undefined;
+      const subject = params.get('subject');
+
+      if (this.productName) {
+        this.conversationSubject = subject || `Négociation prix - ${this.productName}`;
+        this.productMessagePlaceholder = `Je souhaite négocier le prix du produit ${this.productName} (actuellement ${this.productPrice ? this.productPrice.toLocaleString() + ' FCFA' : 'prix non défini'}).`;
+        this.showNewConversationForm = true;
+      }
+    });
+
     this.customer = this.customerAuth.getCurrentCustomer();
     if (this.customer) {
       this.loadConversations();
@@ -53,6 +75,14 @@ export class ClientMessagesComponent implements OnInit, OnDestroy {
     } else {
       this.loading = false;
     }
+  }
+
+  private displayNotification(notification: { title: string; body: string; type: string}): void {
+    this.notificationMessage = `${notification.title} — ${notification.body}`;
+    this.showNotificationBanner = true;
+    setTimeout(() => {
+      this.showNotificationBanner = false;
+    }, 6000);
   }
 
   ngOnDestroy(): void {
@@ -225,6 +255,9 @@ export class ClientMessagesComponent implements OnInit, OnDestroy {
       customerPhone: this.customer.phone,
       customerEmail: this.customer.email,
       subject: this.conversationSubject,
+      productId: this.productId,
+      productName: this.productName,
+      productPrice: this.productPrice,
       status: 'open',
       unreadCount: 0
     };
@@ -273,6 +306,14 @@ export class ClientMessagesComponent implements OnInit, OnDestroy {
           } else {
             this.typingUsers.delete(data.userId);
           }
+        }
+      })
+    );
+
+    this.subscriptions.add(
+      this.messagingService.notification$.subscribe(notification => {
+        if (notification) {
+          this.displayNotification(notification);
         }
       })
     );

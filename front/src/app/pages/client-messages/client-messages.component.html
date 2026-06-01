@@ -8,6 +8,9 @@
   </header>
 
   <div class="messaging-body">
+    <div *ngIf="showNotificationBanner" class="notification-banner">
+      {{ notificationMessage }}
+    </div>
     <aside class="conversations-panel" [class.open]="sidebarOpen">
       <div class="panel-header">
         <h2>Conversations</h2>
@@ -15,6 +18,15 @@
           + Nouveau
         </button>
         <button class="btn-close-sidebar" (click)="sidebarOpen = false">&times;</button>
+      </div>
+
+      <div *ngIf="productName" class="product-context-card">
+        <h3>Négociation produit</h3>
+        <p><strong>{{ productName }}</strong></p>
+        <p *ngIf="productPrice">Prix actuel : {{ productPrice | number }} FCFA</p>
+        <button class="btn btn-secondary btn-sm" (click)="showNewConversationForm = true">
+          Démarrer la discussion
+        </button>
       </div>
 
       <div *ngIf="showNewConversationForm" class="new-conv-form">
@@ -66,6 +78,10 @@
           <button class="btn-back" (click)="sidebarOpen = true">&larr;</button>
           <div class="chat-meta">
             <h2>{{ selectedConversation.subject }}</h2>
+            <p *ngIf="selectedConversation.productName" class="product-context">
+              Produit: <strong>{{ selectedConversation.productName }}</strong>
+              <span *ngIf="selectedConversation.productPrice">- {{ selectedConversation.productPrice | number }} FCFA</span>
+            </p>
             <span class="status" [class.open]="selectedConversation.status === 'open'">
               {{ selectedConversation.status === 'open' ? 'Ouvert' : 'Ferme' }}
             </span>
@@ -104,7 +120,7 @@
           <textarea
             [(ngModel)]="newMessage"
             (keydown)="onKeyDown($event)"
-            placeholder="Tapez votre message... (Shift+Entree pour nouvelle ligne)"
+            placeholder="{{ productMessagePlaceholder || 'Tapez votre message... (Shift+Entree pour nouvelle ligne)' }}"
             rows="1"
           ></textarea>
           <button

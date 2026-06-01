@@ -1,23 +1,39 @@
 <div class="shop-page">
-  <div class="hero-image">
-    <img src="/login.jpeg" alt="" />
-  </div>
-  <div class="hero-text">
-    <h1>Bienvenue sur notre boutique</h1>
-    <p>Decouvrez notre selection de produits solaires et electroniques de qualite.</p>
-    <a routerLink="/client-messages" class="btn-contact">Nous contacter</a>
+  <!-- Top Navbar -->
+  <div class="shop-nav">
+    <a routerLink="/shop" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }" class="nav-link">🏠 Boutique</a>
+    <a routerLink="/cart" routerLinkActive="active" class="nav-link">🛒 Panier</a>
+    <a routerLink="/checkout" routerLinkActive="active" class="nav-link">💳 Paiement</a>
+    <a routerLink="/client-messages" routerLinkActive="active" class="nav-link">💬 Messages</a>
+    <a routerLink="/login" class="nav-link login-link">🔒 Connexion</a>
   </div>
 
-  <div class="shop-nav">
-    <a routerLink="/shop" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }" class="nav-link">Boutique</a>
-    <a routerLink="/cart" routerLinkActive="active" class="nav-link">Panier</a>
-    <a routerLink="/checkout" routerLinkActive="active" class="nav-link">Paiement</a>
-    <a routerLink="/client-messages" routerLinkActive="active" class="nav-link">Messages</a>
-    <a routerLink="/login" class="nav-link login-link">🔒 Connexion</a>
+  <!-- Featured Sections -->
+  <div class="sections-container" *ngIf="!loading">
+    <div class="feature-section" *ngFor="let section of sections; let i = index" [ngClass]="'section-' + (i + 1)">
+      <div class="section-image">
+        <img [src]="section.image" [alt]="section.title" />
+        <div class="section-overlay"></div>
+        <div class="section-content">
+          <span class="section-label">Section {{ i + 1 }}</span>
+          <h2>{{ section.title }}</h2>
+          <p>{{ section.desc }}</p>
+          <div class="section-buttons">
+            <button class="btn btn-primary" (click)="goToShop()">Voir la boutique</button>
+            <button class="btn btn-secondary" (click)="goToCart()">Voir le panier</button>
+            <button class="btn btn-secondary" (click)="goToCheckout()">Paiement</button>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 
   <!-- Filters Section -->
   <div class="filters-section">
+    <div class="filter-header">
+      <h2>📦 Tous les Produits</h2>
+      <p>Parcourez notre catalogue complet</p>
+    </div>
     <div class="filter-card">
       <div class="search-box">
         <span class="search-icon">🔍</span>
@@ -126,6 +142,14 @@
               title="Ajouter au panier"
             >
               🛒
+            </button>
+            <button
+              class="btn btn-negotiate"
+              (click)="negotiateProduct(product)"
+              [disabled]="product.stockQuantity === 0"
+              title="Négocier le prix"
+            >
+              💬 Négocier
             </button>
             <a
               class="btn btn-whatsapp"

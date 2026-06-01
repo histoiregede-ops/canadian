@@ -1,9 +1,11 @@
 require('dotenv').config();
 
+const DB_PASS = process.env.DB_PASS || process.env.DB_PASSWORD || '';
+
 module.exports = {
   development: {
     username: process.env.DB_USER || 'root',
-    password: process.env.DB_PASS || '',
+    password: DB_PASS,
     database: process.env.DB_NAME || 'solar_erp',
     host: process.env.DB_HOST || 'localhost',
     dialect: 'mysql',
@@ -11,7 +13,7 @@ module.exports = {
   },
   test: {
     username: process.env.DB_USER || 'root',
-    password: process.env.DB_PASS || '',
+    password: DB_PASS,
     database: process.env.DB_NAME || 'solar_erp_test',
     host: process.env.DB_HOST || 'localhost',
     dialect: 'mysql',
@@ -19,7 +21,7 @@ module.exports = {
   },
   production: {
     username: process.env.DB_USER || 'root',
-    password: process.env.DB_PASS || '',
+    password: DB_PASS,
     database: process.env.DB_NAME || 'solar_erp',
     host: process.env.DB_HOST || 'localhost',
     dialect: 'mysql',
