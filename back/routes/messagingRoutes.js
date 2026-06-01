@@ -74,6 +74,13 @@ router.post('/conversations', authenticateAny, async (req, res) => {
       productPrice,
       status = 'open'
     } = req.body;
+
+    if (!customerId || !customerName || !subject) {
+      return res.status(400).json({
+        error: 'customerId, customerName et subject sont requis pour créer une conversation'
+      });
+    }
+
     const id = `conv_${Date.now()}`;
 
     await sequelize.query(
@@ -113,6 +120,7 @@ router.post('/conversations', authenticateAny, async (req, res) => {
 
     res.json(conversation);
   } catch (error) {
+    console.error('Error creating conversation:', error, req.body);
     res.status(400).json({ error: error.message });
   }
 });

@@ -216,10 +216,11 @@ export class ClientMessagesComponent implements OnInit, OnDestroy {
       return;
     }
 
+    const senderName = this.customer.name || this.customer.email || 'Client';
     const message: Omit<Message, 'id' | 'createdAt'> = {
       conversationId: this.selectedConversation.id!,
       senderId: this.customer.id || localStorage.getItem('customerId') || 'unknown',
-      senderName: this.customer.name,
+      senderName,
       senderRole: 'customer',
       content: this.newMessage
     };
@@ -230,15 +231,16 @@ export class ClientMessagesComponent implements OnInit, OnDestroy {
           this.messages.push(sentMessage);
           this.scrollToBottom();
         }
-        this.newMessage = '';
-        this.sendingMessage = false;
       },
       error: (err) => {
         console.error('Error sending message:', err);
-        this.sendingMessage = false;
         this.notificationMessage = 'Erreur lors de l\'envoi du message. Veuillez réessayer.';
         this.showNotificationBanner = true;
         setTimeout(() => { this.showNotificationBanner = false; }, 6000);
+      },
+      complete: () => {
+        this.newMessage = '';
+        this.sendingMessage = false;
       }
     });
   }
@@ -249,12 +251,13 @@ export class ClientMessagesComponent implements OnInit, OnDestroy {
     // Créer une conversation avec le sujet du premier message (premiers 50 chars)
     const subject = this.newMessage.length > 50 ? this.newMessage.substring(0, 50) + '...' : this.newMessage;
 
+    const customerName = this.customer.name || this.customer.email || 'Client';
     const conversation: Omit<Conversation, 'id' | 'messages' | 'createdAt' | 'updatedAt'> = {
       customerId: this.customer.id!,
-      customerName: this.customer.name,
+      customerName,
       customerPhone: this.customer.phone,
       customerEmail: this.customer.email,
-      subject: subject,
+      subject: subject || 'Nouvelle conversation',
       productId: this.productId,
       productName: this.productName,
       productPrice: this.productPrice,
@@ -284,15 +287,16 @@ export class ClientMessagesComponent implements OnInit, OnDestroy {
               this.messages.push(sentMessage);
               this.scrollToBottom();
             }
-            this.newMessage = '';
-            this.sendingMessage = false;
           },
           error: (err) => {
             console.error('Error sending message:', err);
-            this.sendingMessage = false;
             this.notificationMessage = 'Erreur lors de l\'envoi du message. Veuillez réessayer.';
             this.showNotificationBanner = true;
             setTimeout(() => { this.showNotificationBanner = false; }, 6000);
+          },
+          complete: () => {
+            this.newMessage = '';
+            this.sendingMessage = false;
           }
         });
       },

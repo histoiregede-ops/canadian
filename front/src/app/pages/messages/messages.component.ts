@@ -129,15 +129,16 @@ export class MessagesComponent implements OnInit, OnDestroy {
           this.messages.push(sentMessage);
           this.scrollToBottom();
         }
-        this.newMessage = '';
-        this.sendingMessage = false;
       },
       error: (err) => {
         console.error('Error sending message:', err);
-        this.sendingMessage = false;
         this.notificationMessage = 'Erreur lors de l\'envoi du message. Veuillez réessayer.';
         this.showNotificationBanner = true;
         setTimeout(() => this.showNotificationBanner = false, 6000);
+      },
+      complete: () => {
+        this.newMessage = '';
+        this.sendingMessage = false;
       }
     });
   }

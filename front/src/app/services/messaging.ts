@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable, BehaviorSubject, interval, switchMap, startWith } from 'rxjs';
+import { Observable, BehaviorSubject, EMPTY, interval, switchMap, startWith } from 'rxjs';
 import { WebSocketService } from './websocket';
 import { environment } from '../../environments/environment';
 
@@ -122,9 +122,7 @@ export class MessagingService {
     if (this.wsService.isConnected()) {
       this.wsService.sendMessage(message);
       // WebSocket handles broadcast back, return empty observable
-      return new Observable(subscriber => {
-        subscriber.complete();
-      });
+      return EMPTY;
     } else {
       // Fallback to HTTP
       return this.http.post<Message>(`${this.apiUrl}/send`, message);
