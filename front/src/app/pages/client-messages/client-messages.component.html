@@ -33,11 +33,28 @@
         <input
           type="text"
           [(ngModel)]="conversationSubject"
+          [disabled]="creatingConversation"
           placeholder="Sujet de la conversation..."
+          class="form-input"
         />
+        <div *ngIf="conversationError" class="form-error">
+          {{ conversationError }}
+        </div>
         <div class="form-actions">
-          <button class="btn btn-primary btn-sm" (click)="createNewConversation()">Creer</button>
-          <button class="btn btn-ghost btn-sm" (click)="showNewConversationForm = false">Annuler</button>
+          <button 
+            class="btn btn-primary btn-sm" 
+            (click)="createNewConversation()"
+            [disabled]="creatingConversation || !conversationSubject.trim()"
+          >
+            {{ creatingConversation ? 'Création...' : 'Créer' }}
+          </button>
+          <button 
+            class="btn btn-ghost btn-sm" 
+            (click)="showNewConversationForm = false"
+            [disabled]="creatingConversation"
+          >
+            Annuler
+          </button>
         </div>
       </div>
 

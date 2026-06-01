@@ -81,20 +81,24 @@
 }
 
 .btn-primary {
-  background: #128C7E;
+  background: linear-gradient(135deg, #128C7E 0%, #006b5f 100%);
   color: #fff;
   padding: 8px 16px;
   border-radius: 8px;
   font-size: 0.8rem;
+  box-shadow: 0 2px 8px rgba(18, 140, 126, 0.2);
 }
 
-.btn-primary:hover {
-  background: #075e54;
+.btn-primary:hover:not(:disabled) {
+  background: linear-gradient(135deg, #075e54 0%, #004d40 100%);
+  box-shadow: 0 4px 12px rgba(7, 94, 84, 0.3);
+  transform: translateY(-1px);
 }
 
 .btn-primary:disabled {
-  opacity: 0.4;
+  opacity: 0.5;
   cursor: not-allowed;
+  transform: none;
 }
 
 .btn-sm {
@@ -105,20 +109,48 @@
 
 .btn-ghost {
   background: transparent;
-  color: #3f4946;
-  border: 1px solid #bec9c5;
+  color: #006b5f;
+  border: 1px solid #e0e3e6;
+  transition: all 0.2s ease;
 }
 
-.btn-ghost:hover {
+.btn-ghost:hover:not(:disabled) {
   background: #f2f4f7;
+  border-color: #006b5f;
+  color: #005a51;
+}
+
+.btn-ghost:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  color: #9e9e9e;
+  border-color: #e0e3e6;
+}
+
+.btn-secondary {
+  background: #f2f4f7;
+  color: #191c1e;
+  border: 1px solid #e0e3e6;
+  padding: 8px 14px;
+  border-radius: 0.75rem;
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-secondary:hover {
+  background: #e6e8eb;
+  border-color: #006b5f;
 }
 
 .new-conv-form {
-  padding: 12px 16px;
-  border-bottom: 1px solid #eceef1;
+  padding: 14px 16px;
+  border-bottom: 1px solid #e0e3e6;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 10px;
+  background: #f7f9fc;
 }
 
 .new-conv-form input {
@@ -129,6 +161,7 @@
   background: #ffffff;
   color: #191c1e;
   font-family: inherit;
+  transition: border-color 0.2s ease;
 }
 
 .new-conv-form input:focus {
@@ -137,13 +170,39 @@
   box-shadow: 0 0 0 3px rgba(18, 140, 126, 0.1);
 }
 
+.new-conv-form input:disabled {
+  background: #f0f2f5;
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.form-input {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.form-error {
+  font-size: 0.75rem;
+  color: #d32f2f;
+  padding: 4px 8px;
+  background: #ffebee;
+  border-radius: 6px;
+  border-left: 3px solid #d32f2f;
+}
+
 .form-actions {
   display: flex;
   gap: 8px;
+  margin-top: 2px;
 }
 
 .form-actions .btn {
   flex: 1;
+  border: none;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-align: center;
 }
 
 .conversations-list {
@@ -520,39 +579,30 @@
 
 .product-context-card {
   padding: 14px 18px;
-  border-bottom: 1px solid #eceef1;
-  background: #f2f4f7;
+  border-bottom: 1px solid #e0e3e6;
+  background: #e6f4ee;
+  border-radius: 0.5rem;
 }
 
 .product-context-card h3 {
-  font-size: 0.75rem;
+  font-size: 0.7rem;
   font-weight: 700;
-  margin: 0 0 6px;
-  color: #6f7976;
+  margin: 0 0 8px;
+  color: #006b5f;
   text-transform: uppercase;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.08em;
 }
 
 .product-context-card p {
-  font-size: 0.85rem;
-  margin: 0 0 4px;
+  font-size: 0.9rem;
+  margin: 0 0 6px;
   color: #191c1e;
+  font-weight: 500;
 }
 
-.btn-secondary {
-  background: #e0e3e6;
-  color: #191c1e;
-  padding: 6px 12px;
-  border-radius: 8px;
-  font-size: 0.75rem;
-  border: none;
-  font-weight: 600;
-  cursor: pointer;
-  transition: background 0.2s;
-}
-
-.btn-secondary:hover {
-  background: #bec9c5;
+.product-context-card p strong {
+  color: #075e54;
+  font-weight: 700;
 }
 
 .notification-banner {

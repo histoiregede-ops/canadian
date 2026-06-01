@@ -20,6 +20,8 @@ export class ClientMessagesComponent implements OnInit, OnDestroy {
 
   newMessage = '';
   conversationSubject = '';
+  conversationError = '';
+  creatingConversation = false;
   showNewConversationForm = false;
 
   sidebarOpen = false;
@@ -250,7 +252,18 @@ export class ClientMessagesComponent implements OnInit, OnDestroy {
   }
 
   createNewConversation(): void {
-    if (!this.conversationSubject.trim() || !this.customer) return;
+    if (!this.conversationSubject.trim()) {
+      this.conversationError = 'Veuillez entrer un sujet';
+      return;
+    }
+    
+    if (!this.customer) {
+      this.conversationError = 'Vous devez être connecté';
+      return;
+    }
+
+    this.creatingConversation = true;
+    this.conversationError = '';
 
     const conversation: Omit<Conversation, 'id' | 'messages' | 'createdAt' | 'updatedAt'> = {
       customerId: this.customer.id!,
@@ -272,12 +285,14 @@ export class ClientMessagesComponent implements OnInit, OnDestroy {
         this.conversationSubject = '';
         this.showNewConversationForm = false;
         this.messages = [];
+        this.creatingConversation = false;
+        this.conversationError = '';
       },
       error: (err) => {
         console.error('Error creating conversation:', err);
-        this.notificationMessage = err.error?.error || err.error?.message || 'Erreur lors de la création de la conversation';
-        this.showNotificationBanner = true;
-        setTimeout(() => { this.showNotificationBanner = false; }, 6000);
+        this.conversationError = err.error?.error || err.error?.message || 'Erreur lors de la création de la conversation';
+        this.creatingConversation = false;
+        setTimeout(() => { this.conversationError = ''; }, 6000);
       }
     });
   }
