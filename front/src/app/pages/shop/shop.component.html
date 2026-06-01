@@ -16,14 +16,8 @@
         <img [src]="section.image" [alt]="section.title" />
         <div class="section-overlay"></div>
         <div class="section-content">
-          <span class="section-label">Section {{ i + 1 }}</span>
           <h2>{{ section.title }}</h2>
           <p>{{ section.desc }}</p>
-          <div class="section-buttons">
-            <button class="btn btn-primary" (click)="goToShop()">Voir la boutique</button>
-            <button class="btn btn-secondary" (click)="goToCart()">Voir le panier</button>
-            <button class="btn btn-secondary" (click)="goToCheckout()">Paiement</button>
-          </div>
         </div>
       </div>
     </div>
