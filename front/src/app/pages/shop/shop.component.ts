@@ -28,6 +28,7 @@ export interface ProductWithReviews extends Product {
 export class ShopComponent implements OnInit {
   products: ProductWithReviews[] = [];
   categories: Category[] = [];
+  featuredProducts: ProductWithReviews[] = [];
   
   searchQuery = '';
   selectedCategoryId = '';

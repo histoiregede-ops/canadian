@@ -48,8 +48,8 @@ export class MessagingService {
 
   private pollingInterval = 30000; // 30 seconds fallback polling
   private currentConversationId: string | null = null;
-
-  public notification$ = this.wsService.notification$;
+  private notificationSubject = new BehaviorSubject<{title: string; body: string; type: string} | null>(null);
+  public notification$ = this.notificationSubject.asObservable();
 
   constructor(
     private http: HttpClient,
@@ -69,6 +69,12 @@ export class MessagingService {
     this.wsService.typing$.subscribe(typing => {
       if (typing) {
         this.typingSubject.next(typing);
+      }
+    });
+
+    this.wsService.notification$.subscribe(notification => {
+      if (notification) {
+        this.notificationSubject.next(notification);
       }
     });
 

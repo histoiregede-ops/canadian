@@ -43,10 +43,6 @@ export class SidebarComponent implements OnInit, OnDestroy {
     }
   }
 
-  ngOnDestroy(): void {
-    if (this.sub) this.sub.unsubscribe();
-  }
-
   logout(): void {
     this.authService.logout();
     this.router.navigate(['/login']);
