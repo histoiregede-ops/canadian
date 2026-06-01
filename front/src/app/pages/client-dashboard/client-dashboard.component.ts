@@ -354,16 +354,36 @@ interface LoyaltyInfo {
       justify-content: space-between;
       padding: 10px 0;
       border-bottom: 1px solid #e9ecef;
+      gap: 10px;
+      flex-wrap: wrap;
     }
 
     .info-item label {
       font-weight: bold;
       color: #2c3e50;
+      min-width: 120px;
+    }
+
+    @media (max-width: 1024px) {
+      .dashboard-container {
+        max-width: 100%;
+        padding: 18px;
+      }
+
+      .loyalty-card,
+      .orders-section,
+      .account-section {
+        padding: 24px;
+      }
+
+      .dashboard-header {
+        padding: 28px 22px;
+      }
     }
 
     @media (max-width: 768px) {
       .dashboard-container {
-        padding: 10px;
+        padding: 14px;
       }
 
       .dashboard-header {
@@ -374,8 +394,31 @@ interface LoyaltyInfo {
         font-size: 2rem;
       }
 
+      .dashboard-header p {
+        font-size: 0.95rem;
+      }
+
+      .loyalty-card,
+      .orders-section,
+      .account-section,
+      .action-btn {
+        border-radius: 14px;
+      }
+
+      .loyalty-header,
+      .order-header,
+      .profile-info {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+
       .quick-actions {
         grid-template-columns: 1fr;
+      }
+
+      .action-btn {
+        width: 100%;
+        justify-content: space-between;
       }
 
       .orders-grid {
@@ -384,6 +427,41 @@ interface LoyaltyInfo {
 
       .order-actions {
         flex-direction: column;
+      }
+
+      .order-actions .btn-outline,
+      .order-actions .btn-primary {
+        width: 100%;
+      }
+    }
+
+    @media (max-width: 576px) {
+      .dashboard-header {
+        padding: 18px 14px;
+      }
+
+      .dashboard-header h1 {
+        font-size: 1.65rem;
+      }
+
+      .quick-actions {
+        gap: 14px;
+      }
+
+      .points-display,
+      .order-card,
+      .profile-info,
+      .empty-state {
+        padding: 18px;
+      }
+
+      .info-item {
+        justify-content: space-between;
+      }
+
+      .info-item label,
+      .info-item span {
+        width: 100%;
       }
     }
   `]
