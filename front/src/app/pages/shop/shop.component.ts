@@ -7,6 +7,7 @@ import { environment } from '../../../environments/environment';
 import { Category, CategoryService } from '../../services/category';
 import { CartService } from '../../services/cart';
 import { Product, ProductService } from '../../services/product';
+import { CustomerAuthService } from '../../services/customer-auth';
 import {
   ProductReviewService,
   ProductReviewsResponse,
@@ -36,6 +37,10 @@ export class ShopComponent implements OnInit {
 
   loading = true;
 
+  get isCustomerLoggedIn(): boolean {
+    return this.customerAuth.isAuthenticated();
+  }
+
   sections = [
     { 
       image: '/installation pano maison.png', 
@@ -61,6 +66,7 @@ export class ShopComponent implements OnInit {
     private categoryService: CategoryService,
     private cartService: CartService,
     private reviewService: ProductReviewService,
+    private customerAuth: CustomerAuthService,
     private router: Router
   ) {}
 
@@ -98,6 +104,11 @@ export class ShopComponent implements OnInit {
 
   goToCheckout(): void {
     this.router.navigate(['/checkout']);
+  }
+
+  logoutCustomer(): void {
+    this.customerAuth.logout();
+    this.router.navigate(['/login']);
   }
 
   getWhatsAppLink(product: Product): string {
