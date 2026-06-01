@@ -27,8 +27,24 @@ interface LoyaltyInfo {
     <div class="dashboard-container">
       <!-- Header -->
       <div class="dashboard-header">
-        <h1>Mon Espace Client</h1>
-        <p>Bienvenue, {{ customer?.name }} !</p>
+        <div class="header-top">
+          <div>
+            <h1>Mon Espace Client</h1>
+            <p>Bienvenue, {{ customer?.name }} !</p>
+          </div>
+          <button class="mobile-menu-toggle" (click)="menuOpen = !menuOpen" aria-label="Menu client">
+            <span></span>
+            <span></span>
+            <span></span>
+          </button>
+        </div>
+        <div class="mobile-menu-panel" *ngIf="menuOpen">
+          <a routerLink="/shop" class="mobile-menu-link" (click)="menuOpen = false">Continuer mes achats</a>
+          <a routerLink="/messages" class="mobile-menu-link" (click)="menuOpen = false">
+            Mes messages
+            <span class="badge" *ngIf="unreadMessages > 0">{{ unreadMessages }}</span>
+          </a>
+        </div>
       </div>
 
       <!-- Loyalty Points Card -->
@@ -133,6 +149,66 @@ interface LoyaltyInfo {
     .dashboard-header h1 {
       margin: 0 0 10px 0;
       font-size: 2.5rem;
+    }
+
+    .header-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 16px;
+      width: 100%;
+    }
+
+    .mobile-menu-toggle {
+      display: none;
+      width: 42px;
+      height: 42px;
+      border: none;
+      background: #128c7e;
+      border-radius: 12px;
+      cursor: pointer;
+      padding: 8px;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+      flex-shrink: 0;
+    }
+
+    .mobile-menu-toggle span {
+      display: block;
+      width: 20px;
+      height: 2px;
+      background: white;
+      border-radius: 2px;
+    }
+
+    .mobile-menu-panel {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-top: 16px;
+    }
+
+    .mobile-menu-link {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: white;
+      border: 1px solid #e9ecef;
+      border-radius: 12px;
+      padding: 12px 16px;
+      color: #1a1a2e;
+      text-decoration: none;
+      font-weight: 600;
+    }
+
+    .mobile-menu-link .badge {
+      margin-left: 12px;
+      background: #128c7e;
+      color: white;
+      border-radius: 999px;
+      padding: 2px 10px;
+      font-size: 0.75rem;
     }
 
     .loyalty-card {
@@ -398,6 +474,15 @@ interface LoyaltyInfo {
         font-size: 0.95rem;
       }
 
+      .mobile-menu-toggle {
+        display: flex;
+      }
+
+      .quick-actions {
+        display: none;
+        grid-template-columns: 1fr;
+      }
+
       .loyalty-card,
       .orders-section,
       .account-section,
@@ -412,9 +497,6 @@ interface LoyaltyInfo {
         align-items: flex-start;
       }
 
-      .quick-actions {
-        grid-template-columns: 1fr;
-      }
 
       .action-btn {
         width: 100%;
@@ -471,6 +553,7 @@ export class ClientDashboardComponent implements OnInit {
   recentOrders: Order[] = [];
   loyaltyInfo: LoyaltyInfo | null = null;
   unreadMessages = 0;
+  menuOpen = false;
 
   constructor(
     private customerAuth: CustomerAuthService,
