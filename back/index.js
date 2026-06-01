@@ -270,12 +270,12 @@ sequelize.sync()
         const id = 'msg_' + Date.now();
 
         await sequelize.query(
-          'INSERT INTO app_messages (id, conversationId, senderId, senderName, senderRole, content, createdAt) VALUES (?, ?, ?, ?, ?, ?, NOW())',
+          'INSERT INTO app_messages (id, conversationId, senderId, senderName, senderRole, content, createdAt) VALUES (?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)',
           { replacements: [id, conversationId, senderId, senderName, senderRole, content] }
         );
 
         await sequelize.query(
-          'UPDATE app_conversations SET lastMessage = ?, updatedAt = NOW() WHERE id = ?',
+          'UPDATE app_conversations SET lastMessage = ?, updatedAt = CURRENT_TIMESTAMP WHERE id = ?',
           { replacements: [content, conversationId] }
         );
 

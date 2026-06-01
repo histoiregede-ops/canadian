@@ -84,7 +84,7 @@ router.post('/conversations', authenticateAny, async (req, res) => {
     const id = `conv_${Date.now()}`;
 
     await sequelize.query(
-      'INSERT INTO app_conversations (id, customerId, customerName, customerPhone, customerEmail, subject, productId, productName, productPrice, status, unreadCount, createdAt, updatedAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, NOW(), NOW())',
+      'INSERT INTO app_conversations (id, customerId, customerName, customerPhone, customerEmail, subject, productId, productName, productPrice, status, unreadCount, createdAt, updatedAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)',
       {
         replacements: [
           id,
@@ -154,7 +154,7 @@ router.post('/send', authenticateAny, async (req, res) => {
 
     const id = `msg_${Date.now()}`;
     await sequelize.query(
-      'INSERT INTO app_messages (id, conversationId, senderId, senderName, senderRole, content, attachmentUrl, createdAt) VALUES (?, ?, ?, ?, ?, ?, ?, NOW())',
+      'INSERT INTO app_messages (id, conversationId, senderId, senderName, senderRole, content, attachmentUrl, createdAt) VALUES (?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)',
       { replacements: [id, conversationId, senderId, senderName, senderRole, content, attachmentUrl || null] }
     );
 
@@ -164,7 +164,7 @@ router.post('/send', authenticateAny, async (req, res) => {
     };
 
     await sequelize.query(
-      'UPDATE app_conversations SET lastMessage = ?, updatedAt = NOW() WHERE id = ?',
+      'UPDATE app_conversations SET lastMessage = ?, updatedAt = CURRENT_TIMESTAMP WHERE id = ?',
       { replacements: [content, conversationId] }
     );
 
@@ -194,7 +194,7 @@ router.patch('/:messageId/read', authenticateAny, async (req, res) => {
     }
 
     await sequelize.query(
-      'UPDATE app_messages SET readAt = NOW() WHERE id = ?',
+      'UPDATE app_messages SET readAt = CURRENT_TIMESTAMP WHERE id = ?',
       { replacements: [req.params.messageId] }
     );
 
@@ -218,7 +218,7 @@ router.patch('/conversations/:conversationId/close', authenticateAny, async (req
     }
 
     await sequelize.query(
-      'UPDATE app_conversations SET status = ?, updatedAt = NOW() WHERE id = ?',
+      'UPDATE app_conversations SET status = ?, updatedAt = CURRENT_TIMESTAMP WHERE id = ?',
       { replacements: ['closed', req.params.conversationId] }
     );
 
