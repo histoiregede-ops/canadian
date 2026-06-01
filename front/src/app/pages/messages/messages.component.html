@@ -42,12 +42,14 @@
           [class.active]="selectedConversation?.id === conv.id"
           (click)="selectConversation(conv); sidebarOpen = false"
         >
+          <div class="conv-avatar">{{ conv.customerName?.charAt(0) || conv.subject?.charAt(0) }}</div>
           <div class="conv-body">
             <h3>{{ conv.subject }}</h3>
             <p class="conv-preview">{{ conv.lastMessage }}</p>
             <p *ngIf="isAdmin" class="conv-client">{{ conv.customerName }} <span *ngIf="conv.customerPhone" class="conv-phone">{{ conv.customerPhone }}</span></p>
           </div>
           <div class="conv-meta">
+            <span class="conv-time">{{ conv.updatedAt | date:'short' }}</span>
             <span class="badge" [class.closed]="conv.status === 'closed'">
               {{ conv.status === 'open' ? 'Ouvert' : 'Ferme' }}
             </span>
