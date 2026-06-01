@@ -57,12 +57,9 @@ export class ClientMessagesComponent implements OnInit, OnDestroy {
       this.productName = params.get('productName') || undefined;
       this.productImage = params.get('productImage') || undefined;
       this.productPrice = params.get('productPrice') ? parseFloat(params.get('productPrice') as string) : undefined;
-      const subject = params.get('subject');
 
       if (this.productName) {
-        this.conversationSubject = subject || `Négociation prix - ${this.productName}`;
-        this.productMessagePlaceholder = `Je souhaite négocier le prix du produit ${this.productName} (actuellement ${this.productPrice ? this.productPrice.toLocaleString() + ' FCFA' : 'prix non défini'}).`;
-        this.showNewConversationForm = true;
+        this.productMessagePlaceholder = `Je souhaite discuter du produit ${this.productName} (actuellement ${this.productPrice ? this.productPrice.toLocaleString() + ' FCFA' : 'prix non défini'}).`;
       }
     });
 
@@ -314,52 +311,6 @@ export class ClientMessagesComponent implements OnInit, OnDestroy {
       event.preventDefault();
       this.sendMessage();
     }
-  }
-
-  createNewConversation(): void {
-    if (!this.conversationSubject.trim()) {
-      this.conversationError = 'Veuillez entrer un sujet';
-      return;
-    }
-    
-    if (!this.customer) {
-      this.conversationError = 'Vous devez être connecté';
-      return;
-    }
-
-    this.creatingConversation = true;
-    this.conversationError = '';
-
-    const conversation: Omit<Conversation, 'id' | 'messages' | 'createdAt' | 'updatedAt'> = {
-      customerId: this.customer.id!,
-      customerName: this.customer.name,
-      customerPhone: this.customer.phone,
-      customerEmail: this.customer.email,
-      subject: this.conversationSubject,
-      productId: this.productId,
-      productName: this.productName,
-      productPrice: this.productPrice,
-      status: 'open',
-      unreadCount: 0
-    };
-
-    this.messagingService.createConversation(conversation).subscribe({
-      next: (newConversation) => {
-        this.conversations.unshift(newConversation);
-        this.selectedConversation = newConversation;
-        this.conversationSubject = '';
-        this.showNewConversationForm = false;
-        this.messages = [];
-        this.creatingConversation = false;
-        this.conversationError = '';
-      },
-      error: (err) => {
-        console.error('Error creating conversation:', err);
-        this.conversationError = err.error?.error || err.error?.message || 'Erreur lors de la création de la conversation';
-        this.creatingConversation = false;
-        setTimeout(() => { this.conversationError = ''; }, 6000);
-      }
-    });
   }
 
   closeConversation(): void {
