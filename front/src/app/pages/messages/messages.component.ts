@@ -149,10 +149,10 @@ export class MessagesComponent implements OnInit, OnDestroy {
   createNewConversation(): void {
     if (!this.conversationSubject.trim()) return;
 
-    const customerId = localStorage.getItem('customerId') || 'guest_user';
+    const customerId = this.currentUser?.id || localStorage.getItem('customerId') || 'guest_user';
     const conversation: Omit<Conversation, 'id' | 'messages' | 'createdAt' | 'updatedAt'> = {
       customerId,
-      customerName: localStorage.getItem('customerName') || 'Client',
+      customerName: this.currentUser?.fullName || localStorage.getItem('customerName') || 'Client',
       subject: this.conversationSubject,
       status: 'open',
       unreadCount: 0
@@ -166,7 +166,12 @@ export class MessagesComponent implements OnInit, OnDestroy {
         this.showNewConversationForm = false;
         this.messages = [];
       },
-      error: (err) => console.error('Error creating conversation:', err)
+      error: (err) => {
+        console.error('Error creating conversation:', err);
+        this.notificationMessage = 'Erreur lors de la création de la conversation';
+        this.showNotificationBanner = true;
+        setTimeout(() => this.showNotificationBanner = false, 4000);
+      }
     });
   }
 

@@ -270,7 +270,10 @@ export class ClientMessagesComponent implements OnInit, OnDestroy {
         this.showNewConversationForm = false;
         this.messages = [];
       },
-      error: (err) => console.error('Error creating conversation:', err)
+      error: (err) => {
+        console.error('Error creating conversation:', err);
+        this.authError = err.error?.error || err.error?.message || 'Erreur lors de la création de la conversation';
+      }
     });
   }
 
