@@ -19,10 +19,6 @@ export class ClientMessagesComponent implements OnInit, OnDestroy {
   messages: Message[] = [];
 
   newMessage = '';
-  conversationSubject = '';
-  conversationError = '';
-  creatingConversation = false;
-  showNewConversationForm = false;
 
   sidebarOpen = false;
   loading = true;
@@ -213,9 +209,15 @@ export class ClientMessagesComponent implements OnInit, OnDestroy {
   }
 
   sendMessage(): void {
-    if (!this.newMessage.trim() || !this.selectedConversation || !this.customer) return;
+    if (!this.newMessage.trim() || !this.customer) return;
 
     this.sendingMessage = true;
+
+    // Si pas de conversation, en créer une automatiquement
+    if (!this.selectedConversation) {
+      this.autoCreateAndSendMessage();
+      return;
+    }
 
     const message: Omit<Message, 'id' | 'createdAt'> = {
       conversationId: this.selectedConversation.id!,
@@ -238,6 +240,69 @@ export class ClientMessagesComponent implements OnInit, OnDestroy {
         console.error('Error sending message:', err);
         this.sendingMessage = false;
         this.notificationMessage = 'Erreur lors de l\'envoi du message. Veuillez réessayer.';
+        this.showNotificationBanner = true;
+        setTimeout(() => { this.showNotificationBanner = false; }, 6000);
+      }
+    });
+  }
+
+  autoCreateAndSendMessage(): void {
+    if (!this.customer) return;
+
+    // Créer une conversation avec le sujet du premier message (premiers 50 chars)
+    const subject = this.newMessage.length > 50 ? this.newMessage.substring(0, 50) + '...' : this.newMessage;
+
+    const conversation: Omit<Conversation, 'id' | 'messages' | 'createdAt' | 'updatedAt'> = {
+      customerId: this.customer.id!,
+      customerName: this.customer.name,
+      customerPhone: this.customer.phone,
+      customerEmail: this.customer.email,
+      subject: subject,
+      productId: this.productId,
+      productName: this.productName,
+      productPrice: this.productPrice,
+      status: 'open',
+      unreadCount: 0
+    };
+
+    this.messagingService.createConversation(conversation).subscribe({
+      next: (newConversation) => {
+        this.conversations.unshift(newConversation);
+        this.selectedConversation = newConversation;
+        this.messages = [];
+        this.messagingService.joinConversation(newConversation.id!);
+        
+        // Maintenant envoyer le message
+        const message: Omit<Message, 'id' | 'createdAt'> = {
+          conversationId: newConversation.id!,
+          senderId: this.customer!.id || localStorage.getItem('customerId') || 'unknown',
+          senderName: this.customer!.name,
+          senderRole: 'customer',
+          content: this.newMessage
+        };
+
+        this.messagingService.sendMessage(message).subscribe({
+          next: (sentMessage) => {
+            if (sentMessage) {
+              this.messages.push(sentMessage);
+              this.scrollToBottom();
+            }
+            this.newMessage = '';
+            this.sendingMessage = false;
+          },
+          error: (err) => {
+            console.error('Error sending message:', err);
+            this.sendingMessage = false;
+            this.notificationMessage = 'Erreur lors de l\'envoi du message. Veuillez réessayer.';
+            this.showNotificationBanner = true;
+            setTimeout(() => { this.showNotificationBanner = false; }, 6000);
+          }
+        });
+      },
+      error: (err) => {
+        console.error('Error creating conversation:', err);
+        this.sendingMessage = false;
+        this.notificationMessage = 'Erreur lors de la création de la conversation. Veuillez réessayer.';
         this.showNotificationBanner = true;
         setTimeout(() => { this.showNotificationBanner = false; }, 6000);
       }
