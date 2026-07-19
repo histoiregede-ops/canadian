@@ -5,6 +5,12 @@ const sequelize = require('../config/database');
 const { Op } = require('sequelize');
 const { authenticate, authorize } = require('../utils/auth');
 
+const dateFormat = (col) => {
+  const dialect = sequelize.getDialect();
+  if (dialect === 'sqlite') return sequelize.fn('strftime', '%Y-%m', col);
+  return sequelize.fn('DATE_FORMAT', col, '%Y-%m');
+};
+
 router.get('/dashboard', authenticate, authorize('admin', 'cashier'), async (req, res) => {
   try {
     const monthStart = new Date();
@@ -41,13 +47,13 @@ router.get('/dashboard', authenticate, authorize('admin', 'cashier'), async (req
 
     const monthlyRevenue = await Order.findAll({
       attributes: [
-        [sequelize.fn('DATE_FORMAT', sequelize.col('createdAt'), '%Y-%m'), 'month'],
+        [dateFormat(sequelize.col('createdAt')), 'month'],
         [sequelize.fn('SUM', sequelize.col('totalAmount')), 'revenue'],
         [sequelize.fn('COUNT', sequelize.col('Order.id')), 'orderCount']
       ],
       where: { status: { [Op.notIn]: ['cancelled'] } },
-      group: [sequelize.fn('DATE_FORMAT', sequelize.col('createdAt'), '%Y-%m')],
-      order: [[sequelize.fn('DATE_FORMAT', sequelize.col('createdAt'), '%Y-%m'), 'ASC']],
+      group: [dateFormat(sequelize.col('createdAt'))],
+      order: [[dateFormat(sequelize.col('createdAt')), 'ASC']],
       limit: 12
     });
 

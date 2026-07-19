@@ -6,6 +6,11 @@ const sequelize = require('../config/database');
 
 const { authenticate, authorize } = require('../utils/auth');
 
+const dateFormat = (colRef) => {
+  if (sequelize.getDialect() === 'sqlite') return fn('strftime', '%Y-%m', colRef);
+  return fn('DATE_FORMAT', colRef, '%Y-%m');
+};
+
 router.get('/transactions', authenticate, authorize('admin'), async (req, res) => {
   try {
     const transactions = await CashTransaction.findAll({ order: [['date', 'DESC']] });
@@ -42,13 +47,13 @@ router.get('/transactions', authenticate, authorize('admin'), async (req, res) =
     const sixMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 5, 1);
     const monthlyData = await CashTransaction.findAll({
       attributes: [
-        [fn('DATE_FORMAT', col('date'), '%Y-%m'), 'month'],
+        [dateFormat(col('date')), 'month'],
         [fn('sum', literal("CASE WHEN type = 'income' THEN amount ELSE 0 END")), 'income'],
         [fn('sum', literal("CASE WHEN type = 'expense' THEN amount ELSE 0 END")), 'expense']
       ],
       where: { date: { [Op.gte]: sixMonthsAgo } },
-      group: [fn('DATE_FORMAT', col('date'), '%Y-%m')],
-      order: [[fn('DATE_FORMAT', col('date'), '%Y-%m'), 'ASC']],
+      group: [dateFormat(col('date'))],
+      order: [[dateFormat(col('date')), 'ASC']],
       raw: true
     });
 
