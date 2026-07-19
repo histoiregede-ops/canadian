@@ -1,0 +1,187 @@
+<div class="page-container">
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">Service Après-Vente (SAV)</h1>
+      <p class="page-subtitle">Suivi technique et réparations électroniques</p>
+    </div>
+    <button class="btn btn-primary" (click)="openAddModal()">➕ Nouveau Dépôt</button>
+  </div>
+
+  <div class="stats-grid">
+    <div class="stat-card">
+      <div class="stat-icon info">🔧</div>
+      <div class="stat-content">
+        <p class="stat-label">Total</p>
+        <h3 class="stat-value">{{ repairs.length }}</h3>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon warning">⚙️</div>
+      <div class="stat-content">
+        <p class="stat-label">En cours</p>
+        <h3 class="stat-value">{{ getActiveCount() }}</h3>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon danger">🚨</div>
+      <div class="stat-content">
+        <p class="stat-label">Urgents</p>
+        <h3 class="stat-value">{{ getUrgentCount() }}</h3>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon success">✅</div>
+      <div class="stat-content">
+        <p class="stat-label">Prêts</p>
+        <h3 class="stat-value">{{ getReadyCount() }}</h3>
+      </div>
+    </div>
+  </div>
+
+  <div class="filters-card">
+    <div class="filter-group">
+      <div class="search-box">
+        <span class="search-icon">🔍</span>
+        <input type="text" placeholder="Rechercher un appareil..." [(ngModel)]="searchQuery" class="form-input" />
+      </div>
+      <select class="form-select" [(ngModel)]="selectedStatus">
+        <option value="">Tous les statuts</option>
+        <option value="received">Reçu</option>
+        <option value="in_diagnosis">Diagnostic</option>
+        <option value="repairing">En réparation</option>
+        <option value="waiting_for_parts">Attente pièces</option>
+        <option value="ready">Prêt</option>
+        <option value="delivered">Livré</option>
+        <option value="cancelled">Annulé</option>
+      </select>
+      <select class="form-select" [(ngModel)]="selectedPriority">
+        <option value="">Toutes priorités</option>
+        <option value="low">Faible</option>
+        <option value="normal">Normale</option>
+        <option value="high">Haute</option>
+        <option value="urgent">Urgent</option>
+      </select>
+    </div>
+  </div>
+
+  <div class="loading-state" *ngIf="loading">
+    <div class="spinner"></div>
+    <p>Chargement des dossiers techniques...</p>
+  </div>
+
+  <div class="empty-state" *ngIf="!loading && filteredRepairs.length === 0">
+    <span class="empty-icon">🔧</span>
+    <h3 class="empty-title">Aucune réparation trouvée</h3>
+    <p class="empty-text">Cliquez sur "Nouveau Dépôt" pour enregistrer un appareil.</p>
+  </div>
+
+  <div class="repairs-grid" *ngIf="!loading && filteredRepairs.length > 0">
+    <div class="card repair-card" *ngFor="let repair of filteredRepairs" [class.urgent]="repair.priority === 'urgent'">
+      <div class="card-body">
+        <div class="repair-header">
+          <div class="device-icon">{{ getDeviceIcon(repair.deviceType) }}</div>
+          <div class="device-info">
+            <h3 class="device-name">{{ repair.brand }} {{ repair.deviceType }}</h3>
+            <span class="serial">S/N: {{ repair.serialNumber || 'N/A' }}</span>
+          </div>
+          <div class="priority-badge" *ngIf="repair.priority && repair.priority !== 'normal'" [class]="repair.priority">
+            {{ getPriorityLabel(repair.priority) }}
+          </div>
+        </div>
+
+        <div class="card-badge" [class]="repair.status">
+          {{ getStatusLabel(repair.status) }}
+        </div>
+
+        <div class="issue-details">
+          <div class="issue-header">
+            <span class="issue-title">Problème signalé</span>
+            <span class="issue-date" *ngIf="repair.receivedAt">{{ repair.receivedAt | date:'dd/MM' }}</span>
+          </div>
+          <p>{{ repair.reportedIssue }}</p>
+          <div class="diagnosis" *ngIf="repair.diagnosis">
+            <span>🔍</span> {{ repair.diagnosis }}
+          </div>
+        </div>
+
+        <div class="customer-info" *ngIf="repair.Customer">
+          <span>👤 {{ repair.Customer.fullName || repair.Customer.name }}</span>
+          <span>📞 {{ repair.Customer.phone }}</span>
+        </div>
+
+        <div class="repair-footer">
+          <div class="cost" *ngIf="repair.estimatedCost">
+            <span class="label">Estimation</span>
+            <span class="price">{{ repair.estimatedCost | number }} FCFA</span>
+          </div>
+          <div class="cost" *ngIf="!repair.estimatedCost">
+            <span class="label">Devis</span>
+            <span class="price pending">Non défini</span>
+          </div>
+          <div class="card-actions">
+            <button class="btn btn-outline btn-sm" (click)="openEditModal(repair)">✏️ Modifier</button>
+            <button class="btn btn-danger btn-sm" (click)="deleteRepair(repair.id!)">🗑️ Supprimer</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-overlay" *ngIf="showModal">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h2 class="modal-title">{{ isEditing ? '✏️ Modifier le Dossier' : '➕ Nouveau Dépôt SAV' }}</h2>
+        <button class="modal-close" (click)="showModal = false">×</button>
+      </div>
+
+      <div class="modal-body">
+        <form (submit)="saveRepair()" class="form">
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Marque *</label>
+              <input type="text" [(ngModel)]="currentRepair.brand" name="brand" required placeholder="Ex: Samsung" class="form-input" />
+            </div>
+            <div class="form-group">
+              <label class="form-label">Modèle / Type *</label>
+              <input type="text" [(ngModel)]="currentRepair.deviceType" name="deviceType" required placeholder="Ex: Galaxy S23" class="form-input" />
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Numéro de Série (S/N)</label>
+            <input type="text" [(ngModel)]="currentRepair.serialNumber" name="serialNumber" class="form-input" />
+          </div>
+          <div class="form-group">
+            <label class="form-label">Client *</label>
+            <select [(ngModel)]="currentRepair.customerId" name="customerId" required class="form-select">
+              <option value="">Sélectionner un client</option>
+              <option *ngFor="let client of customers" [value]="client.id">{{ client.fullName || client.name }}</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Problème Signalé *</label>
+            <textarea [(ngModel)]="currentRepair.reportedIssue" name="reportedIssue" rows="3" required class="form-textarea"></textarea>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Priorité</label>
+              <select [(ngModel)]="currentRepair.priority" name="priority" class="form-select">
+                <option value="low">Faible</option>
+                <option value="normal">Normale</option>
+                <option value="high">Haute</option>
+                <option value="urgent">Urgent</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Estimation Coût (FCFA)</label>
+              <input type="number" [(ngModel)]="currentRepair.estimatedCost" name="cost" class="form-input" />
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" (click)="showModal = false">Annuler</button>
+            <button type="submit" class="btn btn-primary">{{ isEditing ? 'Mettre à jour' : 'Enregistrer' }}</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>

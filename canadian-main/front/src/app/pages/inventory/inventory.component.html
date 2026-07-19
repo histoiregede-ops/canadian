@@ -1,0 +1,261 @@
+<div class="page-container">
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">Catalogue & Stock</h1>
+      <p class="page-subtitle">Gérez vos produits solaires et électroniques</p>
+    </div>
+    <button class="btn btn-primary" (click)="openAddModal()">➕ Nouveau Produit</button>
+  </div>
+
+  <div class="stats-grid">
+    <div class="stat-card">
+      <div class="stat-icon primary">📦</div>
+      <div class="stat-content">
+        <p class="stat-label">Total Produits</p>
+        <h3 class="stat-value">{{ products.length }}</h3>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon warning">⚠️</div>
+      <div class="stat-content">
+        <p class="stat-label">Stock Faible (1-15)</p>
+        <h3 class="stat-value">{{ lowStockCount }}</h3>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon danger">🚫</div>
+      <div class="stat-content">
+        <p class="stat-label">Rupture (0)</p>
+        <h3 class="stat-value">{{ outOfStockCount }}</h3>
+      </div>
+    </div>
+  </div>
+
+  <div class="filters-card">
+    <div class="filter-group">
+      <div class="search-box">
+        <span class="search-icon">🔍</span>
+        <input type="text" placeholder="Rechercher un produit..." [(ngModel)]="searchQuery" class="form-input" />
+      </div>
+      <select class="form-select" [(ngModel)]="selectedCategoryId">
+        <option value="">Toutes les catégories</option>
+        <option *ngFor="let cat of categories" [value]="cat.id">{{ cat.name }}</option>
+      </select>
+      <select class="form-select" [(ngModel)]="selectedStatus">
+        <option value="">Tous les statuts</option>
+        <option value="available">Disponible</option>
+        <option value="on_order">Stock Faible</option>
+        <option value="out_of_stock">Rupture</option>
+      </select>
+      <select class="form-select" [(ngModel)]="selectedSupplierId">
+        <option value="">Tous les fournisseurs</option>
+        <option *ngFor="let sup of suppliers" [value]="sup.id">{{ sup.name }}</option>
+      </select>
+    </div>
+  </div>
+
+  <div class="loading-state" *ngIf="loading">
+    <div class="spinner"></div>
+    <p>Chargement des produits...</p>
+  </div>
+
+  <div class="empty-state" *ngIf="!loading && products.length === 0">
+    <span class="empty-icon">📦</span>
+    <h3 class="empty-title">Aucun produit trouvé</h3>
+    <p class="empty-text">Commencez par ajouter un produit à votre catalogue.</p>
+  </div>
+
+  <div class="product-grid" *ngIf="!loading && products.length > 0">
+    <div class="card product-card" *ngFor="let product of filteredProducts">
+      <div class="product-image">
+        <span class="placeholder-icon" *ngIf="!product.photo">📦</span>
+        <img [src]="getProductImage(product.photo)" *ngIf="product.photo" alt="Product Image" />
+      </div>
+      <div class="product-info">
+        <div class="product-header">
+          <span class="category-badge">{{ product.Category?.name || 'Général' }}</span>
+          <span *ngIf="product.supplierName" class="badge badge-neutral">🏭 {{ product.supplierName }}</span>
+        </div>
+        <h3 class="product-name">{{ product.name }}</h3>
+        <p class="product-desc">{{ product.description }}</p>
+        <div class="product-meta">
+          <span class="price">{{ product.price | number }} FCFA</span>
+          <span class="stock-badge" [ngClass]="getStatusClass(product.status)">
+            {{ getStatusLabel(product.status) }} ({{ product.stockQuantity }})
+          </span>
+        </div>
+        <img *ngIf="product.barcode" [src]="getBarcodePreview(product.barcode)" alt="Code-barres" class="barcode-preview" />
+      </div>
+      <div class="product-actions">
+        <button class="btn btn-ghost btn-sm" (click)="openHistory(product)" title="Historique">📋</button>
+        <button class="btn btn-ghost btn-sm" (click)="openEditModal(product)" title="Modifier">✏️</button>
+        <button class="btn btn-ghost btn-sm" (click)="downloadBarcode(product)" title="Télécharger code-barres">📎</button>
+        <button class="btn btn-ghost btn-sm" (click)="deleteProduct(product.id!)" title="Supprimer" style="color:var(--danger)">🗑️</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="finished-section" *ngIf="!loading && finishedProducts.length > 0">
+    <div class="section-header">
+      <h2>⚠️ Articles Finis ou Presque Finis</h2>
+      <span class="badge-count">{{ finishedProducts.length }}</span>
+    </div>
+    <div class="finished-grid">
+      <div class="card finished-card" *ngFor="let product of finishedProducts">
+        <div class="finished-icon" [ngClass]="product.stockQuantity === 0 ? 'empty' : 'low'">
+          {{ product.stockQuantity === 0 ? '🚫' : '⚠️' }}
+        </div>
+        <div class="finished-info">
+          <h3>{{ product.name }}</h3>
+          <p class="category">{{ product.Category?.name || 'Général' }}
+            <span *ngIf="product.supplierName" class="badge badge-neutral" style="margin-left:6px">🏭 {{ product.supplierName }}</span>
+          </p>
+          <div class="stock-info">
+            <span class="quantity" [ngClass]="product.stockQuantity === 0 ? 'red' : 'orange'">
+              Stock: {{ product.stockQuantity }} unité(s)
+            </span>
+            <span class="price">{{ product.price | number }} FCFA</span>
+          </div>
+        </div>
+        <div class="finished-actions">
+          <button class="btn btn-warning btn-sm" (click)="restockProduct(product)">Reapprovisionner</button>
+          <button class="btn btn-outline btn-sm" (click)="adjustStock(product)">🔧 Ajuster stock</button>
+          <button class="btn btn-outline btn-sm" (click)="openHistory(product)">📋 Historique</button>
+          <button class="btn btn-outline btn-sm" (click)="downloadBarcode(product)">📎 Code-barres</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-overlay" *ngIf="showModal">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h2 class="modal-title">{{ isEditing ? '✏️ Modifier le Produit' : '➕ Ajouter un Produit' }}</h2>
+        <button class="modal-close" (click)="showModal = false">×</button>
+      </div>
+
+      <div class="modal-body">
+        <form (submit)="saveProduct()" class="form">
+          <div class="form-group">
+            <label class="form-label">Nom du Produit *</label>
+            <input type="text" [(ngModel)]="currentProduct.name" name="name" required placeholder="Ex: Panneau Solaire 400W" class="form-input" />
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Prix (FCFA) *</label>
+              <input type="number" [(ngModel)]="currentProduct.price" name="price" required class="form-input" />
+            </div>
+            <div class="form-group">
+              <label class="form-label">Stock Initial *</label>
+              <input type="number" [(ngModel)]="currentProduct.stockQuantity" name="stock" required class="form-input" />
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Catégorie *</label>
+            <select [(ngModel)]="currentProduct.categoryId" name="categoryId" required class="form-select">
+              <option value="">Sélectionner une catégorie</option>
+              <option *ngFor="let cat of categories" [value]="cat.id">{{ cat.name }}</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Fournisseur</label>
+            <select [(ngModel)]="currentProduct.supplierId" name="supplierId" class="form-select">
+              <option value="">Sélectionner un fournisseur</option>
+              <option *ngFor="let sup of suppliers" [value]="sup.id">{{ sup.name }}</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Description</label>
+            <textarea [(ngModel)]="currentProduct.description" name="description" rows="3" class="form-textarea"></textarea>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Code-barres</label>
+            <div class="barcode-input-group">
+              <input [(ngModel)]="currentProduct.barcode" name="barcode" placeholder="Scan or enter barcode" class="form-input" />
+              <button type="button" class="btn btn-sm btn-secondary" (click)="startBarcodeScan()">📷 Scanner</button>
+              <button type="button" class="btn btn-sm btn-outline" (click)="downloadBarcode(currentProduct)" *ngIf="currentProduct.barcode" title="Télécharger code-barres">📎</button>
+            </div>
+            <img *ngIf="currentProduct.barcode" [src]="getBarcodePreview(currentProduct.barcode)" alt="Aperçu code-barres" class="barcode-preview" />
+          </div>
+          <div class="form-group">
+            <label class="form-label">Image du Produit</label>
+            <input type="file" (change)="onFileSelected($event)" accept="image/*" class="form-input" />
+            <div class="image-preview" *ngIf="currentProduct.photo">
+              <img [src]="currentProduct.photo" alt="Aperçu" />
+              <p class="image-preview-text">Aperçu du produit prêt</p>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-danger" *ngIf="isEditing" (click)="deleteProduct(currentProduct.id!); showModal = false">Supprimer</button>
+            <button type="button" class="btn btn-secondary" (click)="showModal = false">Annuler</button>
+            <button type="submit" class="btn btn-primary">{{ isEditing ? 'Enregistrer' : 'Créer le Produit' }}</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-overlay" *ngIf="showHistoryModal">
+    <div class="modal-card modal-wide">
+      <div class="modal-header">
+        <h2 class="modal-title">📋 Historique des mouvements</h2>
+        <button class="modal-close" (click)="showHistoryModal = false">×</button>
+      </div>
+
+      <div class="modal-body">
+        <p class="history-product-name"><strong>{{ historyProductName }}</strong></p>
+
+        <div class="table-container" *ngIf="!loadingMovements && movements.length > 0">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Type</th>
+                <th>Avant</th>
+                <th>Après</th>
+                <th>Variation</th>
+                <th>Référence</th>
+                <th>Par</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let m of movements">
+                <td>{{ m.createdAt | date:'dd/MM/yy HH:mm' }}</td>
+                <td><span class="reason-badge" [ngClass]="m.reason">{{ reasonLabel(m.reason) }}</span></td>
+                <td>{{ m.previousQuantity }}</td>
+                <td>{{ m.newQuantity }}</td>
+                <td [class.text-success]="m.changeAmount >= 0" [class.text-danger]="m.changeAmount < 0">
+                  {{ m.changeAmount >= 0 ? '+' : '' }}{{ m.changeAmount }}
+                </td>
+                <td>{{ m.reference || '-' }}</td>
+                <td>{{ m.createdBy || '-' }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="empty-state" *ngIf="!loadingMovements && movements.length === 0" style="padding:24px">
+          <p>Aucun mouvement enregistré</p>
+        </div>
+        <div class="loading-state" *ngIf="loadingMovements">
+          <div class="spinner spinner-sm"></div>
+          <p>Chargement...</p>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" (click)="showHistoryModal = false">Fermer</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast-container" *ngIf="toastMessage">
+    <div class="toast-card" [ngClass]="toastType">
+      <span class="toast-icon">{{ toastType === 'out_of_stock' ? '🚫' : '⚠️' }}</span>
+      <div class="toast-body">
+        <strong>{{ toastType === 'out_of_stock' ? 'Rupture de stock' : 'Stock faible' }}</strong>
+        <p>{{ toastMessage }}</p>
+      </div>
+      <button class="toast-close" (click)="dismissToast()">×</button>
+    </div>
+  </div>
+</div>

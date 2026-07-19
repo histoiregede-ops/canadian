@@ -1,0 +1,120 @@
+<div class="login-split-page">
+  <div class="brand-side">
+    <div class="brand-content">
+      <img src="/logo_electro_canadien.ico" alt="Logo" class="floating-logo">
+      <div class="brand-text">
+        <h1>ELECTRO CANADIEN</h1>
+        <p>L'expertise au service de votre énergie</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="form-side">
+    <div class="form-container">
+      <div class="form-header">
+        <h2>{{ loginMode === 'staff' ? 'Bienvenue' : (isRegisterMode ? 'Créer un compte' : 'Bienvenue') }}</h2>
+        <p>{{ loginMode === 'staff' ? 'Connectez-vous à votre espace' : (isRegisterMode ? 'Inscrivez-vous pour accéder à la boutique' : 'Connectez-vous à votre espace client') }}</p>
+      </div>
+
+      <div class="mode-toggle">
+        <button
+          type="button"
+          class="toggle-btn"
+          [class.active]="loginMode === 'staff'"
+          (click)="switchMode('staff')"
+        >
+          <span class="toggle-icon">👤</span>
+          Staff
+        </button>
+        <button
+          type="button"
+          class="toggle-btn"
+          [class.active]="loginMode === 'client'"
+          (click)="switchMode('client')"
+        >
+          <span class="toggle-icon">🛒</span>
+          Client
+        </button>
+      </div>
+
+      <div class="sub-toggle" *ngIf="loginMode === 'client'">
+        <button
+          type="button"
+          class="sub-toggle-btn"
+          [class.active]="!isRegisterMode"
+          (click)="toggleRegister()"
+        >
+          Connexion
+        </button>
+        <button
+          type="button"
+          class="sub-toggle-btn"
+          [class.active]="isRegisterMode"
+          (click)="toggleRegister()"
+        >
+          Inscription
+        </button>
+      </div>
+
+      <form (submit)="onSubmit($event)" class="login-form">
+        <div class="input-group" *ngIf="loginMode === 'staff'">
+          <label for="username">Nom d'utilisateur</label>
+          <div class="input-field">
+            <span class="icon">&#128100;</span>
+            <input type="text" id="username" name="username" [(ngModel)]="username" placeholder="Identifiant" required>
+          </div>
+        </div>
+
+        <div class="input-group" *ngIf="loginMode === 'client' && isRegisterMode">
+          <label for="name">Nom complet</label>
+          <div class="input-field">
+            <span class="icon">&#128100;</span>
+            <input type="text" id="name" name="name" [(ngModel)]="name" placeholder="Votre nom" required>
+          </div>
+        </div>
+
+        <div class="input-group" *ngIf="loginMode === 'client'">
+          <label for="email">Adresse email</label>
+          <div class="input-field">
+            <span class="icon">&#9993;</span>
+            <input type="email" id="email" name="email" [(ngModel)]="email" placeholder="votre@email.com" required>
+          </div>
+        </div>
+
+        <div class="input-group">
+          <label for="password">Mot de passe</label>
+          <div class="input-field">
+            <span class="icon">&#128274;</span>
+            <input type="password" id="password" name="password" [(ngModel)]="password" placeholder="&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;" required>
+          </div>
+        </div>
+
+        <button type="submit" class="btn-submit" [disabled]="loading">
+          <span *ngIf="!loading">
+            <ng-container *ngIf="loginMode === 'staff'">CONNEXION</ng-container>
+            <ng-container *ngIf="loginMode === 'client' && isRegisterMode">CRÉER MON COMPTE</ng-container>
+            <ng-container *ngIf="loginMode === 'client' && !isRegisterMode">CONNEXION</ng-container>
+          </span>
+          <span *ngIf="loading" class="spinner"></span>
+        </button>
+
+        <div class="error-msg" *ngIf="errorMessage">
+          {{ errorMessage }}
+        </div>
+      </form>
+
+      <div class="form-footer">
+        <p *ngIf="loginMode === 'client' && !isRegisterMode">
+          Pas encore de compte ? <a (click)="toggleRegister()">Créer un compte</a>
+        </p>
+        <p *ngIf="loginMode === 'client' && isRegisterMode">
+          Déjà un compte ? <a (click)="toggleRegister()">Se connecter</a>
+        </p>
+        <p class="back-to-shop">
+          <a routerLink="/shop">&#8592; Retour à la boutique</a>
+        </p>
+        <p>&copy; 2026 Electro Canadien - Togo</p>
+      </div>
+    </div>
+  </div>
+</div>

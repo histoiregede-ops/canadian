@@ -1,0 +1,1728 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Canadian Solar ERP API",
+    "description": "API complète pour la gestion de magasin solaire et électronique",
+    "version": "1.0.0",
+    "contact": {
+      "name": "API Support"
+    }
+  },
+  "servers": [
+    {
+      "url": "http://localhost:3000",
+      "description": "Serveur de développement"
+    }
+  ],
+  "components": {
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
+      }
+    },
+    "schemas": {
+      "User": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "username": { "type": "string" },
+          "fullName": { "type": "string" },
+          "email": { "type": "string", "format": "email" },
+          "role": { "type": "string", "enum": ["admin", "seller", "cashier", "technician", "delivery"] }
+        }
+      },
+      "Product": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "name": { "type": "string" },
+          "description": { "type": "string" },
+          "price": { "type": "number", "format": "decimal" },
+          "stockQuantity": { "type": "integer" },
+          "status": { "type": "string", "enum": ["available", "out_of_stock", "on_order"] },
+          "barcode": { "type": "string" },
+          "categoryId": { "type": "string", "format": "uuid" },
+          "supplierId": { "type": "integer" },
+          "photo": { "type": "string", "format": "uri" }
+        }
+      },
+      "Category": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "name": { "type": "string" },
+          "type": { "type": "string", "enum": ["solar", "electronics", "accessory", "other"] }
+        }
+      },
+      "Supplier": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "integer", "format": "int64" },
+          "name": { "type": "string" },
+          "contactName": { "type": "string" },
+          "email": { "type": "string", "format": "email" },
+          "phone": { "type": "string" },
+          "address": { "type": "string" },
+          "city": { "type": "string" },
+          "country": { "type": "string" },
+          "productTypes": { "type": "string" },
+          "isActive": { "type": "boolean" }
+        }
+      },
+      "Customer": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "name": { "type": "string" },
+          "email": { "type": "string", "format": "email" },
+          "phone": { "type": "string" },
+          "address": { "type": "string" },
+          "city": { "type": "string" },
+          "country": { "type": "string" },
+          "points": { "type": "integer" },
+          "loyaltyLevel": { "type": "string", "enum": ["bronze", "silver", "gold", "platinum"] },
+          "isActive": { "type": "boolean" }
+        }
+      },
+      "Order": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "orderNumber": { "type": "string" },
+          "customerId": { "type": "string", "format": "uuid" },
+          "subtotal": { "type": "number", "format": "decimal" },
+          "totalAmount": { "type": "number", "format": "decimal" },
+          "paidAmount": { "type": "number", "format": "decimal" },
+          "status": { "type": "string", "enum": ["pending", "paid", "partially_paid", "cancelled", "shipped", "delivered"] },
+          "paymentMethod": { "type": "string" },
+          "deliveryAddress": { "type": "string" }
+        }
+      },
+      "Repair": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "customerId": { "type": "string", "format": "uuid" },
+          "productId": { "type": "string", "format": "uuid" },
+          "description": { "type": "string" },
+          "status": { "type": "string", "enum": ["pending", "in_progress", "completed", "cancelled"] },
+          "estimatedCost": { "type": "number", "format": "decimal" },
+          "actualCost": { "type": "number", "format": "decimal" },
+          "assignedTo": { "type": "string", "format": "uuid" }
+        }
+      },
+      "Installation": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "customerId": { "type": "string", "format": "uuid" },
+          "technicianId": { "type": "string", "format": "uuid" },
+          "orderId": { "type": "string", "format": "uuid" },
+          "location": { "type": "string" },
+          "kitType": { "type": "string" },
+          "status": { "type": "string", "enum": ["survey", "planned", "in_progress", "testing", "completed", "cancelled"] },
+          "scheduledDate": { "type": "string", "format": "date-time" },
+          "notes": { "type": "string" }
+        }
+      },
+      "CashTransaction": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "type": { "type": "string", "enum": ["income", "expense"] },
+          "amount": { "type": "number", "format": "decimal" },
+          "description": { "type": "string" },
+          "category": { "type": "string" },
+          "customerId": { "type": "string", "format": "uuid" },
+          "customerName": { "type": "string" },
+          "date": { "type": "string", "format": "date-time" }
+        }
+      },
+      "LoginRequest": {
+        "type": "object",
+        "required": ["username", "password"],
+        "properties": {
+          "username": { "type": "string" },
+          "password": { "type": "string", "format": "password" }
+        }
+      },
+      "RegisterRequest": {
+        "type": "object",
+        "required": ["username", "password"],
+        "properties": {
+          "username": { "type": "string" },
+          "password": { "type": "string", "format": "password" },
+          "fullName": { "type": "string" },
+          "email": { "type": "string", "format": "email" },
+          "role": { "type": "string", "enum": ["admin", "seller", "cashier", "technician", "delivery"] }
+        }
+      }
+    }
+  },
+  "paths": {
+    "/api/auth/login": {
+      "post": {
+        "tags": ["Authentication"],
+        "summary": "Connexion utilisateur",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/LoginRequest" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Connexion réussie",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "token": { "type": "string" },
+                    "user": { "$ref": "#/components/schemas/User" }
+                  }
+                }
+              }
+            }
+          },
+          "401": { "description": "Identifiants invalides" }
+        }
+      }
+    },
+    "/api/auth/register": {
+      "post": {
+        "tags": ["Authentication"],
+        "summary": "Créer un utilisateur (admin seulement)",
+        "security": [{ "bearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/RegisterRequest" }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Utilisateur créé",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/User" }
+              }
+            }
+          },
+          "400": { "description": "Données invalides" },
+          "401": { "description": "Non autorisé" }
+        }
+      }
+    },
+    "/api/users": {
+      "get": {
+        "tags": ["Users"],
+        "summary": "Lister tous les utilisateurs",
+        "security": [{ "bearerAuth": [] }],
+        "responses": {
+          "200": {
+            "description": "Liste des utilisateurs",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/User" }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": ["Users"],
+        "summary": "Créer un utilisateur",
+        "security": [{ "bearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/User" }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Utilisateur créé",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/User" }
+              }
+            }
+          },
+          "400": { "description": "Données invalides" }
+        }
+      }
+    },
+    "/api/users/{id}": {
+      "put": {
+        "tags": ["Users"],
+        "summary": "Mettre à jour un utilisateur",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/User" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Utilisateur mis à jour",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/User" }
+              }
+            }
+          },
+          "404": { "description": "Utilisateur non trouvé" }
+        }
+      },
+      "delete": {
+        "tags": ["Users"],
+        "summary": "Supprimer un utilisateur",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }
+        ],
+        "responses": {
+          "200": { "description": "Utilisateur supprimé" },
+          "404": { "description": "Utilisateur non trouvé" }
+        }
+      }
+    },
+    "/api/products": {
+      "get": {
+        "tags": ["Products"],
+        "summary": "Lister tous les produits",
+        "responses": {
+          "200": {
+            "description": "Liste des produits",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/Product" }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": ["Products"],
+        "summary": "Créer un produit",
+        "security": [{ "bearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/Product" }
+            }
+          }
+        },
+        "responses": {
+          "201": { "description": "Produit créé", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Product" } } } },
+          "400": { "description": "Données invalides" }
+        }
+      }
+    },
+    "/api/products/{id}": {
+      "get": {
+        "tags": ["Products"],
+        "summary": "Récupérer un produit",
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }
+        ],
+        "responses": {
+          "200": { "description": "Produit trouvé", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Product" } } } },
+          "404": { "description": "Produit non trouvé" }
+        }
+      },
+      "put": {
+        "tags": ["Products"],
+        "summary": "Mettre à jour un produit",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }
+        ],
+        "responses": {
+          "200": { "description": "Produit mis à jour" },
+          "404": { "description": "Produit non trouvé" }
+        }
+      },
+      "delete": {
+        "tags": ["Products"],
+        "summary": "Supprimer un produit",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }
+        ],
+        "responses": {
+          "204": { "description": "Produit supprimé" },
+          "404": { "description": "Produit non trouvé" }
+        }
+      }
+    },
+    "/api/categories": {
+      "get": {
+        "tags": ["Categories"],
+        "summary": "Lister les catégories",
+        "responses": {
+          "200": {
+            "description": "Liste des catégories",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/Category" }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": ["Categories"],
+        "summary": "Créer une catégorie",
+        "security": [{ "bearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/Category" }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Catégorie créée",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Category" }
+              }
+            }
+          },
+          "400": { "description": "Données invalides" }
+        }
+      }
+    },
+    "/api/categories/{id}": {
+      "get": {
+        "tags": ["Categories"],
+        "summary": "Récupérer une catégorie",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "Catégorie trouvée",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Category" }
+              }
+            }
+          },
+          "404": { "description": "Catégorie non trouvée" }
+        }
+      },
+      "put": {
+        "tags": ["Categories"],
+        "summary": "Mettre à jour une catégorie",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/Category" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Catégorie mise à jour",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Category" }
+              }
+            }
+          },
+          "404": { "description": "Catégorie non trouvée" }
+        }
+      },
+      "delete": {
+        "tags": ["Categories"],
+        "summary": "Supprimer une catégorie",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }
+        ],
+        "responses": {
+          "204": { "description": "Catégorie supprimée" },
+          "404": { "description": "Catégorie non trouvée" }
+        }
+      }
+    },
+    "/api/suppliers": {
+      "get": {
+        "tags": ["Suppliers"],
+        "summary": "Lister les fournisseurs",
+        "security": [{ "bearerAuth": [] }],
+        "responses": {
+          "200": {
+            "description": "Liste des fournisseurs",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/Supplier" }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": ["Suppliers"],
+        "summary": "Créer un fournisseur",
+        "security": [{ "bearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/Supplier" }
+            }
+          }
+        },
+        "responses": {
+          "201": { "description": "Fournisseur créé" },
+          "400": { "description": "Données invalides" }
+        }
+      }
+    },
+    "/api/suppliers/{id}": {
+      "get": {
+        "tags": ["Suppliers"],
+        "summary": "Récupérer un fournisseur",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } }
+        ],
+        "responses": {
+          "200": { "description": "Fournisseur trouvé" },
+          "404": { "description": "Fournisseur non trouvé" }
+        }
+      },
+      "put": {
+        "tags": ["Suppliers"],
+        "summary": "Mettre à jour un fournisseur",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } }
+        ],
+        "responses": {
+          "200": { "description": "Fournisseur mis à jour" },
+          "404": { "description": "Fournisseur non trouvé" }
+        }
+      },
+      "delete": {
+        "tags": ["Suppliers"],
+        "summary": "Supprimer un fournisseur",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } }
+        ],
+        "responses": {
+          "204": { "description": "Fournisseur supprimé" },
+          "404": { "description": "Fournisseur non trouvé" }
+        }
+      }
+    },
+    "/api/customers": {
+      "get": {
+        "tags": ["Customers"],
+        "summary": "Lister les clients",
+        "responses": {
+          "200": {
+            "description": "Liste des clients",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/Customer" }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/orders": {
+      "get": {
+        "tags": ["Orders"],
+        "summary": "Lister les commandes",
+        "security": [{ "bearerAuth": [] }],
+        "responses": {
+          "200": {
+            "description": "Liste des commandes",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/Order" }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": ["Orders"],
+        "summary": "Créer une commande",
+        "security": [{ "bearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "type": "object" }
+            }
+          }
+        },
+        "responses": {
+          "201": { "description": "Commande créée" },
+          "400": { "description": "Données invalides" }
+        }
+      }
+    },
+    "/api/orders/{id}": {
+      "get": {
+        "tags": ["Orders"],
+        "summary": "Récupérer une commande",
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }
+        ],
+        "responses": {
+          "200": { "description": "Commande trouvée" },
+          "404": { "description": "Commande non trouvée" }
+        }
+      },
+      "put": {
+        "tags": ["Orders"],
+        "summary": "Mettre à jour une commande",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "type": "object" }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Commande mise à jour" }
+        }
+      },
+      "delete": {
+        "tags": ["Orders"],
+        "summary": "Annuler une commande et restaurer le stock",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }
+        ],
+        "responses": {
+          "200": { "description": "Commande annulée, stock restauré" },
+          "404": { "description": "Commande non trouvée" }
+        }
+      }
+    },
+    "/api/repairs": {
+      "get": {
+        "tags": ["Repairs"],
+        "summary": "Lister les réparations",
+        "security": [{ "bearerAuth": [] }],
+        "responses": {
+          "200": {
+            "description": "Liste des réparations",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/Repair" }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": ["Repairs"],
+        "summary": "Créer une réparation",
+        "security": [{ "bearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/Repair" }
+            }
+          }
+        },
+        "responses": {
+          "201": { "description": "Réparation créée" }
+        }
+      }
+    },
+    "/api/installations": {
+      "get": {
+        "tags": ["Installations"],
+        "summary": "Lister les installations",
+        "security": [{ "bearerAuth": [] }],
+        "responses": {
+          "200": {
+            "description": "Liste des installations",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/Installation" }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": ["Installations"],
+        "summary": "Créer une installation",
+        "security": [{ "bearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/Installation" }
+            }
+          }
+        },
+        "responses": {
+          "201": { "description": "Installation créée" }
+        }
+      }
+    },
+    "/api/finance/transactions": {
+      "get": {
+        "tags": ["Finance"],
+        "summary": "Lister les transactions financières",
+        "security": [{ "bearerAuth": [] }],
+        "responses": {
+          "200": {
+            "description": "Liste des transactions",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/CashTransaction" }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": ["Finance"],
+        "summary": "Créer une transaction",
+        "security": [{ "bearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/CashTransaction" }
+            }
+          }
+        },
+        "responses": {
+          "201": { "description": "Transaction créée" },
+          "400": { "description": "Données invalides" }
+        }
+      }
+    },
+    "/api/finance/daily-report": {
+      "get": {
+        "tags": ["Finance"],
+        "summary": "Rapport journalier",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          { "name": "startDate", "in": "query", "schema": { "type": "string", "format": "date" } },
+          { "name": "endDate", "in": "query", "schema": { "type": "string", "format": "date" } }
+        ],
+        "responses": {
+          "200": { "description": "Rapport journalier" }
+        }
+      }
+    },
+    "/api/stats/dashboard": {
+      "get": {
+        "tags": ["Stats"],
+        "summary": "Statistiques du dashboard",
+        "responses": {
+          "200": {
+            "description": "Statistiques",
+            "content": {
+              "application/json": {
+                "schema": { "type": "object" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/stats/dashboard/recent-orders": {
+      "get": {
+        "tags": ["Stats"],
+        "summary": "Commandes récentes",
+        "responses": {
+          "200": { "description": "Commandes récentes" }
+        }
+      }
+    },
+    "/api/stats/dashboard/urgent-repairs": {
+      "get": {
+        "tags": ["Stats"],
+        "summary": "Réparations urgentes",
+        "responses": {
+          "200": { "description": "Réparations urgentes" }
+        }
+      }
+    },
+    "/api/notifications": {
+      "get": {
+        "tags": ["Notifications"],
+        "summary": "Lister les notifications",
+        "security": [{ "bearerAuth": [] }],
+        "responses": {
+          "200": {
+            "description": "Liste des notifications",
+            "content": {
+              "application/json": {
+                "schema": { "type": "array" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/config/payment-methods": {
+      "get": {
+        "tags": ["Config"],
+        "summary": "Méthodes de paiement",
+        "responses": {
+          "200": { "description": "Liste des méthodes de paiement" }
+        }
+      }
+    },
+    "/api/config/status-labels": {
+      "get": {
+        "tags": ["Config"],
+        "summary": "Labels de statuts",
+        "responses": {
+          "200": { "description": "Labels de statuts" }
+        }
+      }
+    },
+    "/api/config/loyalty-levels": {
+      "get": {
+        "tags": ["Config"],
+        "summary": "Niveaux de fidélité",
+        "responses": {
+          "200": { "description": "Niveaux de fidélité" }
+        }
+      }
+    },
+    "/api/config/expense-categories": {
+      "get": {
+        "tags": ["Config"],
+        "summary": "Catégories de dépenses",
+        "responses": {
+          "200": { "description": "Catégories de dépenses" }
+        }
+      }
+    },
+    "/api/seed": {
+      "get": {
+        "tags": ["Seed"],
+        "summary": "Seed données de démo",
+        "responses": {
+          "200": { "description": "Données de démo insérées" }
+        }
+      }
+    },
+    "/api/seed-all": {
+      "get": {
+        "tags": ["Seed"],
+        "summary": "Seed complet de la base de données",
+        "responses": {
+          "200": { "description": "Base de données peuplée" }
+        }
+      }
+    },
+    "/api/reports/dashboard": {
+      "get": {
+        "tags": ["Reports"],
+        "summary": "Rapports du dashboard",
+        "security": [{ "bearerAuth": [] }],
+        "responses": {
+          "200": { "description": "Données de rapports" }
+        }
+      }
+    },
+    "/api/products/{id}/movements": {
+      "get": {
+        "tags": ["Products"],
+        "summary": "Historique des mouvements de stock",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }
+        ],
+        "responses": {
+          "200": { "description": "Mouvements de stock" }
+        }
+      }
+    },
+    "/api/products/{id}/restock": {
+      "post": {
+        "tags": ["Products"],
+        "summary": "Réapprovisionner un produit",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "quantity": { "type": "integer", "minimum": 1 }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Produit réapprovisionné" }
+        }
+      }
+    },
+    "/api/products/{id}/adjust-stock": {
+      "post": {
+        "tags": ["Products"],
+        "summary": "Ajuster manuellement le stock d'un produit",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "quantity": { "type": "integer", "minimum": 0 },
+                  "reason": { "type": "string" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Stock ajusté" }
+        }
+      }
+    },
+    "/api/customers": {
+      "get": {
+        "tags": ["Customers"],
+        "summary": "Lister tous les clients",
+        "security": [{ "bearerAuth": [] }],
+        "responses": {
+          "200": { "description": "Liste des clients" }
+        }
+      },
+      "post": {
+        "tags": ["Customers"],
+        "summary": "Créer un client",
+        "security": [{ "bearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "type": "object" }
+            }
+          }
+        },
+        "responses": {
+          "201": { "description": "Client créé" }
+        }
+      }
+    },
+    "/api/customers/{id}": {
+      "get": {
+        "tags": ["Customers"],
+        "summary": "Récupérer un client",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }
+        ],
+        "responses": {
+          "200": { "description": "Client trouvé" },
+          "404": { "description": "Client non trouvé" }
+        }
+      },
+      "put": {
+        "tags": ["Customers"],
+        "summary": "Mettre à jour un client",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "type": "object" }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Client mis à jour" }
+        }
+      },
+      "delete": {
+        "tags": ["Customers"],
+        "summary": "Supprimer un client",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }
+        ],
+        "responses": {
+          "200": { "description": "Client supprimé" }
+        }
+      }
+    },
+    "/api/customers/search": {
+      "get": {
+        "tags": ["Customers"],
+        "summary": "Rechercher des clients",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          { "name": "q", "in": "query", "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": { "description": "Résultats de recherche" }
+        }
+      }
+    },
+    "/api/customers/quick-register": {
+      "post": {
+        "tags": ["Customers"],
+        "summary": "Inscription rapide client",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "type": "object" }
+            }
+          }
+        },
+        "responses": {
+          "201": { "description": "Client créé" }
+        }
+      }
+    },
+    "/api/customers/register": {
+      "post": {
+        "tags": ["Customers"],
+        "summary": "Inscription complète client",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "type": "object" }
+            }
+          }
+        },
+        "responses": {
+          "201": { "description": "Client créé" }
+        }
+      }
+    },
+    "/api/customers/login": {
+      "post": {
+        "tags": ["Customers"],
+        "summary": "Connexion client",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "type": "object" }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Connexion réussie" }
+        }
+      }
+    },
+    "/api/customers/{id}/orders": {
+      "get": {
+        "tags": ["Customers"],
+        "summary": "Commandes d'un client",
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }
+        ],
+        "responses": {
+          "200": { "description": "Commandes du client" }
+        }
+      }
+    },
+    "/api/customers/{id}/loyalty": {
+      "get": {
+        "tags": ["Customers"],
+        "summary": "Points de fidélité d'un client",
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }
+        ],
+        "responses": {
+          "200": { "description": "Infos de fidélité" }
+        }
+      },
+      "post": {
+        "tags": ["Customers"],
+        "summary": "Ajouter des points de fidélité",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "points": { "type": "integer" },
+                  "reason": { "type": "string" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Points mis à jour" }
+        }
+      }
+    },
+    "/api/customers/profile/me": {
+      "get": {
+        "tags": ["Customers"],
+        "summary": "Profil du client connecté",
+        "security": [{ "bearerAuth": [] }],
+        "responses": {
+          "200": { "description": "Profil client" }
+        }
+      },
+      "put": {
+        "tags": ["Customers"],
+        "summary": "Mettre à jour son profil",
+        "security": [{ "bearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "type": "object" }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Profil mis à jour" }
+        }
+      }
+    },
+    "/api/orders/customer/{customerId}": {
+      "get": {
+        "tags": ["Orders"],
+        "summary": "Commandes d'un client",
+        "parameters": [
+          { "name": "customerId", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }
+        ],
+        "responses": {
+          "200": { "description": "Commandes du client" }
+        }
+      }
+    },
+    "/api/repairs/{id}": {
+      "get": {
+        "tags": ["Repairs"],
+        "summary": "Détail d'une réparation",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }
+        ],
+        "responses": {
+          "200": { "description": "Réparation" }
+        }
+      },
+      "put": {
+        "tags": ["Repairs"],
+        "summary": "Mettre à jour une réparation",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }
+        ],
+        "responses": {
+          "200": { "description": "Réparation mise à jour" }
+        }
+      },
+      "delete": {
+        "tags": ["Repairs"],
+        "summary": "Supprimer une réparation",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }
+        ],
+        "responses": {
+          "204": { "description": "Réparation supprimée" }
+        }
+      }
+    },
+    "/api/installations/{id}": {
+      "get": {
+        "tags": ["Installations"],
+        "summary": "Détail d'une installation",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }
+        ],
+        "responses": {
+          "200": { "description": "Installation" }
+        }
+      },
+      "put": {
+        "tags": ["Installations"],
+        "summary": "Mettre à jour une installation",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }
+        ],
+        "responses": {
+          "200": { "description": "Installation mise à jour" }
+        }
+      },
+      "delete": {
+        "tags": ["Installations"],
+        "summary": "Supprimer une installation",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }
+        ],
+        "responses": {
+          "204": { "description": "Installation supprimée" }
+        }
+      }
+    },
+    "/api/finance/transactions/stats": {
+      "get": {
+        "tags": ["Finance"],
+        "summary": "Statistiques financières",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          { "name": "startDate", "in": "query", "schema": { "type": "string", "format": "date" } },
+          { "name": "endDate", "in": "query", "schema": { "type": "string", "format": "date" } }
+        ],
+        "responses": {
+          "200": { "description": "Statistiques" }
+        }
+      }
+    },
+    "/api/finance/transactions/{id}": {
+      "get": {
+        "tags": ["Finance"],
+        "summary": "Détail d'une transaction",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }
+        ],
+        "responses": {
+          "200": { "description": "Transaction" }
+        }
+      },
+      "put": {
+        "tags": ["Finance"],
+        "summary": "Mettre à jour une transaction",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }
+        ],
+        "responses": {
+          "200": { "description": "Transaction mise à jour" }
+        }
+      },
+      "delete": {
+        "tags": ["Finance"],
+        "summary": "Supprimer une transaction",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }
+        ],
+        "responses": {
+          "204": { "description": "Transaction supprimée" }
+        }
+      }
+    },
+    "/api/finance/transactions/{id}/comment": {
+      "put": {
+        "tags": ["Finance"],
+        "summary": "Commenter une transaction",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "comment": { "type": "string" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Commentaire ajouté" }
+        }
+      }
+    },
+    "/api/finance/flux-journalier": {
+      "get": {
+        "tags": ["Finance"],
+        "summary": "Flux journalier",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          { "name": "startDate", "in": "query", "schema": { "type": "string", "format": "date" } },
+          { "name": "endDate", "in": "query", "schema": { "type": "string", "format": "date" } }
+        ],
+        "responses": {
+          "200": { "description": "Flux journalier" }
+        }
+      }
+    },
+    "/api/payments/initiate": {
+      "post": {
+        "tags": ["Payments"],
+        "summary": "Initier un paiement mobile",
+        "security": [{ "bearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "type": "object" }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Paiement initié" }
+        }
+      }
+    },
+    "/api/payments/webhook": {
+      "post": {
+        "tags": ["Payments"],
+        "summary": "Webhook PawaPay",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "type": "object" }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Webhook reçu" }
+        }
+      }
+    },
+    "/api/payments/status/{depositId}": {
+      "get": {
+        "tags": ["Payments"],
+        "summary": "Statut d'un paiement",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          { "name": "depositId", "in": "path", "required": true, "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": { "description": "Statut du paiement" }
+        }
+      }
+    },
+    "/api/payments/verify-mobile-money": {
+      "post": {
+        "tags": ["Payments"],
+        "summary": "Vérifier un paiement mobile",
+        "security": [{ "bearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "type": "object" }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Résultat de vérification" }
+        }
+      }
+    },
+    "/api/payments": {
+      "post": {
+        "tags": ["Payments"],
+        "summary": "Créer un paiement",
+        "security": [{ "bearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "type": "object" }
+            }
+          }
+        },
+        "responses": {
+          "201": { "description": "Paiement créé" }
+        }
+      }
+    },
+    "/api/payments/{id}": {
+      "get": {
+        "tags": ["Payments"],
+        "summary": "Détail d'un paiement",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }
+        ],
+        "responses": {
+          "200": { "description": "Paiement" }
+        }
+      }
+    },
+    "/api/payments/order/{orderId}": {
+      "get": {
+        "tags": ["Payments"],
+        "summary": "Paiements d'une commande",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          { "name": "orderId", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }
+        ],
+        "responses": {
+          "200": { "description": "Liste des paiements" }
+        }
+      }
+    },
+    "/api/payments/{id}/refund": {
+      "post": {
+        "tags": ["Payments"],
+        "summary": "Rembourser un paiement",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "type": "object" }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Remboursement effectué" }
+        }
+      }
+    },
+    "/api/messages/conversations": {
+      "get": {
+        "tags": ["Messages"],
+        "summary": "Liste des conversations (admin)",
+        "security": [{ "bearerAuth": [] }],
+        "responses": {
+          "200": { "description": "Conversations" }
+        }
+      },
+      "post": {
+        "tags": ["Messages"],
+        "summary": "Créer une conversation",
+        "security": [{ "bearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "type": "object" }
+            }
+          }
+        },
+        "responses": {
+          "201": { "description": "Conversation créée" }
+        }
+      }
+    },
+    "/api/messages/conversations/{customerId}": {
+      "get": {
+        "tags": ["Messages"],
+        "summary": "Conversations d'un client",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          { "name": "customerId", "in": "path", "required": true, "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": { "description": "Conversations" }
+        }
+      }
+    },
+    "/api/messages/conversations/{conversationId}/details": {
+      "get": {
+        "tags": ["Messages"],
+        "summary": "Détail d'une conversation",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          { "name": "conversationId", "in": "path", "required": true, "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": { "description": "Conversation" }
+        }
+      }
+    },
+    "/api/messages/conversations/{conversationId}/messages": {
+      "get": {
+        "tags": ["Messages"],
+        "summary": "Messages d'une conversation",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          { "name": "conversationId", "in": "path", "required": true, "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": { "description": "Messages" }
+        }
+      }
+    },
+    "/api/messages/send": {
+      "post": {
+        "tags": ["Messages"],
+        "summary": "Envoyer un message",
+        "security": [{ "bearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "type": "object" }
+            }
+          }
+        },
+        "responses": {
+          "201": { "description": "Message envoyé" }
+        }
+      }
+    },
+    "/api/messages/{messageId}/read": {
+      "patch": {
+        "tags": ["Messages"],
+        "summary": "Marquer un message comme lu",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          { "name": "messageId", "in": "path", "required": true, "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": { "description": "Message lu" }
+        }
+      }
+    },
+    "/api/messages/conversations/{conversationId}/close": {
+      "patch": {
+        "tags": ["Messages"],
+        "summary": "Fermer une conversation",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          { "name": "conversationId", "in": "path", "required": true, "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": { "description": "Conversation fermée" }
+        }
+      }
+    },
+    "/api/messages/{messageId}": {
+      "delete": {
+        "tags": ["Messages"],
+        "summary": "Supprimer un message",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          { "name": "messageId", "in": "path", "required": true, "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": { "description": "Message supprimé" }
+        }
+      }
+    },
+    "/api/reviews/product/{productId}": {
+      "get": {
+        "tags": ["Reviews"],
+        "summary": "Avis d'un produit",
+        "parameters": [
+          { "name": "productId", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } },
+          { "name": "page", "in": "query", "schema": { "type": "integer" } },
+          { "name": "limit", "in": "query", "schema": { "type": "integer" } }
+        ],
+        "responses": {
+          "200": { "description": "Avis du produit" }
+        }
+      }
+    },
+    "/api/reviews": {
+      "post": {
+        "tags": ["Reviews"],
+        "summary": "Créer un avis",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "type": "object" }
+            }
+          }
+        },
+        "responses": {
+          "201": { "description": "Avis créé" }
+        }
+      }
+    },
+    "/api/reviews/{id}": {
+      "get": {
+        "tags": ["Reviews"],
+        "summary": "Détail d'un avis",
+        "responses": {
+          "200": { "description": "Avis" }
+        }
+      },
+      "put": {
+        "tags": ["Reviews"],
+        "summary": "Modifier un avis",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "type": "object" }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Avis modifié" }
+        }
+      },
+      "delete": {
+        "tags": ["Reviews"],
+        "summary": "Supprimer un avis",
+        "responses": {
+          "200": { "description": "Avis supprimé" }
+        }
+      }
+    },
+    "/api/reviews/admin/{id}": {
+      "delete": {
+        "tags": ["Reviews"],
+        "summary": "Supprimer un avis (admin)",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }
+        ],
+        "responses": {
+          "200": { "description": "Avis supprimé par admin" }
+        }
+      }
+    },
+    "/api/reviews/{id}/helpful": {
+      "post": {
+        "tags": ["Reviews"],
+        "summary": "Marquer un avis comme utile",
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }
+        ],
+        "responses": {
+          "200": { "description": "Avis marqué comme utile" }
+        }
+      }
+    },
+    "/api/reviews/customer/{customerId}": {
+      "get": {
+        "tags": ["Reviews"],
+        "summary": "Avis d'un client",
+        "parameters": [
+          { "name": "customerId", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }
+        ],
+        "responses": {
+          "200": { "description": "Avis du client" }
+        }
+      }
+    },
+    "/api/contact/health": {
+      "get": {
+        "tags": ["Contact"],
+        "summary": "Santé du service contact",
+        "responses": {
+          "200": { "description": "Statut du service" }
+        }
+      }
+    },
+    "/api/notifications/{id}/read": {
+      "patch": {
+        "tags": ["Notifications"],
+        "summary": "Marquer une notification comme lue",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }
+        ],
+        "responses": {
+          "200": { "description": "Notification marquée comme lue" }
+        }
+      }
+    },
+    "/api/notifications/read-all": {
+      "post": {
+        "tags": ["Notifications"],
+        "summary": "Marquer toutes les notifications comme lues",
+        "security": [{ "bearerAuth": [] }],
+        "responses": {
+          "200": { "description": "Toutes les notifications marquées comme lues" }
+        }
+      }
+    }
+  }
+}

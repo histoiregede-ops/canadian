@@ -1,0 +1,241 @@
+<div class="page-container">
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">Finance & Performance</h1>
+      <p class="page-subtitle">Analyse des revenus et répartition des flux monétaires</p>
+    </div>
+    <div class="header-actions">
+      <button class="btn btn-secondary" (click)="openReportModal()">📋 Rapport Journalier</button>
+      <button class="btn btn-primary" (click)="openAddModal()">➕ Nouvelle Opération</button>
+    </div>
+  </div>
+
+  <div class="stats-grid">
+    <div class="stat-card">
+      <div class="stat-icon success">💰</div>
+      <div class="stat-content">
+        <p class="stat-label">Total Encaissements</p>
+        <h3 class="stat-value">{{ stats?.revenue | number }} FCFA</h3>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon danger">💸</div>
+      <div class="stat-content">
+        <p class="stat-label">Total Décaissements</p>
+        <h3 class="stat-value">{{ stats?.expense | number }} FCFA</h3>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon primary">📊</div>
+      <div class="stat-content">
+        <p class="stat-label">Solde Net</p>
+        <h3 class="stat-value" [class.text-success]="(stats?.balance || 0) >= 0" [class.text-danger]="(stats?.balance || 0) < 0">{{ stats?.balance | number }} FCFA</h3>
+      </div>
+    </div>
+  </div>
+
+  <div class="charts-grid">
+    <div class="card">
+      <div class="card-header">
+        <h3 class="card-title">Évolution Mensuelle</h3>
+      </div>
+      <div class="chart-container">
+        <canvas #revenueChart></canvas>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-header">
+        <h3 class="card-title">Répartition par Flux</h3>
+      </div>
+      <div class="chart-container">
+        <canvas #categoryChart></canvas>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <h3 class="card-title">Journal des Transactions</h3>
+    </div>
+    <div class="table-container">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Détails</th>
+            <th>Type</th>
+            <th>Montant</th>
+            <th>Statut</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let t of transactions">
+            <td>{{ t.date | date:'dd/MM/yyyy' }}</td>
+            <td>{{ t.description }}</td>
+            <td><span class="badge" [class.badge-success]="t.type === 'income'" [class.badge-danger]="t.type === 'expense'">{{ t.type === 'income' ? 'Encaissement' : 'Décaissement' }}</span></td>
+            <td class="amount" [class.text-success]="t.type === 'income'" [class.text-danger]="t.type === 'expense'">{{ (t.type === 'income' ? '+' : '-') }} {{ t.amount | number }} FCFA</td>
+            <td><span class="badge" [class]="getStatusClass(t.status || 'paid')">{{ getStatusLabel(t.status || 'paid') }}</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="modal-overlay" *ngIf="showModal">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h2 class="modal-title">➕ Nouvelle Opération</h2>
+        <button class="modal-close" (click)="closeModal()">×</button>
+      </div>
+
+      <div class="modal-body">
+        <form (submit)="saveTransaction()" class="form">
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Type</label>
+              <select [(ngModel)]="newTransaction.type" name="type" required class="form-select">
+                <option value="income">Encaissement</option>
+                <option value="expense">Décaissement</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Montant (FCFA)</label>
+              <input type="number" [(ngModel)]="newTransaction.amount" name="amount" required min="0" step="0.01" class="form-input" />
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Description</label>
+            <input type="text" [(ngModel)]="newTransaction.description" name="description" required placeholder="Ex: Vente panneaux solaires" class="form-input" />
+          </div>
+          <div class="form-group">
+            <label class="form-label">Client</label>
+            <select [(ngModel)]="newTransaction.customerId" name="customerId" (change)="updateCustomerName($event)" class="form-select">
+              <option value="">Sélectionner un client</option>
+              <option *ngFor="let c of customers" [value]="c.id">{{ c.fullName || c.name }}</option>
+            </select>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Catégorie</label>
+              <select [(ngModel)]="newTransaction.category" name="category" class="form-select">
+                <option value="">Sélectionner</option>
+                <option value="Ventes">Ventes</option>
+                <option value="Achats">Achats</option>
+                <option value="Salaires">Salaires</option>
+                <option value="Transport">Transport</option>
+                <option value="Maintenance">Maintenance</option>
+                <option value="Autre">Autre</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Date</label>
+              <input type="date" [(ngModel)]="newTransaction.date" name="date" required class="form-input" />
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" (click)="closeModal()">Annuler</button>
+            <button type="submit" class="btn btn-primary">Enregistrer</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-overlay" *ngIf="showReportModal">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h2 class="modal-title">📋 Rapport Flux Journalier</h2>
+        <button class="modal-close" (click)="closeReportModal()">×</button>
+      </div>
+
+      <div class="modal-body">
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Du</label>
+            <input type="date" [(ngModel)]="selectedStart" name="startDate" class="form-input" />
+          </div>
+          <div class="form-group">
+            <label class="form-label">Au</label>
+            <input type="date" [(ngModel)]="selectedEnd" name="endDate" class="form-input" />
+          </div>
+          <div class="form-group" style="display:flex;align-items:flex-end">
+            <button class="btn btn-primary" (click)="loadFlux()">🔍</button>
+          </div>
+        </div>
+
+        <div class="flux-totals" *ngIf="fluxData">
+          <div class="flux-total-card income">
+            <span class="total-label">Entrées</span>
+            <span class="total-value">+{{ fluxData.income | number }} FCFA</span>
+          </div>
+          <div class="flux-total-card expense">
+            <span class="total-label">Sorties</span>
+            <span class="total-value">-{{ fluxData.expense | number }} FCFA</span>
+          </div>
+          <div class="flux-total-card balance" [class.positive]="fluxData.balance >= 0" [class.negative]="fluxData.balance < 0">
+            <span class="total-label">Solde</span>
+            <span class="total-value">{{ fluxData.balance | number }} FCFA</span>
+          </div>
+        </div>
+
+        <div class="table-container" *ngIf="fluxData">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Heure</th>
+                <th>Client</th>
+                <th>Description</th>
+                <th>Type</th>
+                <th>Montant</th>
+                <th>Commentaire</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let t of fluxData.transactions">
+                <td>{{ t.time || '-' }}</td>
+                <td>{{ t.customerName || '-' }}</td>
+                <td>{{ t.description }}</td>
+                <td><span class="badge" [class.badge-success]="t.type === 'income'" [class.badge-danger]="t.type === 'expense'">{{ t.type === 'income' ? 'Entrée' : 'Sortie' }}</span></td>
+                <td class="amount" [class.text-success]="t.type === 'income'" [class.text-danger]="t.type === 'expense'">{{ (t.type === 'income' ? '+' : '-') }} {{ t.amount | number }} FCFA</td>
+                <td>
+                  <span class="comment-text">{{ t.comment || '' }}</span>
+                  <button class="btn btn-ghost btn-sm" (click)="openCommentPopup(t)" title="Ajouter/modifier commentaire">💬</button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+          <div class="empty-state" *ngIf="fluxData.transactions.length === 0" style="padding:24px">
+            <p>Aucune transaction trouvée pour cette période.</p>
+          </div>
+        </div>
+
+        <div class="modal-footer" *ngIf="fluxData && fluxData.transactions.length > 0">
+          <button class="btn btn-secondary" (click)="exportPDF()">📄 Exporter PDF</button>
+          <button class="btn btn-secondary" (click)="exportXLSX()">📊 Exporter XLSX</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-overlay" *ngIf="showCommentPopup">
+    <div class="modal-card" style="max-width:420px">
+      <div class="modal-header">
+        <h2 class="modal-title">💬 Commentaire</h2>
+        <button class="modal-close" (click)="closeCommentPopup()">×</button>
+      </div>
+
+      <div class="modal-body">
+        <p class="comment-transaction-ref">
+          <strong>Transaction:</strong> {{ editingTransaction?.description }}
+          <span *ngIf="editingTransaction?.customerName"> — {{ editingTransaction?.customerName }}</span>
+        </p>
+        <textarea [(ngModel)]="editingComment" class="form-textarea" placeholder="Ajouter un commentaire..." rows="4"></textarea>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn btn-secondary" (click)="closeCommentPopup()">Annuler</button>
+        <button class="btn btn-primary" (click)="saveComment()">Enregistrer</button>
+      </div>
+    </div>
+  </div>
+</div>

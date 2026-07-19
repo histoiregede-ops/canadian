@@ -1,0 +1,168 @@
+<div class="page-container">
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">Fournisseurs</h1>
+      <p class="page-subtitle">Gérez vos fournisseurs et partenaires</p>
+    </div>
+    <button class="btn btn-primary" (click)="openAddModal()">➕ Nouveau fournisseur</button>
+  </div>
+
+  <div class="filters-card">
+    <div class="search-box">
+      <span class="search-icon">🔍</span>
+      <input 
+        type="text" 
+        class="form-input" 
+        placeholder="Rechercher par nom, contact ou email..." 
+        [(ngModel)]="searchQuery" 
+        (input)="onSearch()" 
+      />
+    </div>
+  </div>
+
+  <div class="stats-grid" *ngIf="!loading && filteredSuppliers.length > 0">
+    <div class="stat-card">
+      <div class="stat-icon info">📦</div>
+      <div class="stat-content">
+        <p class="stat-label">Total Fournisseurs</p>
+        <h3 class="stat-value">{{ suppliers.length }}</h3>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon success">✅</div>
+      <div class="stat-content">
+        <p class="stat-label">Actifs</p>
+        <h3 class="stat-value">{{ suppliers.filter(s => s.isActive !== false).length }}</h3>
+      </div>
+    </div>
+  </div>
+
+  <div class="loading-state" *ngIf="loading">
+    <div class="spinner"></div>
+    <p>Chargement...</p>
+  </div>
+
+  <div class="empty-state" *ngIf="!loading && filteredSuppliers.length === 0">
+    <span class="empty-icon">📭</span>
+    <h3 class="empty-title">Aucun fournisseur trouvé</h3>
+    <p class="empty-text">Modifiez votre recherche ou ajoutez un nouveau fournisseur.</p>
+    <button class="btn btn-primary" (click)="openAddModal()">Créer un fournisseur</button>
+  </div>
+
+  <div class="suppliers-grid" *ngIf="!loading && filteredSuppliers.length > 0">
+    <div class="card supplier-card" *ngFor="let s of filteredSuppliers">
+      <div class="card-header">
+        <div class="supplier-header-info">
+          <h3 class="supplier-name">{{ s.name }}</h3>
+          <span class="badge" [class.badge-success]="s.isActive !== false" [class.badge-danger]="s.isActive === false">
+            {{ s.isActive !== false ? 'Actif' : 'Inactif' }}
+          </span>
+        </div>
+      </div>
+
+      <div class="card-body">
+        <div class="supplier-meta">
+          <div class="meta-row" *ngIf="s.contactName">
+            <span class="meta-label">Contact</span>
+            <span class="meta-value">{{ s.contactName }}</span>
+          </div>
+          <div class="meta-row" *ngIf="s.email">
+            <span class="meta-label">Email</span>
+            <span class="meta-value">{{ s.email }}</span>
+          </div>
+          <div class="meta-row" *ngIf="s.phone">
+            <span class="meta-label">Tél</span>
+            <span class="meta-value">{{ s.phone }}</span>
+          </div>
+          <div class="meta-row" *ngIf="s.city">
+            <span class="meta-label">Localisation</span>
+            <span class="meta-value">{{ s.city }}{{ s.country ? ', ' + s.country : '' }}</span>
+          </div>
+          <div class="meta-row" *ngIf="s.productTypes">
+            <span class="meta-label">Produits</span>
+            <span class="meta-value">{{ s.productTypes }}</span>
+          </div>
+          <div class="meta-row">
+            <span class="meta-label">Produits liés</span>
+            <span class="badge badge-neutral">{{ supplierProductCounts[s.id!] || 0 }}</span>
+          </div>
+        </div>
+
+        <div class="card-actions">
+          <button class="btn btn-outline btn-sm" (click)="openEditModal(s)">✏️ Modifier</button>
+          <button class="btn btn-danger btn-sm" (click)="deleteSupplier(s.id!)">🗑️ Supprimer</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-overlay" *ngIf="showModal" (click)="showModal = false">
+    <div class="modal-card" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2 class="modal-title">{{ isEditing ? '✏️ Modifier' : '➕ Nouveau' }} fournisseur</h2>
+        <button class="modal-close" (click)="showModal = false">&times;</button>
+      </div>
+
+      <div class="modal-body">
+        <form (ngSubmit)="saveSupplier()" class="form">
+          <div class="form-group">
+            <label class="form-label">Nom *</label>
+            <input class="form-input" [(ngModel)]="currentSupplier.name" required name="name" />
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Personne contact</label>
+              <input class="form-input" [(ngModel)]="currentSupplier.contactName" name="contactName" />
+            </div>
+            <div class="form-group">
+              <label class="form-label">Téléphone</label>
+              <input class="form-input" [(ngModel)]="currentSupplier.phone" name="phone" />
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Email</label>
+              <input class="form-input" type="email" [(ngModel)]="currentSupplier.email" name="email" />
+            </div>
+            <div class="form-group">
+              <label class="form-label">Ville</label>
+              <input class="form-input" [(ngModel)]="currentSupplier.city" name="city" />
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Adresse</label>
+            <textarea class="form-textarea" [(ngModel)]="currentSupplier.address" name="address"></textarea>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Pays</label>
+              <input class="form-input" [(ngModel)]="currentSupplier.country" name="country" />
+            </div>
+            <div class="form-group">
+              <label class="form-label">Types de produits</label>
+              <input class="form-input" [(ngModel)]="currentSupplier.productTypes" name="productTypes" placeholder="ex: solaire, électronique" />
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" style="display:flex;align-items:center;gap:8px;cursor:pointer">
+              <input type="checkbox" [(ngModel)]="currentSupplier.isActive" name="isActive" />
+              <span>Fournisseur actif</span>
+            </label>
+          </div>
+
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" (click)="showModal = false">Annuler</button>
+            <button type="submit" class="btn btn-primary" [disabled]="!currentSupplier.name">
+              {{ isEditing ? 'Enregistrer' : 'Créer' }}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>

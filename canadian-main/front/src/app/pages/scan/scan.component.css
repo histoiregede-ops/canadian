@@ -1,0 +1,16 @@
+/* Page-specific styles (design-system.css is loaded globally) */
+
+.scan-page {
+  min-height: calc(100vh - var(--navbar-height));
+}
+
+.badge-info {
+  background: var(--info-bg);
+  color: #1e40af;
+}
+
+@media (max-width: 768px) {
+  .scan-page {
+    padding: 16px !important;
+  }
+}

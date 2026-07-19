@@ -1,0 +1,6 @@
+{
+  "root": "dist/front/browser",
+  "routes": {
+    "/**": "index.html"
+  }
+}

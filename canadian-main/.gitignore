@@ -1,0 +1,26 @@
+# Root git ignore for project deployment
+node_modules/
+back/node_modules/
+front/node_modules/
+front/dist/
+dist/
+.env
+.env.*
+*.log
+*.sqlite
+*.sqlite3
+*.local
+.vscode/
+.DS_Store
+Thumbs.db
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.log
+
+# Ignore nested git backup metadata
+front/.git_nested_backup/
+
+
+.vercel
