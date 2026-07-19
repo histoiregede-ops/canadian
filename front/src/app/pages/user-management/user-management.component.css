@@ -364,53 +364,73 @@
     padding: var(--space-2);
   }
 
-  .title-section h1 {
-    font-size: var(--font-lg);
+  .page-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--space-2);
   }
 
+  .header-actions {
+    width: 100%;
+    flex-direction: column;
+    gap: var(--space-2);
+  }
+
+  .header-actions .btn,
   .page-header .btn {
     width: 100%;
     justify-content: center;
   }
 
   .stat-card {
-    padding: var(--space-3);
-    gap: var(--space-3);
+    padding: var(--space-2);
+    gap: var(--space-2);
   }
 
   .stat-icon {
-    width: 36px;
-    height: 36px;
-    font-size: 1.1rem;
+    width: 32px;
+    height: 32px;
+    font-size: 1rem;
   }
 
   .stat-num {
-    font-size: var(--font-lg);
+    font-size: var(--font-base);
   }
 
   .user-table th,
   .user-table td {
     padding: var(--space-2);
     font-size: var(--font-xs);
+    white-space: nowrap;
   }
 
   .user-cell {
-    gap: var(--space-2);
+    gap: var(--space-1);
   }
 
   .user-avatar {
-    width: 32px;
-    height: 32px;
-    font-size: 0.75rem;
+    width: 28px;
+    height: 28px;
+    font-size: 0.65rem;
+  }
+
+  .user-name {
+    font-size: var(--font-xs);
+  }
+
+  .actions-cell {
+    gap: var(--space-1);
   }
 
   .actions-cell .btn {
+    width: 28px;
+    height: 28px;
     font-size: 0;
-    min-width: 32px;
+    min-width: 28px;
     justify-content: center;
   }
 
   .modal-card {
-    margin: var(--space-2);
+    margin: var(--space-1);
   }
 }

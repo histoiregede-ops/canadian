@@ -218,47 +218,66 @@
 
 .cart-item {
   display: flex;
-  flex-direction: column;
-  gap: 8px;
+  align-items: center;
+  gap: 12px;
   padding-bottom: 12px;
   border-bottom: 1px dashed var(--border);
 }
 
 .item-info {
-  display: flex;
-  flex-direction: column;
+  flex: 1;
+  min-width: 0;
 }
 
 .item-info .name {
+  display: block;
   font-weight: 600;
   font-size: 0.875rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .item-info .price {
   font-size: 0.75rem;
   color: var(--text-muted);
+  display: block;
+  margin-top: 2px;
 }
 
 .item-qty {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 8px;
+  flex-shrink: 0;
 }
 
 .item-qty button {
-  width: 24px;
-  height: 24px;
-  border-radius: 4px;
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
   background: #f1f5f9;
   display: flex;
   align-items: center;
   justify-content: center;
+  font-weight: 700;
+  font-size: 1rem;
+}
+
+.item-qty span {
+  min-width: 20px;
+  text-align: center;
+  font-weight: 600;
+  font-size: 0.9rem;
 }
 
 .subtotal {
-  align-self: flex-end;
   font-weight: 700;
   font-size: 0.875rem;
+  white-space: nowrap;
+  flex-shrink: 0;
+  min-width: 70px;
+  text-align: right;
 }
 
 .cart-summary {
@@ -816,21 +835,34 @@
   }
 
   .cart-item {
-    gap: 6px;
-  }
-
-  .cart-item .item-qty {
     gap: 8px;
   }
 
-  .cart-item .item-qty button {
-    width: 32px;
-    height: 32px;
-    font-size: 1rem;
+  .item-info .name {
+    font-size: 0.8rem;
   }
 
-  .cart-item .subtotal {
+  .item-info .price {
+    font-size: 0.7rem;
+  }
+
+  .item-qty {
+    gap: 6px;
+  }
+
+  .item-qty button {
+    width: 30px;
+    height: 30px;
+    font-size: 0.9rem;
+  }
+
+  .item-qty span {
+    font-size: 0.85rem;
+  }
+
+  .subtotal {
     font-size: 0.8rem;
+    min-width: 60px;
   }
 
   .discount-input {
@@ -881,43 +913,32 @@
   }
 
   .cart-item {
-    flex-direction: row;
-    flex-wrap: wrap;
-    gap: 4px 8px;
+    gap: 6px;
     padding-bottom: 8px;
   }
 
-  .cart-item .item-info {
-    flex: 1;
-    min-width: 0;
-  }
-
-  .cart-item .item-info .name {
+  .item-info .name {
     font-size: 0.8rem;
   }
 
-  .cart-item .item-info .price {
+  .item-info .price {
     font-size: 0.7rem;
   }
 
-  .cart-item .item-qty {
-    order: 1;
-  }
-
-  .cart-item .item-qty button {
-    width: 28px;
-    height: 28px;
+  .item-qty button {
+    width: 26px;
+    height: 26px;
     font-size: 0.85rem;
   }
 
-  .cart-item .item-qty span {
-    font-size: 0.85rem;
-  }
-
-  .cart-item .subtotal {
-    order: 2;
-    align-self: center;
+  .item-qty span {
     font-size: 0.8rem;
+    min-width: 16px;
+  }
+
+  .subtotal {
+    font-size: 0.8rem;
+    min-width: 50px;
   }
 
   .cart-header {

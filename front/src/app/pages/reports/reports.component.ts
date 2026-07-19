@@ -12,6 +12,7 @@ Chart.register(...registerables);
   selector: 'app-reports',
   standalone: true,
   imports: [CommonModule],
+  styleUrls: ['./reports.component.css'],
   template: `
     <div class="container">
       <h1>Rapports commerciaux</h1>
