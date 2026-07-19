@@ -1,0 +1,53 @@
+services:
+  - type: web
+    name: canadian-backend
+    runtime: docker
+    repo: https://github.com/histoiregede-ops/canadian.git
+    branch: main
+    dockerfilePath: ./Dockerfile
+    plan: free
+    region: frankfurt
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DB_DIALECT
+        value: mysql
+      - key: DB_HOST
+        value: db
+      - key: DB_USER
+        value: root
+      - key: DB_PORT
+        value: 3306
+      - key: JWT_SECRET
+        generateValue: true
+      - key: FRONTEND_URL
+        value: https://canadian-frontend.onrender.com
+
+  - type: static
+    name: canadian-frontend
+    runtime: static
+    repo: https://github.com/histoiregede-ops/canadian.git
+    branch: main
+    buildCommand: npm install && npm run build -- --configuration production
+    publishPath: dist/front/browser
+    plan: free
+    region: frankfurt
+    headers:
+      - path: /*
+        name: Cache-Control
+        value: no-cache, no-store, must-revalidate, max-age=0
+      - path: /*.html
+        name: Cache-Control
+        value: no-cache, no-store, must-revalidate, max-age=0
+      - path: /*.js
+        name: Cache-Control
+        value: no-cache, no-store, must-revalidate, max-age=0
+      - path: /*.css
+        name: Cache-Control
+        value: no-cache, no-store, must-revalidate, max-age=0
+      - path: /*
+        name: X-Frame-Options
+        value: DENY
+      - path: /*
+        name: X-Content-Type-Options
+        value: nosniff
