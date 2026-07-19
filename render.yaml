@@ -28,7 +28,7 @@ services:
     runtime: static
     repo: https://github.com/histoiregede-ops/canadian.git
     branch: main
-    buildCommand: npm install && npm run build -- --configuration production
+    buildCommand: npm install && npm run build
     publishPath: dist/front/browser
     plan: free
     region: frankfurt

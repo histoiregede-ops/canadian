@@ -4,6 +4,7 @@
   "description": "Professional ERP for Solar Tech Solutions",
   "scripts": {
     "start": "npm run dev",
+    "build": "cd front && npm run build -- --configuration production",
     "start:back": "cd back && node index.js",
     "start:front": "cd front && npm start",
     "db:migrate": "cd back && npx sequelize-cli db:migrate",
