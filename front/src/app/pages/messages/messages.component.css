@@ -666,3 +666,76 @@
     font-size: 0.82rem;
   }
 }
+
+@media (max-width: 360px) {
+  .messaging-header {
+    padding: 12px 12px 8px;
+  }
+
+  .messaging-header h1 {
+    font-size: 1.1rem;
+  }
+
+  .subtitle {
+    font-size: 0.8rem;
+  }
+
+  .messaging-body {
+    padding: 0 8px 8px;
+  }
+
+  .conversations-panel {
+    width: 100%;
+  }
+
+  .conv-item {
+    padding: 10px 12px;
+  }
+
+  .conv-body h3 {
+    font-size: 0.85rem;
+  }
+
+  .chat-header {
+    padding: 8px 10px;
+  }
+
+  .chat-meta h2 {
+    font-size: 0.85rem;
+  }
+
+  .customer-info {
+    font-size: 0.7rem;
+  }
+
+  .messages-list {
+    padding: 12px;
+  }
+
+  .message {
+    max-width: 98%;
+  }
+
+  .msg-bubble {
+    padding: 8px 10px;
+  }
+
+  .msg-text {
+    font-size: 0.85rem;
+  }
+
+  .input-area {
+    padding: 6px 8px;
+  }
+
+  .input-area textarea {
+    padding: 8px 10px;
+    font-size: 0.8rem;
+  }
+
+  .btn-send {
+    width: 38px;
+    height: 38px;
+    min-width: 38px;
+  }
+}

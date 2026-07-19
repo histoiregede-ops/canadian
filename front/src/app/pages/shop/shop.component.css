@@ -738,3 +738,101 @@
     grid-template-columns: 1fr;
   }
 }
+
+@media (max-width: 360px) {
+  .hero-banner {
+    padding: var(--space-8) var(--space-3);
+    min-height: 200px;
+  }
+
+  .hero-content h1 {
+    font-size: 1.3rem;
+  }
+
+  .hero-content p {
+    font-size: 0.8rem;
+  }
+
+  .hero-badge {
+    font-size: 0.65rem;
+    padding: var(--space-1) var(--space-2);
+  }
+
+  .services-header h2 {
+    font-size: 1.25rem;
+  }
+
+  .service-card {
+    padding: var(--space-5);
+  }
+
+  .service-icon {
+    font-size: 2rem;
+  }
+
+  .shop-nav {
+    padding: var(--space-2) var(--space-3);
+    gap: var(--space-3);
+  }
+
+  .products-grid {
+    gap: var(--space-2);
+    padding: var(--space-4) var(--space-2);
+  }
+
+  .product-image-container {
+    min-height: 160px;
+    max-height: 200px;
+  }
+
+  .product-image .placeholder {
+    font-size: 2rem;
+  }
+
+  .product-details {
+    padding: var(--space-3);
+  }
+
+  .product-name {
+    font-size: 0.95rem;
+  }
+
+  .product-desc {
+    font-size: 0.8rem;
+  }
+
+  .product-footer {
+    flex-direction: column;
+    gap: var(--space-2);
+  }
+
+  .btn-cart,
+  .btn-whatsapp {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .featured-section {
+    padding: var(--space-6) var(--space-2);
+  }
+
+  .featured-header h2 {
+    font-size: 1.5rem;
+  }
+
+  .featured-image {
+    height: 180px;
+  }
+
+  .filters-section {
+    padding: var(--space-6) var(--space-2);
+  }
+
+  .filter-header h2 {
+    font-size: 1.25rem;
+  }
+
+  .search-input {
+    font-size: 0.85rem;
+  }
+}

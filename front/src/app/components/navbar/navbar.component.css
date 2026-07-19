@@ -237,3 +237,28 @@
   .nav-actions { gap: 4px; }
   .action-btn { width: 36px; height: 36px; }
 }
+
+@media (max-width: 360px) {
+  .navbar {
+    padding: 0 8px;
+    gap: 6px;
+  }
+
+  .nav-actions { gap: 2px; }
+  .action-btn { width: 32px; height: 32px; font-size: 1rem; }
+  .action-btn .badge { width: 14px; height: 14px; font-size: 0.55rem; top: 2px; right: 2px; }
+
+  .hamburger { padding: 6px; }
+  .hamburger-line { width: 18px; }
+
+  .btn-primary { padding: 6px; font-size: 0.8rem; }
+
+  .notification-dropdown {
+    width: 100vw;
+    right: -8px;
+    border-radius: 0;
+    max-height: 100vh;
+    position: fixed;
+    top: var(--navbar-height);
+  }
+}

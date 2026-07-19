@@ -691,3 +691,67 @@
     font-size: 0.65rem;
   }
 }
+
+@media (max-width: 360px) {
+  .checkout-page {
+    padding: 8px;
+    gap: 8px;
+  }
+
+  .page-header h1 {
+    font-size: 1.1rem;
+  }
+
+  .checkout-form,
+  .order-summary {
+    padding: 12px;
+    border-radius: 10px;
+  }
+
+  .form-section h2 {
+    font-size: 0.85rem;
+  }
+
+  .form-group input {
+    padding: 8px 10px;
+    font-size: 0.85rem;
+  }
+
+  .payment-option {
+    padding: 10px;
+  }
+
+  .payment-option input[type="radio"] {
+    width: 16px;
+    height: 16px;
+    margin-right: 10px;
+  }
+
+  .option-name {
+    font-size: 0.8rem;
+  }
+
+  .phone-input {
+    padding: 8px 10px;
+    font-size: 0.85rem;
+  }
+
+  .btn-submit {
+    padding: 10px 12px;
+    font-size: 0.85rem;
+  }
+
+  .item {
+    grid-template-columns: 1fr;
+    gap: 2px;
+  }
+
+  .item-qty {
+    grid-column: auto;
+    text-align: left;
+  }
+
+  .pricing-row.total {
+    font-size: 0.9rem;
+  }
+}

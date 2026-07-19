@@ -358,3 +358,59 @@
 
   .search-box { min-width: auto; }
 }
+
+@media (max-width: 360px) {
+  .user-management-page {
+    padding: var(--space-2);
+  }
+
+  .title-section h1 {
+    font-size: var(--font-lg);
+  }
+
+  .page-header .btn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .stat-card {
+    padding: var(--space-3);
+    gap: var(--space-3);
+  }
+
+  .stat-icon {
+    width: 36px;
+    height: 36px;
+    font-size: 1.1rem;
+  }
+
+  .stat-num {
+    font-size: var(--font-lg);
+  }
+
+  .user-table th,
+  .user-table td {
+    padding: var(--space-2);
+    font-size: var(--font-xs);
+  }
+
+  .user-cell {
+    gap: var(--space-2);
+  }
+
+  .user-avatar {
+    width: 32px;
+    height: 32px;
+    font-size: 0.75rem;
+  }
+
+  .actions-cell .btn {
+    font-size: 0;
+    min-width: 32px;
+    justify-content: center;
+  }
+
+  .modal-card {
+    margin: var(--space-2);
+  }
+}

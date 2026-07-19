@@ -543,3 +543,55 @@
     font-size: 0.9rem;
   }
 }
+
+@media (max-width: 360px) {
+  .messaging-header {
+    padding: 12px 16px;
+  }
+
+  .messaging-header h1 {
+    font-size: 1rem;
+  }
+
+  .conversations-panel {
+    width: 100%;
+  }
+
+  .conv-item {
+    padding: 10px 12px;
+    gap: 10px;
+  }
+
+  .conv-avatar {
+    width: 44px;
+    height: 44px;
+    font-size: 1rem;
+  }
+
+  .conv-body h3 {
+    font-size: 0.85rem;
+  }
+
+  .msg-bubble {
+    max-width: 95%;
+    padding: 8px 12px;
+  }
+
+  .msg-text {
+    font-size: 0.85rem;
+  }
+
+  .input-area {
+    padding: 8px 10px;
+  }
+
+  .msg-input {
+    font-size: 0.85rem;
+    padding: 8px 12px;
+  }
+
+  .btn-send {
+    width: 36px;
+    height: 36px;
+  }
+}

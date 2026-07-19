@@ -75,3 +75,65 @@
     grid-template-columns: 1fr;
   }
 }
+
+@media (max-width: 480px) {
+  .page-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--space-3);
+  }
+
+  .page-header .btn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .tech-card .card-body {
+    gap: var(--space-3);
+  }
+
+  .tech-header {
+    gap: var(--space-3);
+  }
+
+  .tech-avatar {
+    width: 40px;
+    height: 40px;
+    font-size: 0.85rem;
+  }
+
+  .tech-name {
+    font-size: var(--font-base);
+  }
+
+  .card-actions {
+    flex-direction: column;
+  }
+
+  .card-actions .btn {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+@media (max-width: 360px) {
+  .tech-avatar {
+    width: 36px;
+    height: 36px;
+    font-size: 0.75rem;
+  }
+
+  .tech-name {
+    font-size: var(--font-sm);
+  }
+
+  .tech-email {
+    font-size: var(--font-xs);
+  }
+
+  .card-actions .btn {
+    font-size: 0;
+    min-width: 36px;
+    justify-content: center;
+  }
+}

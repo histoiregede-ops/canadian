@@ -814,4 +814,192 @@
   .summary-row.total {
     font-size: 1.1rem;
   }
+
+  .cart-item {
+    gap: 6px;
+  }
+
+  .cart-item .item-qty {
+    gap: 8px;
+  }
+
+  .cart-item .item-qty button {
+    width: 32px;
+    height: 32px;
+    font-size: 1rem;
+  }
+
+  .cart-item .subtotal {
+    font-size: 0.8rem;
+  }
+
+  .discount-input {
+    width: 70px;
+  }
+}
+
+@media (max-width: 360px) {
+  .sales-pos {
+    padding-bottom: 60px;
+  }
+
+  .pos-grid {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+
+  .pos-item {
+    flex-direction: row;
+    padding: 8px;
+    gap: 10px;
+    text-align: left;
+  }
+
+  .pos-item .product-image {
+    width: 60px;
+    height: 60px;
+    margin-bottom: 0;
+    flex-shrink: 0;
+  }
+
+  .pos-item .placeholder-icon {
+    font-size: 1.5rem;
+  }
+
+  .pos-item .item-name {
+    font-size: 0.75rem;
+    margin-bottom: 2px;
+  }
+
+  .pos-item .item-price {
+    font-size: 0.7rem;
+  }
+
+  .pos-item .item-stock {
+    font-size: 0.6rem;
+    margin-top: 2px;
+  }
+
+  .cart-item {
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 4px 8px;
+    padding-bottom: 8px;
+  }
+
+  .cart-item .item-info {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .cart-item .item-info .name {
+    font-size: 0.8rem;
+  }
+
+  .cart-item .item-info .price {
+    font-size: 0.7rem;
+  }
+
+  .cart-item .item-qty {
+    order: 1;
+  }
+
+  .cart-item .item-qty button {
+    width: 28px;
+    height: 28px;
+    font-size: 0.85rem;
+  }
+
+  .cart-item .item-qty span {
+    font-size: 0.85rem;
+  }
+
+  .cart-item .subtotal {
+    order: 2;
+    align-self: center;
+    font-size: 0.8rem;
+  }
+
+  .cart-header {
+    margin-bottom: 8px;
+  }
+
+  .header-main h2 {
+    font-size: 0.9rem;
+  }
+
+  .cart-summary {
+    gap: 8px;
+  }
+
+  .summary-row {
+    font-size: 0.75rem;
+  }
+
+  .summary-row.total {
+    font-size: 0.95rem;
+  }
+
+  .discount-input {
+    width: 60px;
+    font-size: 0.8rem;
+  }
+
+  .payment-methods h3 {
+    font-size: 0.8rem;
+    margin-bottom: 8px;
+  }
+
+  .methods-grid {
+    gap: 6px;
+  }
+
+  .method {
+    padding: 8px;
+    font-size: 0.7rem;
+  }
+
+  .mobile-number-display {
+    padding: 8px;
+  }
+
+  .mob-number {
+    font-size: 1.2rem;
+  }
+
+  .sales-phone-input {
+    padding: 8px;
+    font-size: 0.85rem;
+  }
+
+  .btn-large {
+    padding: 12px;
+    font-size: 0.85rem;
+  }
+
+  .customer-search-box {
+    padding: 8px 10px;
+  }
+
+  .customer-search-box input {
+    font-size: 0.75rem;
+  }
+
+  .selected-customer {
+    padding: 8px 10px;
+  }
+
+  .customer-details {
+    font-size: 0.75rem;
+  }
+
+  .customer-details strong {
+    font-size: 0.8rem;
+  }
+
+  .customer-avatar {
+    width: 28px;
+    height: 28px;
+    font-size: 0.85rem;
+  }
 }

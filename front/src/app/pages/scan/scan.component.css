@@ -14,3 +14,22 @@
     padding: 16px !important;
   }
 }
+
+@media (max-width: 480px) {
+  .page-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--space-3);
+  }
+
+  .page-header .btn {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+@media (max-width: 360px) {
+  .scan-page {
+    padding: 12px !important;
+  }
+}

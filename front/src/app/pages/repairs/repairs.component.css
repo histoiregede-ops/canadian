@@ -192,3 +192,91 @@
     grid-template-columns: 1fr;
   }
 }
+
+@media (max-width: 480px) {
+  .page-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--space-3);
+  }
+
+  .page-header .btn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .repair-card .card-body {
+    gap: var(--space-3);
+  }
+
+  .repair-header {
+    gap: var(--space-2);
+  }
+
+  .device-icon {
+    width: 36px;
+    height: 36px;
+    font-size: 1rem;
+  }
+
+  .device-name {
+    font-size: var(--font-base);
+  }
+
+  .issue-details {
+    padding: var(--space-2) var(--space-3);
+  }
+
+  .customer-info {
+    flex-direction: column;
+    gap: var(--space-1);
+    padding: var(--space-2) var(--space-4);
+  }
+
+  .repair-footer {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--space-3);
+  }
+
+  .card-actions {
+    width: 100%;
+    flex-direction: column;
+  }
+
+  .card-actions .btn {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+@media (max-width: 360px) {
+  .repair-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .device-name {
+    font-size: var(--font-sm);
+  }
+
+  .serial {
+    font-size: 0.65rem;
+  }
+
+  .issue-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--space-1);
+  }
+
+  .cost .price {
+    font-size: var(--font-base);
+  }
+
+  .card-actions .btn {
+    font-size: 0;
+    min-width: 36px;
+    justify-content: center;
+  }
+}

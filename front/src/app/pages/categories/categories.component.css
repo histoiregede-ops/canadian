@@ -115,3 +115,33 @@
     justify-content: center;
   }
 }
+
+@media (max-width: 360px) {
+  .category-card .card-body {
+    gap: var(--space-3);
+  }
+
+  .category-header {
+    gap: var(--space-3);
+  }
+
+  .category-icon {
+    width: 40px;
+    height: 40px;
+    font-size: 1.25rem;
+  }
+
+  .category-name {
+    font-size: var(--font-base);
+  }
+
+  .category-type {
+    font-size: var(--font-xs);
+  }
+
+  .card-actions .btn {
+    font-size: 0;
+    min-width: 36px;
+    justify-content: center;
+  }
+}

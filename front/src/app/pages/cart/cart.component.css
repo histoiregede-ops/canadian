@@ -535,3 +535,100 @@
     gap: 8px;
   }
 }
+
+@media (max-width: 360px) {
+  .cart-page {
+    padding: 8px;
+    gap: 12px;
+  }
+
+  .page-header h1 {
+    font-size: 1.2rem;
+  }
+
+  .empty-cart {
+    padding: 24px 12px;
+  }
+
+  .empty-icon {
+    font-size: 2rem;
+  }
+
+  .empty-cart h2 {
+    font-size: 1rem;
+  }
+
+  .cart-items-container,
+  .order-summary {
+    padding: 12px;
+  }
+
+  .cart-item {
+    grid-template-columns: 50px 1fr;
+    padding: 8px;
+    gap: 8px;
+  }
+
+  .item-image {
+    width: 50px;
+    height: 50px;
+    border-radius: 8px;
+  }
+
+  .placeholder {
+    font-size: 1.2rem;
+  }
+
+  .item-details h3 {
+    font-size: 0.8rem;
+  }
+
+  .item-details .category {
+    font-size: 0.65rem;
+  }
+
+  .item-details .price {
+    font-size: 0.75rem;
+  }
+
+  .item-quantity {
+    padding: 2px 4px;
+    gap: 4px;
+  }
+
+  .qty-btn {
+    width: 22px;
+    height: 22px;
+    font-size: 0.75rem;
+  }
+
+  .item-quantity input {
+    width: 28px;
+    font-size: 0.8rem;
+  }
+
+  .item-total {
+    font-size: 0.85rem;
+  }
+
+  .remove-btn {
+    width: 24px;
+    height: 24px;
+    font-size: 0.8rem;
+  }
+
+  .summary-row {
+    font-size: 0.8rem;
+    padding: 6px 0;
+  }
+
+  .summary-row.total {
+    font-size: 0.9rem;
+    padding: 10px 8px;
+  }
+
+  .security-badge {
+    padding: 8px 10px;
+    font-size: 0.75rem;
+  }
+}

@@ -325,3 +325,64 @@
     width: auto;
   }
 }
+
+@media (max-width: 480px) {
+  .sidebar {
+    width: 280px !important;
+  }
+
+  .sidebar.open {
+    width: 280px !important;
+  }
+
+  .logo {
+    padding: 16px 20px;
+  }
+
+  .logo-text {
+    font-size: 1.1rem;
+  }
+
+  .nav-item {
+    padding: 10px 20px;
+  }
+
+  .nav-item .icon {
+    font-size: 1rem;
+  }
+
+  .user-info {
+    padding: 12px 20px;
+  }
+
+  .sidebar-footer {
+    padding: 8px 0;
+  }
+}
+
+@media (max-width: 360px) {
+  .sidebar {
+    width: 100vw !important;
+  }
+
+  .logo {
+    padding: 14px 16px;
+  }
+
+  .logo-text {
+    font-size: 1rem;
+  }
+
+  .nav-item {
+    padding: 10px 16px;
+    gap: 10px;
+  }
+
+  .user-info {
+    padding: 10px 16px;
+  }
+
+  .logout-item {
+    padding: 10px 16px;
+  }
+}
