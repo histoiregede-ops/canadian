@@ -1,8 +1,10 @@
 FROM node:20-alpine AS build
+ARG BUILD_TIMESTAMP
 WORKDIR /app
 COPY front/package*.json ./
 RUN npm ci
 COPY front/ .
+RUN echo "Build timestamp: ${BUILD_TIMESTAMP}"
 RUN npm run build -- --configuration production
 
 FROM nginx:alpine
