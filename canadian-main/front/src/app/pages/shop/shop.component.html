@@ -1,0 +1,223 @@
+<div class="shop-page">
+  <!-- Top Navbar -->
+  <div class="shop-nav">
+    <a routerLink="/shop" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }" class="nav-link">🏠 Boutique</a>
+    <a routerLink="/cart" routerLinkActive="active" class="nav-link">🛒 Panier</a>
+    <a routerLink="/checkout" routerLinkActive="active" class="nav-link">💳 Paiement</a>
+    <a *ngIf="!isCustomerLoggedIn" routerLink="/login" class="nav-link login-link">🔒 Connexion</a>
+    <a *ngIf="isCustomerLoggedIn" class="nav-link login-link" (click)="logoutCustomer()" style="cursor:pointer">🚪 Déconnexion</a>
+  </div>
+
+  <!-- Hero Banner -->
+  <div class="hero-banner">
+    <div class="hero-overlay"></div>
+    <div class="hero-content">
+      <h1>Bienvenue chez <span class="hero-highlight">Electro Canadien</span></h1>
+      <p>Découvrez notre gamme complète de produits solaires, électroménagers et accessoires. Qualité premium au meilleur prix.</p>
+      <div class="hero-cta">
+        <span class="hero-badge">⭐ Meilleurs produits</span>
+        <span class="hero-badge">📦 Livraison rapide</span>
+        <span class="hero-badge">🔧 Service après-vente</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Services Section -->
+  <div class="services-section" *ngIf="!loading">
+    <div class="services-header">
+      <h2>🛠️ Nos Services</h2>
+      <p>Des solutions complètes pour votre quotidien</p>
+    </div>
+    <div class="services-grid">
+      <div class="service-card" *ngFor="let service of services">
+        <div class="service-icon">{{ service.icon }}</div>
+        <h3>{{ service.title }}</h3>
+        <p>{{ service.desc }}</p>
+        <a [routerLink]="service.link" class="service-link">{{ service.linkText }} →</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Featured Sections -->
+  <div class="sections-container" *ngIf="!loading">
+    <div class="feature-section" *ngFor="let section of sections; let i = index" [ngClass]="'section-' + (i + 1)">
+      <div class="section-image">
+        <img [src]="section.image" [alt]="section.title" />
+        <div class="section-overlay"></div>
+        <div class="section-content">
+          <h2>{{ section.title }}</h2>
+          <p>{{ section.desc }}</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Featured Products -->
+  <div class="featured-section" *ngIf="!loading && featuredProducts.length > 0">
+    <div class="featured-header">
+      <h2>⭐ Produits Vedettes</h2>
+      <p>Les articles les plus populaires du moment</p>
+    </div>
+    <div class="featured-grid">
+      <div class="product-card" *ngFor="let product of featuredProducts">
+        <div class="product-image-container">
+          <div class="product-image">
+            <span class="placeholder" *ngIf="!product.photo">📦</span>
+            <img [src]="getProductImage(product.photo)" *ngIf="product.photo" alt="{{ product.name }}" />
+          </div>
+          <span class="nouveaute-badge">Nouveauté</span>
+          <div class="stock-badge in-stock">{{ product.stockQuantity }} en stock</div>
+        </div>
+        <div class="product-details">
+          <div class="category-tag">{{ product.Category?.name || 'Général' }}</div>
+          <h3 class="product-name">{{ product.name }}</h3>
+          <p class="product-desc">{{ product.description | slice:0:60 }}{{ (product.description?.length || 0) > 60 ? '...' : '' }}</p>
+          <div class="product-footer">
+            <div class="price-info">
+              <span class="price">{{ product.price | number }} FCFA</span>
+            </div>
+            <div class="actions">
+              <button class="btn btn-cart" (click)="addToCart(product)" title="Ajouter au panier">🛒</button>
+              <a class="btn btn-whatsapp" [href]="getWhatsAppLink(product)" target="_blank" rel="noopener" title="WhatsApp">💬</a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Filters Section -->
+  <div class="filters-section">
+    <div class="filter-header">
+      <h2>📦 Tous les Produits</h2>
+      <p>Parcourez notre catalogue complet</p>
+    </div>
+    <div class="filter-card">
+      <div class="search-box">
+        <span class="search-icon">🔍</span>
+        <input 
+          type="text" 
+          placeholder="Rechercher un produit..." 
+          [(ngModel)]="searchQuery"
+          class="search-input"
+        />
+      </div>
+
+      <div class="category-chips">
+        <button class="chip" [class.active]="selectedCategoryId === ''" (click)="selectedCategoryId = ''">
+          📁 Toutes
+        </button>
+        <button class="chip" *ngFor="let cat of categories" [class.active]="selectedCategoryId === cat.id" (click)="selectedCategoryId = cat.id || ''">
+          {{ cat.name }}
+        </button>
+      </div>
+
+      <select [(ngModel)]="sortBy" (change)="onSortChange()" class="filter-select">
+        <option value="name">📝 Trier par nom</option>
+        <option value="price-low">💰 Prix: bas à haut</option>
+        <option value="price-high">💰 Prix: haut à bas</option>
+        <option value="rating">⭐ Trier par note</option>
+      </select>
+    </div>
+  </div>
+
+  <!-- Loading State -->
+  <div *ngIf="loading" class="loading-container">
+    <div class="spinner"></div>
+    <p>Chargement du catalogue...</p>
+  </div>
+
+  <!-- Empty State -->
+  <div *ngIf="!loading && filteredProducts.length === 0" class="empty-state">
+    <div class="empty-icon">📭</div>
+    <h2>Aucun produit trouvé</h2>
+    <p>Essayez de modifier vos filtres de recherche</p>
+  </div>
+
+  <!-- Products Grid -->
+  <div *ngIf="!loading && filteredProducts.length > 0" class="products-grid">
+    <div class="product-card" *ngFor="let product of filteredProducts">
+      <div class="product-image-container">
+        <div class="product-image">
+          <span class="placeholder" *ngIf="!product.photo">📦</span>
+          <img [src]="getProductImage(product.photo)" *ngIf="product.photo" alt="{{ product.name }}" />
+        </div>
+        <span class="nouveaute-badge" *ngIf="product.stockQuantity > 10">Nouveauté</span>
+        <div class="stock-badge" [ngClass]="product.stockQuantity > 10 ? 'in-stock' : 'low-stock'">
+          {{ product.stockQuantity > 0 ? `${product.stockQuantity} en stock` : 'Rupture' }}
+        </div>
+      </div>
+
+      <div class="product-details">
+        <div class="category-tag">{{ product.Category?.name || 'Général' }}</div>
+        <h3 class="product-name">{{ product.name }}</h3>
+        <p class="product-desc">{{ product.description | slice:0:80 }}{{ (product.description?.length || 0) > 80 ? '...' : '' }}</p>
+
+        <!-- Product Reviews Section -->
+        <div class="product-reviews" *ngIf="product.reviews">
+          <div class="rating-summary">
+            <div class="stars">
+              <span *ngFor="let filled of getStarArray(getAverageRatingNumber(product.reviews.stats.averageRating))" class="star">
+                {{ filled ? '⭐' : '☆' }}
+              </span>
+            </div>
+            <span class="rating-text">{{ formatRating(product.reviews.stats.averageRating) }} ({{ product.reviews.stats.totalReviews }} avis)</span>
+          </div>
+
+          <div class="reviews-preview" *ngIf="product.showReviews">
+            <div class="review-item" *ngFor="let review of product.reviews.reviews.slice(0, 2)">
+              <div class="review-header">
+                <span class="review-author">{{ review.customerName }}</span>
+                <div class="review-stars">
+                  <span *ngFor="let filled of getStarArray(review.rating)" class="star small">
+                    {{ filled ? '⭐' : '☆' }}
+                  </span>
+                </div>
+              </div>
+              <p class="review-title">{{ review.title }}</p>
+              <p class="review-comment">{{ review.comment | slice:0:100 }}{{ review.comment.length > 100 ? '...' : '' }}</p>
+              <div class="review-footer">
+                <span class="review-date">{{ review.createdAt | date:'dd/MM/yyyy' }}</span>
+                <span class="verified-badge" *ngIf="review.isVerified">✓ Achat vérifié</span>
+              </div>
+            </div>
+          </div>
+
+          <button class="reviews-toggle" (click)="toggleReviews(product)" *ngIf="product.reviews.stats.totalReviews > 0">
+            {{ product.showReviews ? 'Masquer les avis' : 'Voir les avis' }}
+          </button>
+        </div>
+
+        <div class="product-footer">
+          <div class="price-info">
+            <span class="price">{{ product.price | number }} FCFA</span>
+          </div>
+          <div class="actions">
+            <button
+              class="btn btn-cart"
+              (click)="addToCart(product)"
+              [disabled]="product.stockQuantity === 0"
+              title="Ajouter au panier"
+            >
+              🛒
+            </button>
+            <a
+              class="btn btn-whatsapp"
+              [href]="getWhatsAppLink(product)"
+              target="_blank"
+              rel="noopener"
+              title="Discuter sur WhatsApp"
+            >
+              💬 WhatsApp
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Results Counter -->
+  <div *ngIf="!loading && filteredProducts.length > 0" class="results-info">
+    {{ filteredProducts.length }} produit(s) trouvé(s)
+  </div>
+</div>

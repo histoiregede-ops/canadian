@@ -1,0 +1,140 @@
+/* Page-specific styles (design-system.css is loaded globally) */
+
+:host {
+  display: block;
+  width: 100%;
+  background-color: var(--bg-color);
+  min-height: 100vh;
+}
+
+.customers-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: var(--space-5);
+}
+
+.customer-card {
+  display: flex;
+  flex-direction: column;
+}
+
+.customer-card .card-body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  flex: 1;
+}
+
+.customer-header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+}
+
+.customer-avatar {
+  width: 48px;
+  height: 48px;
+  border-radius: var(--radius-lg);
+  background: var(--primary);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  font-size: 1rem;
+  flex-shrink: 0;
+}
+
+.customer-main {
+  flex: 1;
+  min-width: 0;
+}
+
+.customer-name {
+  font-size: var(--font-lg);
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.customer-city {
+  font-size: var(--font-sm);
+  color: var(--text-light);
+  display: block;
+  margin-top: 2px;
+}
+
+.customer-contact {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.contact-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--font-sm);
+  color: var(--text-secondary);
+}
+
+.contact-item.muted {
+  color: var(--text-light);
+  font-style: italic;
+}
+
+.contact-icon {
+  width: 28px;
+  height: 28px;
+  background: var(--border-light);
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.8rem;
+  flex-shrink: 0;
+}
+
+.loyalty-info {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+
+.loyalty-badge {
+  padding: 3px 10px;
+  border-radius: 9999px;
+  font-weight: 700;
+  font-size: var(--font-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.loyalty-badge.bronze { background: #cd7f32; color: white; }
+.loyalty-badge.silver { background: #c0c0c0; color: #1e293b; }
+.loyalty-badge.gold { background: #ffd700; color: #1e293b; }
+.loyalty-badge.platinum { background: #e5e4e2; color: #1e293b; border: 1px solid var(--border); }
+
+.loyalty-points {
+  font-weight: 600;
+  color: var(--primary);
+}
+
+.loyalty-spent, .loyalty-orders {
+  color: var(--text-light);
+}
+
+.card-actions {
+  display: flex;
+  gap: var(--space-2);
+}
+
+@media (max-width: 768px) {
+  .customers-grid {
+    grid-template-columns: 1fr;
+  }
+}

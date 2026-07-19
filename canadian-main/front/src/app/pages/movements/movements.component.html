@@ -1,0 +1,111 @@
+<div class="page-container">
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">📊 Mouvements de Stock</h1>
+      <p class="page-subtitle">Historique complet des entrées et sorties</p>
+    </div>
+  </div>
+
+  <div class="filters-card">
+    <div class="filter-group">
+      <div class="search-box">
+        <span class="search-icon">🔍</span>
+        <select class="form-select" [(ngModel)]="filters.productId" (change)="onFilterChange()">
+          <option value="">Tous les produits</option>
+          <option *ngFor="let p of products" [value]="p.id">{{ p.name }}</option>
+        </select>
+      </div>
+      <select class="form-select" [(ngModel)]="filters.reason" (change)="onFilterChange()">
+        <option value="">Toutes les raisons</option>
+        <option *ngFor="let r of reasons" [value]="r">{{ getReasonLabel(r) }}</option>
+      </select>
+      <input type="date" class="form-input" [(ngModel)]="filters.startDate" (change)="onFilterChange()" placeholder="Du" />
+      <input type="date" class="form-input" [(ngModel)]="filters.endDate" (change)="onFilterChange()" placeholder="Au" />
+      <button class="btn btn-secondary" (click)="resetFilters()">Réinitialiser</button>
+    </div>
+  </div>
+
+  <div class="stats-grid" *ngIf="!summaryLoading && summary">
+    <div class="stat-card">
+      <div class="stat-icon info">📊</div>
+      <div class="stat-content">
+        <p class="stat-label">Total Mouvements</p>
+        <h3 class="stat-value">{{ summary.total }}</h3>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon success">📈</div>
+      <div class="stat-content">
+        <p class="stat-label">Réapprovisionnements</p>
+        <h3 class="stat-value">{{ getReasonCount('restock') }}</h3>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon warning">🛒</div>
+      <div class="stat-content">
+        <p class="stat-label">Ventes</p>
+        <h3 class="stat-value">{{ getReasonCount('sale') }}</h3>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon danger">↩️</div>
+      <div class="stat-content">
+        <p class="stat-label">Retours</p>
+        <h3 class="stat-value">{{ getReasonCount('return') }}</h3>
+      </div>
+    </div>
+  </div>
+
+  <div class="loading-state" *ngIf="loading">
+    <div class="spinner"></div>
+    <p>Chargement des mouvements...</p>
+  </div>
+
+  <div class="empty-state" *ngIf="!loading && movements.length === 0">
+    <span class="empty-icon">📊</span>
+    <h3 class="empty-title">Aucun mouvement trouvé</h3>
+    <p class="empty-text">Modifiez vos filtres ou effectuez des opérations sur les produits.</p>
+  </div>
+
+  <div class="table-container" *ngIf="!loading && movements.length > 0">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Date</th>
+          <th>Produit</th>
+          <th>Type</th>
+          <th>Avant</th>
+          <th>Après</th>
+          <th>Variation</th>
+          <th>Référence</th>
+          <th>Par</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let m of movements">
+          <td>{{ m.createdAt | date:'dd/MM/yy HH:mm' }}</td>
+          <td>
+            <div class="product-cell">
+              <span class="product-name">{{ m.Product?.name || getProductName(m.productId) }}</span>
+              <span class="product-category" *ngIf="m.Product?.Category">{{ getCategoryName($any(m.Product).Category) }}</span>
+            </div>
+          </td>
+          <td><span class="reason-badge" [class]="getReasonBadgeClass(m.reason)">{{ getReasonLabel(m.reason) }}</span></td>
+          <td>{{ formatNumber(m.previousQuantity) }}</td>
+          <td>{{ formatNumber(m.newQuantity) }}</td>
+          <td [class.text-success]="m.changeAmount >= 0" [class.text-danger]="m.changeAmount < 0">
+            {{ m.changeAmount >= 0 ? '+' : '' }}{{ formatNumber(m.changeAmount) }}
+          </td>
+          <td class="reference-cell">{{ m.reference || '-' }}</td>
+          <td class="user-cell">{{ m.createdBy || '-' }}</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="pagination" *ngIf="pages > 1">
+    <button class="btn btn-outline btn-sm" (click)="goToPage(currentPage - 1)" [disabled]="currentPage === 1">Précédent</button>
+    <span class="page-info">Page {{ currentPage }} / {{ pages }} ({{ total }} résultats)</span>
+    <button class="btn btn-outline btn-sm" (click)="goToPage(currentPage + 1)" [disabled]="currentPage === pages">Suivant</button>
+  </div>
+</div>

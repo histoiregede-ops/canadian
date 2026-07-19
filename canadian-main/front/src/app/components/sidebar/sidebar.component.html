@@ -1,0 +1,107 @@
+<aside class="sidebar" [class.open]="isOpen" [class.collapsed]="isCollapsed">
+  <div class="sidebar-header">
+    <div class="logo">
+      <img src="/logo_projet.png" class="logo-img" alt="Logo">
+      <span class="logo-text" [class.hide]="isCollapsed">Electro Canadien</span>
+    </div>
+    <button class="sidebar-close" (click)="closeSidebar.emit()" title="Fermer">&#x2715;</button>
+  </div>
+
+  <nav class="nav-menu">
+    <a *ngIf="user?.role === 'admin' || user?.role === 'cashier'" routerLink="/dashboard" routerLinkActive="active" class="nav-item" [class.collapsed]="isCollapsed">
+      <span class="icon">&#x1F4CA;</span>
+      <span class="label" [class.hide]="isCollapsed">Tableau de bord</span>
+      <span class="tooltip" *ngIf="isCollapsed">Tableau de bord</span>
+    </a>
+    <a *ngIf="user?.role === 'admin' || user?.role === 'cashier'" routerLink="/inventory" routerLinkActive="active" class="nav-item" [class.collapsed]="isCollapsed">
+      <span class="icon">&#x1F4E6;</span>
+      <span class="label" [class.hide]="isCollapsed">Catalogue &amp; Stock</span>
+      <span class="tooltip" *ngIf="isCollapsed">Catalogue &amp; Stock</span>
+    </a>
+    <a *ngIf="user?.role === 'admin' || user?.role === 'cashier'" routerLink="/movements" routerLinkActive="active" class="nav-item" [class.collapsed]="isCollapsed">
+      <span class="icon">&#x1F4CA;</span>
+      <span class="label" [class.hide]="isCollapsed">Mouvements</span>
+      <span class="tooltip" *ngIf="isCollapsed">Mouvements</span>
+    </a>
+    <a *ngIf="user?.role === 'admin' || user?.role === 'cashier'" routerLink="/scan" routerLinkActive="active" class="nav-item" [class.collapsed]="isCollapsed">
+      <span class="icon">&#x1F4F7;</span>
+      <span class="label" [class.hide]="isCollapsed">Scanner</span>
+      <span class="tooltip" *ngIf="isCollapsed">Scanner</span>
+    </a>
+    <a *ngIf="user?.role === 'admin' || user?.role === 'cashier'" routerLink="/suppliers" routerLinkActive="active" class="nav-item" [class.collapsed]="isCollapsed">
+      <span class="icon">&#x1F4E6;</span>
+      <span class="label" [class.hide]="isCollapsed">Fournisseurs</span>
+      <span class="tooltip" *ngIf="isCollapsed">Fournisseurs</span>
+    </a>
+    <a *ngIf="user?.role === 'admin'" routerLink="/categories" routerLinkActive="active" class="nav-item" [class.collapsed]="isCollapsed">
+      <span class="icon">&#x1F3F7;&#xFE0F;</span>
+      <span class="label" [class.hide]="isCollapsed">Catégories</span>
+      <span class="tooltip" *ngIf="isCollapsed">Catégories</span>
+    </a>
+    <a *ngIf="user?.role === 'admin' || user?.role === 'cashier'" routerLink="/sales" routerLinkActive="active" class="nav-item" [class.collapsed]="isCollapsed">
+      <span class="icon">&#x1F6D2;</span>
+      <span class="label" [class.hide]="isCollapsed">Ventes (POS)</span>
+      <span class="tooltip" *ngIf="isCollapsed">Ventes (POS)</span>
+    </a>
+    <a routerLink="/shop" routerLinkActive="active" class="nav-item" [class.collapsed]="isCollapsed">
+      <span class="icon">&#x1F3EA;</span>
+      <span class="label" [class.hide]="isCollapsed">Boutique en ligne</span>
+      <span class="tooltip" *ngIf="isCollapsed">Boutique en ligne</span>
+    </a>
+    <a *ngIf="user?.role === 'admin' || user?.role === 'technician'" routerLink="/repairs" routerLinkActive="active" class="nav-item" [class.collapsed]="isCollapsed">
+      <span class="icon">&#x1F527;</span>
+      <span class="label" [class.hide]="isCollapsed">Réparations</span>
+      <span class="tooltip" *ngIf="isCollapsed">Réparations</span>
+    </a>
+    <a *ngIf="user?.role === 'admin' || user?.role === 'technician'" routerLink="/installations" routerLinkActive="active" class="nav-item" [class.collapsed]="isCollapsed">
+      <span class="icon">&#x1F3D7;&#xFE0F;</span>
+      <span class="label" [class.hide]="isCollapsed">Installations</span>
+      <span class="tooltip" *ngIf="isCollapsed">Installations</span>
+    </a>
+    <a *ngIf="user?.role === 'admin' || user?.role === 'cashier'" routerLink="/customers" routerLinkActive="active" class="nav-item" [class.collapsed]="isCollapsed">
+      <span class="icon">&#x1F465;</span>
+      <span class="label" [class.hide]="isCollapsed">Clients</span>
+      <span class="tooltip" *ngIf="isCollapsed">Clients</span>
+    </a>
+    <a *ngIf="user?.role === 'admin'" routerLink="/technicians" routerLinkActive="active" class="nav-item" [class.collapsed]="isCollapsed">
+      <span class="icon">&#x1F6E0;&#xFE0F;</span>
+      <span class="label" [class.hide]="isCollapsed">Techniciens</span>
+      <span class="tooltip" *ngIf="isCollapsed">Techniciens</span>
+    </a>
+    <a *ngIf="user?.role === 'admin'" routerLink="/users" routerLinkActive="active" class="nav-item" [class.collapsed]="isCollapsed">
+      <span class="icon">&#x1F465;</span>
+      <span class="label" [class.hide]="isCollapsed">Utilisateurs</span>
+      <span class="tooltip" *ngIf="isCollapsed">Utilisateurs</span>
+    </a>
+    <a *ngIf="user?.role === 'admin'" routerLink="/finance" routerLinkActive="active" class="nav-item" [class.collapsed]="isCollapsed">
+      <span class="icon">&#x1F4B0;</span>
+      <span class="label" [class.hide]="isCollapsed">Caisse &amp; Finance</span>
+      <span class="tooltip" *ngIf="isCollapsed">Caisse &amp; Finance</span>
+    </a>
+    <a *ngIf="user?.role === 'admin'" routerLink="/reports" routerLinkActive="active" class="nav-item" [class.collapsed]="isCollapsed">
+      <span class="icon">&#x1F4CA;</span>
+      <span class="label" [class.hide]="isCollapsed">Rapports</span>
+      <span class="tooltip" *ngIf="isCollapsed">Rapports</span>
+    </a>
+  </nav>
+
+  <div class="sidebar-footer">
+    <a routerLink="/settings" routerLinkActive="active" class="nav-item" [class.collapsed]="isCollapsed">
+      <span class="icon">&#x2699;&#xFE0F;</span>
+      <span class="label" [class.hide]="isCollapsed">Paramètres</span>
+      <span class="tooltip" *ngIf="isCollapsed">Paramètres</span>
+    </a>
+    <button class="nav-item logout-item" [class.collapsed]="isCollapsed" (click)="logout()" title="Déconnexion">
+      <span class="icon">🚪</span>
+      <span class="label" [class.hide]="isCollapsed">Déconnexion</span>
+      <span class="tooltip" *ngIf="isCollapsed">Déconnexion</span>
+    </button>
+    <div class="user-info" [class.collapsed]="isCollapsed">
+      <div class="avatar">{{ user?.fullName?.substring(0, 2).toUpperCase() || 'US' }}</div>
+      <div class="details" [class.hide]="isCollapsed">
+        <span class="name">{{ user?.fullName || 'Utilisateur' }}</span>
+        <span class="role">{{ user?.role || 'Membre' }}</span>
+      </div>
+    </div>
+  </div>
+</aside>

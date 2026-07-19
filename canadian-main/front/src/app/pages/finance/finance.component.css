@@ -1,0 +1,234 @@
+/* Page-specific styles (design-system.css is loaded globally) */
+
+:host {
+  display: block;
+  width: 100%;
+  background-color: var(--bg-color);
+  min-height: 100vh;
+}
+
+.finance-page {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+  max-width: var(--max-width);
+  margin: 0 auto;
+  padding: var(--space-6);
+}
+
+.charts-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+  gap: var(--space-5);
+  align-items: start;
+}
+
+.chart-container {
+  position: relative;
+  height: 300px;
+  width: 100%;
+}
+
+.flux-totals {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--space-4);
+  margin-bottom: var(--space-5);
+}
+
+.flux-total-card {
+  background: var(--border-light);
+  border-radius: var(--radius-lg);
+  padding: var(--space-4) var(--space-5);
+  border: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.flux-total-card .total-label {
+  font-size: var(--font-xs);
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+}
+
+.flux-total-card .total-value {
+  font-size: var(--font-xl);
+  font-weight: 700;
+}
+
+.flux-total-card.income .total-value { color: var(--success); }
+.flux-total-card.expense .total-value { color: var(--danger); }
+.flux-total-card.balance.positive .total-value { color: var(--success); }
+.flux-total-card.balance.negative .total-value { color: var(--danger); }
+
+.flux-table-wrap {
+  overflow-y: auto;
+  margin-bottom: var(--space-5);
+}
+
+.flux-table th,
+.flux-table td {
+  padding: var(--space-3) var(--space-4);
+  text-align: left;
+  border-bottom: 1px solid var(--border-light);
+}
+
+.flux-table th {
+  font-weight: 600;
+  color: var(--text-secondary);
+  font-size: var(--font-sm);
+  text-transform: uppercase;
+  background: var(--border-light);
+  border-bottom: 2px solid var(--border);
+  position: sticky;
+  top: 0;
+}
+
+.flux-table tr:hover td {
+  background: var(--border-light);
+}
+
+.comment-btn {
+  background: none;
+  border: none;
+  font-size: 1rem;
+  cursor: pointer;
+  padding: 2px 6px;
+  border-radius: var(--radius-sm);
+  transition: all var(--transition-fast);
+  margin-left: var(--space-2);
+}
+
+.comment-btn:hover {
+  background: var(--border);
+}
+
+.comment-text {
+  font-size: var(--font-sm);
+  color: var(--text-secondary);
+  max-width: 150px;
+  display: inline-block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  vertical-align: middle;
+}
+
+.flux-empty {
+  text-align: center;
+  padding: var(--space-12);
+  color: var(--text-light);
+  font-size: var(--font-base);
+}
+
+.flux-export {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-3);
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--border);
+}
+
+.comment-popup-card {
+  max-width: 500px;
+}
+
+.comment-popup-body {
+  margin-bottom: var(--space-5);
+}
+
+.comment-transaction-ref {
+  font-size: var(--font-sm);
+  color: var(--text-secondary);
+  margin-bottom: var(--space-4);
+}
+
+.comment-textarea {
+  width: 100%;
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  font-size: var(--font-base);
+  resize: vertical;
+  transition: all var(--transition-base);
+  box-sizing: border-box;
+  font-family: inherit;
+}
+
+.comment-textarea:focus {
+  outline: none;
+  border-color: var(--primary-light);
+  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+}
+
+@media (max-width: 1024px) {
+  .charts-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .chart-container {
+    height: 250px;
+  }
+}
+
+@media (max-width: 768px) {
+  .finance-page {
+    padding: var(--space-4);
+    gap: var(--space-4);
+  }
+
+  .page-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--space-3);
+  }
+
+  .header-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+    width: 100%;
+  }
+
+  .header-actions .btn {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .chart-container {
+    height: 250px;
+  }
+
+  .flux-totals {
+    grid-template-columns: 1fr;
+  }
+
+  .flux-export {
+    flex-direction: column;
+  }
+
+  .flux-export .btn {
+    width: 100%;
+  }
+}
+
+@media (max-width: 480px) {
+  .finance-page {
+    padding: var(--space-3);
+    gap: var(--space-3);
+  }
+
+  .chart-container {
+    height: 200px;
+  }
+
+  .flux-total-card {
+    padding: var(--space-3);
+  }
+
+  .flux-total-card .total-value {
+    font-size: var(--font-lg);
+  }
+}

@@ -1,0 +1,115 @@
+/* Page-specific styles (design-system.css is loaded globally) */
+
+.filters-card {
+  padding: var(--space-4);
+  margin-bottom: var(--space-5);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+}
+
+.filter-group {
+  display: flex;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+  align-items: flex-end;
+}
+
+.filter-group .search-box {
+  flex: 1;
+  min-width: 220px;
+}
+
+.filter-group .form-select,
+.filter-group .form-input {
+  min-width: 180px;
+  flex: 1;
+}
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: var(--space-5);
+  margin-bottom: var(--space-5);
+}
+
+.stat-card {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+}
+
+.stat-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.product-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.product-name {
+  font-weight: 600;
+  color: var(--text-primary);
+  font-size: var(--font-sm);
+}
+
+.product-category {
+  font-size: var(--font-xs);
+  color: var(--text-muted);
+}
+
+.reference-cell {
+  font-family: ui-monospace, monospace;
+  font-size: var(--font-xs);
+  color: var(--text-muted);
+}
+
+.user-cell {
+  font-size: var(--font-sm);
+  color: var(--text-secondary);
+}
+
+.pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: var(--space-4);
+  margin-top: var(--space-6);
+  padding: var(--space-4);
+}
+
+.page-info {
+  font-size: var(--font-sm);
+  color: var(--text-muted);
+  font-weight: 600;
+}
+
+@media (max-width: 768px) {
+  .filter-group {
+    flex-direction: column;
+  }
+
+  .filter-group .search-box,
+  .filter-group .form-select,
+  .filter-group .form-input {
+    width: 100%;
+    min-width: auto;
+  }
+
+  .stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .table-container {
+    overflow-x: auto;
+  }
+}
+
+@media (max-width: 480px) {
+  .stats-grid {
+    grid-template-columns: 1fr;
+  }
+}
