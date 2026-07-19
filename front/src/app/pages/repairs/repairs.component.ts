@@ -1,8 +1,11 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Subscription } from 'rxjs';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { ActivatedRoute } from '@angular/router';
 import { RepairService, Repair } from '../../services/repair';
 import { CustomerService, Customer } from '../../services/customer';
+import { RefreshService } from '../../services/refresh.service';
 
 @Component({
   selector: 'app-repairs',
@@ -11,7 +14,7 @@ import { CustomerService, Customer } from '../../services/customer';
   templateUrl: './repairs.component.html',
   styleUrls: ['./repairs.component.css']
 })
-export class RepairsComponent implements OnInit {
+export class RepairsComponent implements OnInit, OnDestroy {
   repairs: Repair[] = [];
   customers: Customer[] = [];
   loading = true;
@@ -22,15 +25,28 @@ export class RepairsComponent implements OnInit {
   selectedPriority = '';
 
   currentRepair: Repair = this.initRepair();
+  private refreshSub: Subscription | null = null;
 
   constructor(
+    private route: ActivatedRoute,
     private repairService: RepairService,
-    private customerService: CustomerService
+    private customerService: CustomerService,
+    private refreshService: RefreshService
   ) {}
 
   ngOnInit(): void {
-    this.loadRepairs();
-    this.loadCustomers();
+    this.route.data.subscribe(({ data }) => {
+      if (data) {
+        this.repairs = data.repairs;
+        this.customers = data.customers;
+        this.loading = false;
+      }
+    });
+    this.refreshSub = this.refreshService.refresh$.subscribe(() => this.loadRepairs());
+  }
+
+  ngOnDestroy(): void {
+    this.refreshSub?.unsubscribe();
   }
 
   private priorityWeight: any = { urgent: 0, high: 1, normal: 2, low: 3 };

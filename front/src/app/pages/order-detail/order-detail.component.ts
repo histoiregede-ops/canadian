@@ -5,6 +5,7 @@ import { HttpClient } from '@angular/common/http';
 import { environment } from '../../../environments/environment';
 import { ConfigService } from '../../services/config';
 import { PdfService } from '../../services/pdf';
+import { OrderService } from '../../services/order';
 
 interface OrderItem {
   id: string;
@@ -29,6 +30,7 @@ interface Order {
   createdAt: string;
   Customer?: { name: string; email: string; phone?: string };
   products?: OrderItem[];
+  Installations?: { id: string; status: string; location: string; scheduledDate: string }[];
 }
 
 const TIMELINE_STEPS = [
@@ -69,6 +71,7 @@ const STATUS_ORDER: Record<string, number> = {
         </div>
 
         <button class="btn-invoice" (click)="downloadInvoice()">📄 Télécharger la facture</button>
+        <button *ngIf="order.status !== 'cancelled'" class="btn-cancel" (click)="cancelOrder()" style="margin-left: 10px;">❌ Annuler la commande</button>
 
         <!-- Timeline -->
         <div class="timeline" *ngIf="order.status !== 'cancelled'">
@@ -111,7 +114,7 @@ const STATUS_ORDER: Record<string, number> = {
             <div class="order-items">
               <div class="order-item" *ngFor="let item of order.products">
                 <div class="item-image" *ngIf="item.Product?.photo">
-                  <img [src]="item.Product?.photo" alt="">
+                  <img [src]="getProductImage(item.Product?.photo)" alt="">
                 </div>
                 <div class="item-info">
                   <span class="item-name">{{ item.Product?.name || 'Produit #' + item.productId }}</span>
@@ -126,6 +129,19 @@ const STATUS_ORDER: Record<string, number> = {
               <div class="total-row" *ngIf="order.discount > 0"><span>Remise</span><span>-{{ order.discount | number }} FCFA</span></div>
               <div class="total-row grand-total"><span>Total</span><span>{{ order.totalAmount | number }} FCFA</span></div>
               <div class="total-row paid"><span>Payé</span><span>{{ order.paidAmount | number }} FCFA</span></div>
+            </div>
+          </div>
+
+          <div class="detail-card" *ngIf="order.Installations?.length">
+            <h3>Installation</h3>
+            <div class="order-items">
+              <div class="order-item" *ngFor="let inst of order.Installations">
+                <div class="item-info">
+                  <span class="item-name">{{ inst.location }}</span>
+                  <span class="item-meta">{{ inst.status }} — {{ inst.scheduledDate | date:'dd/MM/yyyy' }}</span>
+                </div>
+                <span class="item-total">{{ getInstallStatusLabel(inst.status) }}</span>
+              </div>
             </div>
           </div>
 
@@ -165,6 +181,8 @@ const STATUS_ORDER: Record<string, number> = {
     .status-cancelled { background: #f8d7da; color: #721c24; }
     .btn-invoice { display: inline-block; padding: 10px 20px; background: #667eea; color: white; border: none; border-radius: 8px; font-size: 14px; cursor: pointer; margin-bottom: 20px; }
     .btn-invoice:hover { background: #5a67d8; }
+    .btn-cancel { display: inline-block; padding: 10px 20px; background: #ef4444; color: white; border: none; border-radius: 8px; font-size: 14px; cursor: pointer; margin-bottom: 20px; }
+    .btn-cancel:hover { background: #dc2626; }
 
     .timeline { display: flex; align-items: flex-start; gap: 0; margin-bottom: 40px; padding: 30px 20px; background: white; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); overflow-x: auto; }
     .timeline-step { display: flex; align-items: flex-start; gap: 12px; flex: 1; min-width: 120px; position: relative; }
@@ -219,7 +237,7 @@ export class OrderDetailComponent implements OnInit {
   orderDates: (string | null)[] = [null, null, null, null];
   paymentLabels: Record<string, string> = {};
 
-  constructor(private route: ActivatedRoute, private http: HttpClient, private configService: ConfigService, private pdfService: PdfService) {}
+  constructor(private route: ActivatedRoute, private http: HttpClient, private configService: ConfigService, private pdfService: PdfService, private orderService: OrderService) {}
 
   ngOnInit() {
     this.configService.getPaymentMethods().subscribe(config => {
@@ -254,12 +272,28 @@ export class OrderDetailComponent implements OnInit {
     return new Date(d).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short' });
   }
 
+  getInstallStatusLabel(status: string): string {
+    const labels: Record<string, string> = {
+      survey: 'Étude', planned: 'Planifié', in_progress: 'En cours',
+      testing: 'Tests', completed: 'Terminé', cancelled: 'Annulé'
+    };
+    return labels[status] || status;
+  }
+
   getStatusLabel(status: string): string {
     const labels: Record<string, string> = {
       pending: 'En attente', paid: 'Payée', partially_paid: 'Partiellement payée',
       shipped: 'Expédiée', delivered: 'Livrée', cancelled: 'Annulée'
     };
     return labels[status] || status;
+  }
+
+  getProductImage(photo?: string): string {
+    if (!photo) return '';
+    if (photo.startsWith('data:image')) return photo;
+    if (photo.includes('cloudinary.com')) return photo;
+    const baseUrl = environment.apiUrl;
+    return photo.startsWith('/') ? `${baseUrl}${photo}` : `${baseUrl}/${photo}`;
   }
 
   getPaymentLabel(method: string): string {
@@ -280,6 +314,19 @@ export class OrderDetailComponent implements OnInit {
         quantity: item.quantity,
         unitPrice: item.unitPrice
       }))
+    });
+  }
+
+  cancelOrder(): void {
+    if (!this.order || !confirm(`Annuler la commande #${this.order.orderNumber} ? Le stock sera restauré.`)) return;
+    this.orderService.deleteOrder(this.order.id).subscribe({
+      next: () => {
+        alert('Commande annulée avec succès');
+        if (this.order) {
+          this.order = { ...this.order, status: 'cancelled' } as Order;
+        }
+      },
+      error: (err) => alert(err.error?.error || 'Erreur lors de l\'annulation')
     });
   }
 }

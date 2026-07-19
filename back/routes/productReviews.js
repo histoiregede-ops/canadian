@@ -66,7 +66,7 @@ router.get('/product/:productId', async (req, res) => {
 });
 
 // Create a new review
-router.post('/', async (req, res) => {
+router.post('/', authenticate, async (req, res) => {
   try {
     const { productId, customerId, rating, title, comment } = req.body;
 
@@ -116,7 +116,7 @@ router.post('/', async (req, res) => {
 });
 
 // Update a review
-router.put('/:id', async (req, res) => {
+router.put('/:id', authenticate, async (req, res) => {
   try {
     const { id } = req.params;
     const { rating, title, comment, customerId } = req.body;
@@ -143,7 +143,7 @@ router.put('/:id', async (req, res) => {
 });
 
 // Delete a review (customer-owned)
-router.delete('/:id', async (req, res) => {
+router.delete('/:id', authenticate, async (req, res) => {
   try {
     const { id } = req.params;
     const { customerId } = req.body;
@@ -177,7 +177,7 @@ router.delete('/admin/:id', authenticate, authorize('admin'), async (req, res) =
 });
 
 // Mark review as helpful
-router.post('/:id/helpful', async (req, res) => {
+router.post('/:id/helpful', authenticate, async (req, res) => {
   try {
     const { id } = req.params;
 
@@ -194,7 +194,7 @@ router.post('/:id/helpful', async (req, res) => {
 });
 
 // Get customer's reviews
-router.get('/customer/:customerId', async (req, res) => {
+router.get('/customer/:customerId', authenticate, async (req, res) => {
   try {
     const { customerId } = req.params;
 

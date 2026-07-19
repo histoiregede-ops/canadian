@@ -1,4 +1,6 @@
-:root {
+/* Page-specific styles (design-system.css is loaded globally) */
+
+:host {
   --sidebar-width: 260px;
   --sidebar-collapsed-width: 68px;
 }
@@ -32,7 +34,7 @@
 }
 
 .content-body {
-  padding: 24px;
+  padding: 24px 24px 24px 32px;
   flex: 1;
   background-color: var(--bg-color);
 }

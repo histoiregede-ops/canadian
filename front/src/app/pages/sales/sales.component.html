@@ -1,6 +1,32 @@
 <div class="sales-pos" [class.cart-collapsed]="isCartCollapsed">
   <!-- Left Side: Product Selection -->
   <div class="products-selection">
+    <!-- Customer Selector -->
+    <div class="customer-selector">
+      <div class="customer-search-box" *ngIf="!selectedCustomer">
+        <span>👤</span>
+        <input type="text" [(ngModel)]="customerSearchQuery" (input)="searchCustomers()"
+          (focus)="customerSearchQuery.length >= 2 && (showCustomerDropdown = customerSearchResults.length > 0)"
+          (blur)="onCustomerSearchBlur()"
+          placeholder="Rechercher un client par nom ou téléphone..." />
+      </div>
+      <div class="selected-customer" *ngIf="selectedCustomer">
+        <span class="customer-avatar">{{ (selectedCustomer.fullName || selectedCustomer.name || '?')[0] }}</span>
+        <div class="customer-details">
+          <strong>{{ selectedCustomer.fullName || selectedCustomer.name }}</strong>
+          <span class="loyalty-badge-sm" [class]="getLoyaltyLevelClass()">{{ getLoyaltyLevelClass() }}</span>
+          <span class="customer-points" *ngIf="selectedCustomer.loyaltyPoints !== undefined">{{ selectedCustomer.loyaltyPoints }} pts</span>
+        </div>
+        <button class="btn-clear-customer" (click)="clearSelectedCustomer()">✕</button>
+      </div>
+      <div class="customer-dropdown" *ngIf="showCustomerDropdown">
+        <div class="dropdown-item" *ngFor="let c of customerSearchResults" (mousedown)="selectCustomer(c)">
+          <span class="item-name">{{ c.fullName || c.name }}</span>
+          <span class="item-phone" *ngIf="c.phone">{{ c.phone }}</span>
+        </div>
+      </div>
+    </div>
+
     <div class="pos-header">
       <div class="search-box">
         <span>🔍</span>
@@ -69,6 +95,10 @@
           <span>Taxe</span>
           <input type="number" [(ngModel)]="tax" class="discount-input" />
         </div>
+        <div class="summary-row loyalty-discount" *ngIf="loyaltyDiscountRate > 0">
+          <span>💰 Fidélité ({{ selectedCustomer?.loyaltyLevel }})</span>
+          <span class="discount-amount">-{{ loyaltyDiscountRate | number }} FCFA</span>
+        </div>
         <div class="summary-row">
           <span>Remise</span>
           <input type="number" [(ngModel)]="discount" class="discount-input" />
@@ -121,7 +151,10 @@
       </div>
 
       <button class="btn btn-solar btn-block btn-large" (click)="checkout()" [disabled]="cart.length === 0 || paymentProcessing">
-        {{ paymentProcessing ? 'Traitement...' : 'ENCAISSER ET IMPRIMER' }}
+        {{ paymentProcessing ? 'Traitement...' : 'ENCAISSER' }}
+      </button>
+      <button class="btn btn-secondary btn-block btn-large" (click)="printReceipt()" [disabled]="!lastCompletedOrder">
+        🖨️ IMPRIMER
       </button>
     </div>
   </div>

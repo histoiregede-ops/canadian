@@ -1,3 +1,5 @@
+/* Page-specific styles (design-system.css is loaded globally) */
+
 .checkout-page {
   display: flex;
   flex-direction: column;
@@ -42,16 +44,6 @@
 }
 
 /* Alerts */
-.alert {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 16px 20px;
-  border-radius: 18px;
-  margin-bottom: 20px;
-  font-weight: 500;
-}
-
 .alert-error {
   background: rgba(254, 226, 226, 0.18);
   color: #991b1b;
@@ -98,10 +90,6 @@
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
 }
 
-.form-group {
-  margin-bottom: 16px;
-}
-
 .form-group label {
   display: block;
   font-weight: 600;
@@ -126,12 +114,6 @@
   outline: none;
   border-color: rgba(59, 130, 246, 0.5);
   box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.12);
-}
-
-.form-row {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 16px;
 }
 
 /* Payment Options */
@@ -455,11 +437,6 @@
     padding-bottom: 12px;
   }
 
-  .form-row {
-    grid-template-columns: 1fr;
-    gap: 12px;
-  }
-
   .form-group input {
     padding: 12px 14px;
     font-size: 0.95rem;
@@ -546,10 +523,6 @@
     font-size: 0.8rem;
   }
 
-  .info-cards {
-    gap: 8px;
-  }
-
   .info-card {
     padding: 12px;
     border-radius: 14px;
@@ -565,12 +538,6 @@
 
   .info-card small {
     font-size: 0.7rem;
-  }
-
-  .alert {
-    padding: 12px 16px;
-    border-radius: 14px;
-    font-size: 0.9rem;
   }
 }
 
@@ -723,14 +690,4 @@
   .info-card small {
     font-size: 0.65rem;
   }
-
-  .alert {
-    padding: 10px 12px;
-    font-size: 0.8rem;
-  }
-
-  .alert-icon {
-    font-size: 1rem;
-  }
 }
-

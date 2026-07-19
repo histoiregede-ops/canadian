@@ -146,11 +146,31 @@ router.get('/:id/orders', verifyToken, async (req, res) => {
   }
 });
 
-// Get customer loyalty info
-router.get('/:id/loyalty', verifyToken, async (req, res) => {
+// Get customer loyalty info (admin + customer auth)
+router.get('/:id/loyalty', async (req, res, next) => {
+  const token = req.headers.authorization?.split(' ')[1];
+  if (!token) return res.status(403).json({ message: 'Token required' });
+  try {
+    const decoded = jwt.verify(token, JWT_SECRET);
+    if (decoded.role) req.user = decoded;
+    else req.customer = decoded;
+    if (req.params.id !== decoded.id?.toString() && decoded.role !== 'admin') {
+      return res.status(403).json({ error: 'Accès refusé' });
+    }
+    next();
+  } catch (err) {
+    return res.status(401).json({ message: 'Invalid token' });
+  }
+}, async (req, res) => {
   try {
     const customer = await Customer.findByPk(req.params.id);
     if (!customer) return res.status(404).json({ message: 'Customer not found' });
+
+    const orders = await Order.findAll({
+      where: { customerId: req.params.id }
+    });
+    const totalSpent = orders.reduce((sum, o) => sum + parseFloat(o.totalAmount || 0), 0);
+    const orderCount = orders.length;
 
     const points = customer.points || 0;
     let level = 'bronze';
@@ -158,7 +178,7 @@ router.get('/:id/loyalty', verifyToken, async (req, res) => {
 
     if (points >= 1000) {
       level = 'platinum';
-      nextLevelPoints = 0; // Max level
+      nextLevelPoints = 0;
     } else if (points >= 500) {
       level = 'gold';
       nextLevelPoints = 1000;
@@ -170,7 +190,9 @@ router.get('/:id/loyalty', verifyToken, async (req, res) => {
     res.json({
       points,
       level,
-      nextLevelPoints
+      nextLevelPoints,
+      totalSpent,
+      orderCount
     });
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -212,6 +234,24 @@ router.post('/:id/loyalty', verifyToken, async (req, res) => {
     res.json(customerResponse);
   } catch (error) {
     res.status(400).json({ error: error.message });
+  }
+});
+
+// Search customers (admin only)
+router.get('/search', authenticate, authorize('admin', 'cashier'), async (req, res) => {
+  try {
+    const q = (req.query.q || '').toLowerCase();
+    if (!q) return res.json([]);
+    const customers = await Customer.findAll();
+    const filtered = customers.filter(c => {
+      const name = (c.name || '').toLowerCase();
+      const phone = (c.phone || '').toLowerCase();
+      const email = (c.email || '').toLowerCase();
+      return name.includes(q) || phone.includes(q) || email.includes(q);
+    });
+    res.json(filtered.map(serializeCustomer));
+  } catch (error) {
+    res.status(500).json({ error: error.message });
   }
 });
 

@@ -1,7 +1,10 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Subscription } from 'rxjs';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { UserService, CreateUserRequest, User } from '../../services/user';
+import { ActivatedRoute } from '@angular/router';
+import { UserService, CreateUserRequest, User } from '../../services/user.service';
+import { RefreshService } from '../../services/refresh.service';
 
 @Component({
   selector: 'app-technicians',
@@ -10,7 +13,7 @@ import { UserService, CreateUserRequest, User } from '../../services/user';
   templateUrl: './technicians.component.html',
   styleUrls: ['./technicians.component.css']
 })
-export class TechniciansComponent implements OnInit {
+export class TechniciansComponent implements OnInit, OnDestroy {
   technicians: User[] = [];
   searchQuery = '';
   loading = true;
@@ -26,11 +29,22 @@ export class TechniciansComponent implements OnInit {
   };
 
   editingId: string | null = null;
+  private refreshSub: Subscription | null = null;
 
-  constructor(private userService: UserService) {}
+  constructor(private route: ActivatedRoute, private userService: UserService, private refreshService: RefreshService) {}
 
   ngOnInit(): void {
-    this.loadTechnicians();
+    this.route.data.subscribe(({ data }) => {
+      if (data) {
+        this.technicians = data.technicians.filter((user: any) => user.role === 'technician');
+        this.loading = false;
+      }
+    });
+    this.refreshSub = this.refreshService.refresh$.subscribe(() => this.loadTechnicians());
+  }
+
+  ngOnDestroy(): void {
+    this.refreshSub?.unsubscribe();
   }
 
   get filteredTechnicians(): User[] {

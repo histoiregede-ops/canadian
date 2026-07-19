@@ -1,13 +1,16 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
+import { Subscription } from 'rxjs';
+import { ActivatedRoute } from '@angular/router';
 
 import { environment } from '../../../environments/environment';
 import { Category, CategoryService } from '../../services/category';
 import { CartService } from '../../services/cart';
 import { Product, ProductService } from '../../services/product';
 import { CustomerAuthService } from '../../services/customer-auth';
+import { RefreshService } from '../../services/refresh.service';
 import {
   ProductReviewService,
   ProductReviewsResponse,
@@ -26,7 +29,7 @@ export interface ProductWithReviews extends Product {
   templateUrl: './shop.component.html',
   styleUrls: ['./shop.component.css'],
 })
-export class ShopComponent implements OnInit {
+export class ShopComponent implements OnInit, OnDestroy {
   products: ProductWithReviews[] = [];
   categories: Category[] = [];
   featuredProducts: ProductWithReviews[] = [];
@@ -36,6 +39,7 @@ export class ShopComponent implements OnInit {
   sortBy: 'name' | 'price-low' | 'price-high' | 'rating' = 'name';
 
   loading = true;
+  private refreshSub?: Subscription;
 
   get isCustomerLoggedIn(): boolean {
     return this.customerAuth.isAuthenticated();
@@ -59,39 +63,72 @@ export class ShopComponent implements OnInit {
     }
   ];
 
+  services = [
+    {
+      icon: '☀️',
+      title: 'Installation de Panneaux Solaires',
+      desc: 'Installation professionnelle de panneaux solaires pour maison, commerce et industrie. Étude, fourniture, pose et mise en service.',
+      link: '/contact',
+      linkText: 'Demander un devis'
+    },
+    {
+      icon: '🔧',
+      title: 'Réparation Téléphones & Électronique',
+      desc: 'Service de réparation expert pour smartphones, tablettes et appareils électroniques. Diagnostic gratuit, pièces de qualité.',
+      link: '/contact',
+      linkText: 'Réparer maintenant'
+    }
+  ];
+
   whatsappNumber = '+22879803856';
 
   constructor(
+    private route: ActivatedRoute,
     private productService: ProductService,
     private categoryService: CategoryService,
     private cartService: CartService,
     private reviewService: ProductReviewService,
     private customerAuth: CustomerAuthService,
-    private router: Router
+    private router: Router,
+    private refreshService: RefreshService
   ) {}
 
   ngOnInit(): void {
-    this.loadProducts();
-    this.loadCategories();
-  }
-
-  negotiateProduct(product: Product): void {
-    this.router.navigate(['/client-messages'], {
-      queryParams: {
-        productId: product.id,
-        productName: product.name,
-        productPrice: product.price,
-        subject: `Négociation prix - ${product.name}`
+    this.route.data.subscribe(({ data }) => {
+      if (data && (data.products || data.categories)) {
+        this.products = (data.products || [])
+          .filter((p: any) => p.status === 'available')
+          .map((p: any) => ({ ...p, showReviews: false }));
+        this.featuredProducts = this.products
+          .filter((p: any) => p.stockQuantity > 5)
+          .slice(0, 6);
+        this.categories = data.categories || [];
+        this.applySorting();
+        this.loadProductReviews();
+        this.loading = false;
+      } else {
+        this.loadProducts();
+        this.loadCategories();
       }
+    }, (err) => {
+      console.error('Shop resolver error:', err);
+      this.loadProducts();
+      this.loadCategories();
+    });
+    setTimeout(() => {
+      if (this.loading) {
+        console.warn('Shop loading fallback: forcing loading=false');
+        this.loading = false;
+      }
+    }, 4000);
+    this.refreshSub = this.refreshService.refresh$.subscribe(() => {
+      this.loadProducts();
+      this.loadCategories();
     });
   }
 
-  openNegotiation(): void {
-    this.router.navigate(['/client-messages'], {
-      queryParams: {
-        subject: 'Je souhaite négocier un produit'
-      }
-    });
+  ngOnDestroy(): void {
+    this.refreshSub?.unsubscribe();
   }
 
   goToShop(): void {
@@ -209,10 +246,6 @@ export class ShopComponent implements OnInit {
     this.cartService.addItem(product, 1);
   }
 
-  viewProduct(product: Product): void {
-    console.log('View product:', product);
-  }
-
   toggleReviews(product: ProductWithReviews): void {
     product.showReviews = !product.showReviews;
   }
@@ -221,6 +254,7 @@ export class ShopComponent implements OnInit {
     if (!photo) return '';
     if (photo.startsWith('data:image')) return photo;
     if (photo.includes('cloudinary.com')) return photo;
+    if (photo.startsWith('http://') || photo.startsWith('https://')) return photo;
     const baseUrl = environment.apiUrl;
     return photo.startsWith('/') ? `${baseUrl}${photo}` : `${baseUrl}/${photo}`;
   }

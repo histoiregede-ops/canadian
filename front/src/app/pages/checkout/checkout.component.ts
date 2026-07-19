@@ -6,6 +6,7 @@ import { CartService, CartItem } from '../../services/cart';
 import { PaymentService, PaymentMethod } from '../../services/payment';
 import { OrderService } from '../../services/order';
 import { CustomerAuthService } from '../../services/customer-auth';
+import { ConfigService } from '../../services/config';
 
 const PAYMENT_LABELS: Record<PaymentMethod, { name: string; icon: string; operator: string; color: string }> = {
   cash: { name: 'Espèces', icon: '💵', operator: '', color: '#22c55e' },
@@ -59,6 +60,7 @@ export class CheckoutComponent implements OnInit, OnDestroy {
     private paymentService: PaymentService,
     private orderService: OrderService,
     private customerAuth: CustomerAuthService,
+    private configService: ConfigService,
     private router: Router
   ) {}
 
@@ -70,6 +72,9 @@ export class CheckoutComponent implements OnInit, OnDestroy {
     this.cartService.cartTotal$.subscribe(total => {
       this.cartTotal = total;
       this.calculateTotals();
+    });
+    this.configService.getPaymentMethods().subscribe(config => {
+      this.whatsappNumber = config.whatsapp;
     });
   }
 

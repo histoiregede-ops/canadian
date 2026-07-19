@@ -15,12 +15,16 @@ export interface Installation {
   scheduledDate?: string | Date;
   completionDate?: string | Date;
   status: string;
+  priority?: 'low' | 'normal' | 'high' | 'urgent';
   totalPrice?: number;
   notes?: string;
   customerId?: string;
   technicianId?: string;
+  orderId?: string;
+  orderNumber?: string;
   Customer?: any;
   Technician?: any;
+  Order?: any;
 }
 
 @Injectable({

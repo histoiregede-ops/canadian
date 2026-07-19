@@ -4,12 +4,15 @@ import { Subscription } from 'rxjs';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Chart, registerables } from 'chart.js';
+import { ActivatedRoute } from '@angular/router';
 
 import { environment } from '../../../environments/environment';
 import { Category, CategoryService } from '../../services/category';
 import { Product, StockMovement, ProductService } from '../../services/product';
+import { SupplierService } from '../../services/supplier';
 import { WebSocketService } from '../../services/websocket';
 import { RefreshService } from '../../services/refresh.service';
+import { BarcodeService } from '../../services/barcode.service';
 
 Chart.register(...registerables);
 
@@ -23,9 +26,11 @@ Chart.register(...registerables);
 export class InventoryComponent implements OnInit, OnDestroy, AfterViewInit {
   products: Product[] = [];
   categories: Category[] = [];
+  suppliers: any[] = [];
 
   searchQuery = '';
   selectedCategoryId = '';
+  selectedSupplierId = '';
   selectedStatus: string = '';
 
   @ViewChild('stockCategoryChart') private categoryChartRef!: ElementRef;
@@ -40,24 +45,27 @@ export class InventoryComponent implements OnInit, OnDestroy, AfterViewInit {
       const matchesQuery =
         !q ||
         (p.name || '').toLowerCase().includes(q) ||
-        (p.description || '').toLowerCase().includes(q);
+        (p.description || '').toLowerCase().includes(q) ||
+        (p.barcode || '').toLowerCase().includes(q);
       const matchesCategory =
         !this.selectedCategoryId || p.categoryId === this.selectedCategoryId;
+      const matchesSupplier =
+        !this.selectedSupplierId || p.supplierId === Number(this.selectedSupplierId);
       const matchesStatus = !this.selectedStatus || p.status === this.selectedStatus;
 
-      return matchesQuery && matchesCategory && matchesStatus;
+      return matchesQuery && matchesCategory && matchesSupplier && matchesStatus;
     });
   }
 
   get finishedProducts(): Product[] {
     const threshold = this.selectedCategoryId ? 0 : 15;
     return this.products
-      .filter((p) => p.stockQuantity <= threshold)
+      .filter((p) => p.stockQuantity <= (p.lowStockThreshold || threshold))
       .sort((a, b) => a.stockQuantity - b.stockQuantity);
   }
 
   get lowStockCount(): number {
-    return this.products.filter(p => p.stockQuantity > 0 && p.stockQuantity <= 15).length;
+    return this.products.filter(p => p.stockQuantity > 0 && p.stockQuantity <= (p.lowStockThreshold || 15)).length;
   }
 
   get outOfStockCount(): number {
@@ -78,6 +86,9 @@ export class InventoryComponent implements OnInit, OnDestroy, AfterViewInit {
   toastType: 'low_stock' | 'out_of_stock' | '' = '';
   toastTimeout: any = null;
 
+  // Barcode scanning
+  isScanning = false;
+
   // Notification subscription
   private wsSub: Subscription | null = null;
   private refreshSub: Subscription | null = null;
@@ -85,15 +96,25 @@ export class InventoryComponent implements OnInit, OnDestroy, AfterViewInit {
   currentProduct: Product = this.initProduct();
 
   constructor(
+    private route: ActivatedRoute,
     private productService: ProductService,
     private categoryService: CategoryService,
+    private supplierService: SupplierService,
     private wsService: WebSocketService,
-    private refreshService: RefreshService
+    private refreshService: RefreshService,
+    private barcodeService: BarcodeService
   ) { }
 
   ngOnInit(): void {
-    this.loadProducts();
+    this.route.data.subscribe(({ data }) => {
+      if (data) {
+        this.products = data.products;
+        this.loading = false;
+        this.updateCharts();
+      }
+    });
     this.loadCategories();
+    this.loadSuppliers();
     this.listenNotifications();
     this.refreshSub = this.refreshService.refresh$.subscribe(() => {
       this.loadProducts();
@@ -136,12 +157,22 @@ export class InventoryComponent implements OnInit, OnDestroy, AfterViewInit {
     return {
       name: '',
       description: '',
+      barcode: this.generateBarcode(),
       price: 0,
       stockQuantity: 0,
       status: 'available',
       categoryId: '',
+      supplierId: undefined,
       photo: '',
     };
+  }
+
+  private generateBarcode(): string {
+    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ';
+    const part1 = Array.from({ length: 3 }, () => chars[Math.floor(Math.random() * chars.length)]).join('');
+    const part2 = Array.from({ length: 3 }, () => chars[Math.floor(Math.random() * chars.length)]).join('');
+    const part3 = Array.from({ length: 4 }, () => chars[Math.floor(Math.random() * chars.length)]).join('');
+    return `ELEC-${part1}-${part2}-${part3}`;
   }
 
   // Méthode pour capturer l'image sélectionnée et la convertir en Base64
@@ -187,6 +218,12 @@ export class InventoryComponent implements OnInit, OnDestroy, AfterViewInit {
   loadCategories(): void {
     this.categoryService.getCategories().subscribe((data: Category[]) => {
       this.categories = data;
+    });
+  }
+
+  loadSuppliers(): void {
+    this.supplierService.getSuppliers().subscribe((data: any[]) => {
+      this.suppliers = data;
     });
   }
 
@@ -250,6 +287,30 @@ export class InventoryComponent implements OnInit, OnDestroy, AfterViewInit {
     });
   }
 
+  adjustStock(product: Product): void {
+    const qty = prompt(`Nouvelle quantite en stock pour "${product.name}" :`, String(product.stockQuantity));
+    if (qty === null) return;
+    const num = parseInt(qty, 10);
+    if (isNaN(num) || num < 0) {
+      alert('Veuillez entrer une quantite valide');
+      return;
+    }
+    const reason = prompt('Raison de l\'ajustement (optionnel):', 'Ajustement manuel') || 'Ajustement manuel';
+    this.productService.adjustStock(product.id!, num, reason).subscribe({
+      next: (updated) => {
+        const idx = this.products.findIndex(p => p.id === product.id);
+        if (idx !== -1) {
+          this.products[idx] = { ...this.products[idx], stockQuantity: updated.stockQuantity, status: updated.status };
+          this.products = [...this.products];
+        }
+      },
+      error: (err) => {
+        console.error('Error adjusting stock:', err);
+        alert('Erreur lors de l\'ajustement du stock');
+      }
+    });
+  }
+
   // Open movement history modal
   openHistory(product: Product): void {
     this.historyProductName = product.name || '';
@@ -280,6 +341,22 @@ export class InventoryComponent implements OnInit, OnDestroy, AfterViewInit {
     return map[reason] || reason;
   }
 
+  startBarcodeScan(): void {
+    if (this.isScanning) return;
+    this.isScanning = true;
+    const code = prompt('Entrez le code-barres manuellement ou scannez:');
+    if (code) {
+      this.currentProduct.barcode = code;
+      const existing = this.products.find(p => p.barcode === code);
+      if (existing) {
+        if (confirm(`Produit trouvé: ${existing.name}. Ouvrir ?`)) {
+          this.openEditModal(existing);
+        }
+      }
+    }
+    this.isScanning = false;
+  }
+
   saveProduct(): void {
     // Photo required only for new products, not edits
     if (!this.isEditing && !this.currentProduct.photo) {
@@ -301,14 +378,18 @@ export class InventoryComponent implements OnInit, OnDestroy, AfterViewInit {
           }
         });
     } else {
-      this.productService.createProduct(this.currentProduct).subscribe({
+      const payload = { ...this.currentProduct };
+      if (!payload.categoryId) payload.categoryId = undefined;
+      if (!payload.supplierId) payload.supplierId = undefined;
+      this.productService.createProduct(payload).subscribe({
         next: () => {
           this.loadProducts();
           this.showModal = false;
         },
         error: (err) => {
           console.error('Erreur lors de la création:', err);
-          alert('Erreur lors de la création du produit.');
+          const msg = err.error?.error || err.message || 'Erreur lors de la création du produit.';
+          alert(msg);
         }
       });
     }
@@ -326,6 +407,21 @@ export class InventoryComponent implements OnInit, OnDestroy, AfterViewInit {
         }
       });
     }
+  }
+
+  downloadBarcode(product: Product): void {
+    const code = product.barcode || product.id || '';
+    if (!code) {
+      alert('Ce produit n\'a pas de code-barres.');
+      return;
+    }
+    const filename = `${product.name.replace(/[^a-zA-Z0-9]/g, '_')}_${code}`;
+    this.barcodeService.downloadBarcode(code, filename);
+  }
+
+  getBarcodePreview(code: string): string {
+    if (!code) return '';
+    return this.barcodeService.generateBarcodeDataUrl(code);
   }
 
   getStatusClass(status: string): string {
@@ -406,8 +502,9 @@ export class InventoryComponent implements OnInit, OnDestroy, AfterViewInit {
     };
 
     this.products.forEach(p => {
+      const threshold = p.lowStockThreshold || 15;
       if (p.stockQuantity === 0) statusCounts.out++;
-      else if (p.stockQuantity <= 15) statusCounts.low++;
+      else if (p.stockQuantity <= threshold) statusCounts.low++;
       else statusCounts.available++;
     });
 

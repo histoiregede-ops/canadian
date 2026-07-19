@@ -29,6 +29,19 @@ const LOYALTY_LEVELS = [
   { key: 'platinum', name: 'Platinum', minPoints: 1000, maxPoints: null, color: '#e5e4e2' }
 ];
 
+const EXPENSE_CATEGORIES = [
+  { key: 'rent', name: 'Loyer / Local', icon: '🏠' },
+  { key: 'salary', name: 'Salaires', icon: '👷' },
+  { key: 'electricity', name: 'Électricité', icon: '💡' },
+  { key: 'internet', name: 'Internet / Téléphonie', icon: '📡' },
+  { key: 'transport', name: 'Transport / Carburant', icon: '🚐' },
+  { key: 'maintenance', name: 'Maintenance / Réparations', icon: '🔧' },
+  { key: 'marketing', name: 'Marketing / Publicité', icon: '📣' },
+  { key: 'supplies', name: 'Fournitures', icon: '📦' },
+  { key: 'taxes', name: 'Taxes / Impôts', icon: '🧾' },
+  { key: 'other', name: 'Autre', icon: '📝' }
+];
+
 router.get('/payment-methods', (req, res) => {
   res.json({
     methods: PAYMENT_METHODS,
@@ -44,6 +57,10 @@ router.get('/status-labels', (req, res) => {
 
 router.get('/loyalty-levels', (req, res) => {
   res.json(LOYALTY_LEVELS);
+});
+
+router.get('/expense-categories', (req, res) => {
+  res.json(EXPENSE_CATEGORIES);
 });
 
 module.exports = router;

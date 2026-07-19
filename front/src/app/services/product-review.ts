@@ -103,10 +103,8 @@ export class ProductReviewService {
 
   // Check if customer can review product
   canReviewProduct(customerId: string, productId: string): Observable<boolean> {
-    // This would check if customer has purchased the product
-    // For now, we'll allow reviews from any customer
     return new Observable(subscriber => {
-      subscriber.next(true);
+      subscriber.next(false);
       subscriber.complete();
     });
   }

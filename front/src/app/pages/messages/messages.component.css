@@ -1,4 +1,6 @@
-﻿.messaging {
+﻿/* Page-specific styles (design-system.css is loaded globally) */
+
+.messaging {
   display: flex;
   flex-direction: column;
   height: 100vh;
@@ -68,30 +70,6 @@
   cursor: pointer;
   padding: 0;
   line-height: 1;
-}
-
-.btn {
-  border: none;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.btn-primary {
-  background: #128C7E;
-  color: #fff;
-  padding: 8px 16px;
-  border-radius: 8px;
-  font-size: 0.8rem;
-}
-
-.btn-primary:hover {
-  background: #075e54;
-}
-
-.btn-primary:disabled {
-  opacity: 0.4;
-  cursor: not-allowed;
 }
 
 .btn-sm {
@@ -281,18 +259,7 @@
   min-width: 0;
 }
 
-.empty-state {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  flex: 1;
-  gap: 12px;
-  padding: 40px;
-  text-align: center;
-}
-
-.empty-icon {
+.empty-state .empty-icon {
   font-size: 3rem;
   opacity: 0.3;
 }
@@ -593,28 +560,8 @@
     min-width: 120px;
   }
 
-  .conversations-list {
-    min-height: 0;
-  }
-
   .chat-panel {
     min-height: 0;
-  }
-
-  .chat-header {
-    flex-wrap: wrap;
-    align-items: flex-start;
-    padding: 12px 16px;
-    gap: 12px;
-  }
-
-  .chat-meta {
-    width: 100%;
-  }
-
-  .customer-info {
-    flex-wrap: wrap;
-    gap: 8px;
   }
 
   .messages-list {
@@ -665,21 +612,18 @@
     font-size: 0.9rem;
   }
 
-  .btn-primary {
+  .chat-header {
+    padding: 12px 16px;
+    gap: 12px;
+  }
+
+  .chat-meta {
     width: 100%;
   }
 
-  .chat-header {
-    padding: 12px 14px;
-  }
-
-  .chat-meta h2 {
-    font-size: 0.95rem;
-  }
-
   .customer-info {
-    font-size: 0.72rem;
-    gap: 6px;
+    flex-wrap: wrap;
+    gap: 8px;
   }
 
   .messages-list {

@@ -34,6 +34,10 @@ const Installation = sequelize.define('Installation', {
   roofType: {
     type: DataTypes.STRING
   },
+  priority: {
+    type: DataTypes.ENUM('low', 'normal', 'high', 'urgent'),
+    defaultValue: 'normal'
+  },
   status: {
     type: DataTypes.ENUM('survey', 'planned', 'in_progress', 'testing', 'completed', 'cancelled'),
     defaultValue: 'planned'
@@ -49,6 +53,10 @@ const Installation = sequelize.define('Installation', {
   },
   notes: {
     type: DataTypes.TEXT
+  },
+  orderId: {
+    type: DataTypes.UUID,
+    allowNull: true
   }
 });
 

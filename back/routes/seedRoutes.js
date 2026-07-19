@@ -2,8 +2,9 @@ const express = require('express');
 const router = express.Router();
 const sequelize = require('../config/database');
 const path = require('path');
+const { authenticate, authorize } = require('../utils/auth');
 
-router.get('/seed', async (req, res) => {
+router.get('/seed', authenticate, authorize('admin'), async (req, res) => {
   try {
     await sequelize.sync({ force: true });
     const seeders = [
@@ -19,7 +20,7 @@ router.get('/seed', async (req, res) => {
   }
 });
 
-router.get('/seed-all', async (req, res) => {
+router.get('/seed-all', authenticate, authorize('admin'), async (req, res) => {
   try {
     await sequelize.sync({ force: true });
     const seedFiles = [

@@ -139,6 +139,10 @@ export class MessagingService {
     return this.http.patch<Message>(`${this.apiUrl}/${messageId}/read`, {});
   }
 
+  deleteMessage(messageId: string): Observable<any> {
+    return this.http.delete(`${this.apiUrl}/${messageId}`);
+  }
+
   // Close conversation
   closeConversation(conversationId: string): Observable<Conversation> {
     return this.http.patch<Conversation>(`${this.apiUrl}/conversations/${conversationId}/close`, {});

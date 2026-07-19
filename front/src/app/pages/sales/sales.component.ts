@@ -1,12 +1,16 @@
-import { Component, OnInit, HostListener, OnDestroy } from '@angular/core';
+import { Component, OnInit, HostListener, OnDestroy, ChangeDetectorRef, NgZone } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { ActivatedRoute } from '@angular/router';
+import { Subscription } from 'rxjs';
+import { timeout } from 'rxjs/operators';
 import { ProductService, Product } from '../../services/product';
 import { OrderService, OrderData } from '../../services/order';
 import { PdfService } from '../../services/pdf';
 import { PaymentService, PaymentMethod } from '../../services/payment';
 import { ConfigService, PaymentMethod as ConfigPaymentMethod } from '../../services/config';
 import { RefreshService } from '../../services/refresh.service';
+import { CustomerService, Customer } from '../../services/customer';
 import { environment } from '../../../environments/environment';
 
 interface CartItem {
@@ -40,22 +44,79 @@ export class SalesComponent implements OnInit, OnDestroy {
   paymentProcessing = false;
   paymentErrorMessage = '';
   private statusInterval: any;
+  private readonly MAX_POLLING_ATTEMPTS = 60;
+  private pollingAttempts = 0;
+
+  selectedCustomer: Customer | null = null;
+  customerSearchQuery = '';
+  customerSearchResults: Customer[] = [];
+  showCustomerDropdown = false;
+  loyaltyDiscountRate = 0;
+  private refreshSub: Subscription | null = null;
+
+  lastCompletedOrder: { orderNumber?: string; id?: string; orderData?: OrderData; cartItems?: { productName: string; quantity: number; unitPrice: number }[] } | null = null;
 
   constructor(
+    private route: ActivatedRoute,
     private productService: ProductService,
     private orderService: OrderService,
     private pdfService: PdfService,
     private paymentService: PaymentService,
     private configService: ConfigService,
-    private refreshService: RefreshService
+    private refreshService: RefreshService,
+    private customerService: CustomerService,
+    private cdr: ChangeDetectorRef,
+    private ngZone: NgZone
   ) { }
 
   ngOnInit(): void {
     if (window.innerWidth <= 1200) {
       this.isCartCollapsed = true;
     }
-    this.loadConfig();
-    this.loadProducts();
+    this.route.data.subscribe(({ data }) => {
+      if (data) {
+        this.products = data.products;
+        this.paymentMethodsList = data.config.methods;
+        this.whatsappNumber = data.config.whatsapp;
+        this.mobileMoneyMethods = data.config.methods.filter((m: any) => m.isMobileMoney).map((m: any) => m.key);
+        data.config.methods.forEach((m: any) => {
+          this.paymentLabels[m.key] = { name: m.name, icon: '', operator: m.operator };
+        });
+        if (this.paymentMethodsList.length > 0) {
+          this.paymentMethod = this.paymentMethodsList[0].key;
+        }
+      }
+    });
+    this.refreshSub = this.refreshService.refresh$.subscribe(() => {
+      this.loadProducts();
+      this.loadConfig();
+    });
+    this.loadScanCart();
+  }
+
+  private loadScanCart(): void {
+    const scanCart = localStorage.getItem('scanCart');
+    if (scanCart) {
+      localStorage.removeItem('scanCart');
+      try {
+        const items = JSON.parse(scanCart);
+        this.productService.getProducts().subscribe(products => {
+          for (const item of items) {
+            const product = products.find(p => p.id === item.productId);
+            if (product) {
+              const existing = this.cart.find(c => c.product.id === product.id);
+              if (existing) {
+                existing.quantity += item.quantity;
+              } else {
+                this.cart.push({ product, quantity: item.quantity });
+              }
+            }
+          }
+        });
+      } catch (e) {
+        console.error('Failed to parse scan cart', e);
+      }
+    }
   }
 
   ngOnDestroy(): void {
@@ -105,6 +166,68 @@ export class SalesComponent implements OnInit, OnDestroy {
     );
   }
 
+  searchCustomers(): void {
+    const q = this.customerSearchQuery.trim();
+    if (q.length < 2) {
+      this.customerSearchResults = [];
+      this.showCustomerDropdown = false;
+      return;
+    }
+    this.customerService.searchCustomers(q).subscribe({
+      next: (results) => {
+        this.customerSearchResults = results;
+        this.showCustomerDropdown = results.length > 0;
+      },
+      error: () => {
+        this.customerSearchResults = [];
+        this.showCustomerDropdown = false;
+      }
+    });
+  }
+
+  selectCustomer(customer: Customer): void {
+    this.selectedCustomer = customer;
+    this.customerSearchQuery = customer.fullName || customer.name || '';
+    this.showCustomerDropdown = false;
+    this.customerSearchResults = [];
+    this.loadCustomerLoyalty(customer);
+  }
+
+  onCustomerSearchBlur(): void {
+    setTimeout(() => this.showCustomerDropdown = false, 200);
+  }
+
+  clearSelectedCustomer(): void {
+    this.selectedCustomer = null;
+    this.customerSearchQuery = '';
+    this.loyaltyDiscountRate = 0;
+    this.showCustomerDropdown = false;
+  }
+
+  private loadCustomerLoyalty(customer: Customer): void {
+    if (!customer.id) return;
+    this.customerService.getCustomerLoyalty(customer.id).subscribe({
+      next: (loyalty) => {
+        customer.loyaltyPoints = loyalty.points;
+        customer.loyaltyLevel = loyalty.level;
+        customer.totalSpent = loyalty.totalSpent;
+        customer.orderCount = loyalty.orderCount;
+        if (loyalty.level === 'platinum') {
+          this.loyaltyDiscountRate = Math.round(this.subtotal * 0.1);
+        } else if (loyalty.level === 'gold') {
+          this.loyaltyDiscountRate = Math.round(this.subtotal * 0.05);
+        } else {
+          this.loyaltyDiscountRate = 0;
+        }
+      },
+      error: () => {}
+    });
+  }
+
+  getLoyaltyLevelClass(): string {
+    return this.selectedCustomer?.loyaltyLevel || 'bronze';
+  }
+
   addToCart(product: Product): void {
     if (product.stockQuantity <= 0) {
       alert('Stock insuffisant !');
@@ -124,6 +247,7 @@ export class SalesComponent implements OnInit, OnDestroy {
 
   updateQuantity(index: number, delta: number): void {
     const item = this.cart[index];
+    if (!item) return;
     item.quantity += delta;
     if (item.quantity <= 0) {
       this.removeFromCart(index);
@@ -136,8 +260,9 @@ export class SalesComponent implements OnInit, OnDestroy {
 
   get total(): number {
     const disc = Number(this.discount) || 0;
+    const loyaltyDisc = this.loyaltyDiscountRate || 0;
     const tx = Number(this.tax) || 0;
-    return this.subtotal - disc + tx;
+    return this.subtotal - disc - loyaltyDisc + tx;
   }
 
   get isMobileMoney(): boolean {
@@ -152,6 +277,12 @@ export class SalesComponent implements OnInit, OnDestroy {
     this.isCartCollapsed = !this.isCartCollapsed;
   }
 
+  private resetPaymentState(): void {
+    this.paymentProcessing = false;
+    this.paymentStatus = 'failed';
+    try { this.cdr.detectChanges(); } catch (_) {}
+  }
+
   getWhatsAppLink(amount: number, orderRef: string): string {
     const label = this.paymentLabels[this.paymentMethod]?.name || this.paymentMethod;
     const message = `Bonjour, paiement ${label} de ${amount.toLocaleString()} FCFA pour la commande ${orderRef}.`;
@@ -159,9 +290,22 @@ export class SalesComponent implements OnInit, OnDestroy {
   }
 
   checkout(): void {
-    if (this.cart.length === 0) return;
+    console.debug('[CHECKOUT] Début checkout, panier:', this.cart.length, 'articles');
+    if (this.cart.length === 0) {
+      console.warn('[CHECKOUT] Panier vide');
+      return;
+    }
+
+    for (const item of this.cart) {
+      if (item.quantity > (item.product.stockQuantity || 0)) {
+        console.warn('[CHECKOUT] Stock insuffisant pour', item.product.name);
+        alert(`Stock insuffisant pour ${item.product.name}: ${item.product.stockQuantity} disponible(s), ${item.quantity} demandé(s).`);
+        return;
+      }
+    }
 
     if (this.isMobileMoney && !this.payerPhone.trim()) {
+      console.warn('[CHECKOUT] Pas de numéro mobile money');
       alert('Veuillez entrer le numéro de téléphone du client.');
       return;
     }
@@ -169,7 +313,14 @@ export class SalesComponent implements OnInit, OnDestroy {
     this.paymentProcessing = true;
     this.paymentStatus = '';
     this.paymentErrorMessage = '';
+    this.cdr.detectChanges();
 
+    const receiptCartItems = this.cart.map(item => ({
+      productName: item.product.name,
+      quantity: item.quantity,
+      unitPrice: item.product.price
+    }));
+    const totalDiscount = (Number(this.discount) || 0) + (this.loyaltyDiscountRate || 0);
     const orderData: OrderData = {
       items: this.cart.map(item => ({
         productId: item.product.id!,
@@ -177,18 +328,40 @@ export class SalesComponent implements OnInit, OnDestroy {
         unitPrice: item.product.price
       })),
       paymentMethod: this.paymentMethod,
-      discount: Number(this.discount) || 0,
+      discount: totalDiscount,
       tax: Number(this.tax) || 0,
       subtotal: this.subtotal,
       totalAmount: this.total,
       paidAmount: this.paymentMethod === 'cash' ? this.total : 0
     };
 
-    this.orderService.createOrder(orderData).subscribe({
+    const orderJson = JSON.stringify(orderData);
+    console.debug('[CHECKOUT] Envoi createOrder:', orderJson.substring(0, 500));
+
+    this.orderService.createOrder(orderData).pipe(
+      timeout(30000)
+    ).subscribe({
       next: (res) => {
+        console.debug('[CHECKOUT] createOrder succès:', JSON.stringify(res).substring(0, 300));
+
+        if (!res || !res.id) {
+          console.error('[CHECKOUT] Réponse createOrder sans id:', res);
+          this.paymentErrorMessage = 'Erreur: réponse commande invalide.';
+          this.resetPaymentState();
+          return;
+        }
+
         this.lastOrderRef = res.orderNumber || res.id;
+        this.lastCompletedOrder = {
+          orderNumber: res.orderNumber,
+          id: res.id,
+          orderData,
+          cartItems: receiptCartItems
+        };
+        console.debug('[CHECKOUT] lastCompletedOrder stocké, id=', res.id, 'ref=', this.lastOrderRef);
 
         if (this.isMobileMoney) {
+          console.debug('[CHECKOUT] Mode mobile money, initiation paiement...');
           this.paymentService.initiatePayment({
             orderId: res.id,
             amount: this.total,
@@ -196,82 +369,143 @@ export class SalesComponent implements OnInit, OnDestroy {
             phoneNumber: this.payerPhone
           }).subscribe({
             next: (initResult) => {
+              console.debug('[CHECKOUT] Initiation résultat:', JSON.stringify(initResult));
               if (initResult.success) {
                 this.paymentStatus = 'initiated';
+                try { this.cdr.detectChanges(); } catch (_) {}
                 this.startPaymentStatusPolling(initResult.depositId, res.id);
               } else {
+                console.error('[CHECKOUT] Initiation échouée:', initResult.message);
                 this.paymentStatus = 'failed';
                 this.paymentErrorMessage = `Paiement échoué: ${initResult.message}`;
                 this.paymentProcessing = false;
+                try { this.cdr.detectChanges(); } catch (_) {}
               }
             },
             error: (err) => {
-              console.error('Payment initiation error:', err);
+              console.error('[CHECKOUT] Erreur initiation paiement:', err);
               this.paymentStatus = 'failed';
               this.paymentErrorMessage = 'Erreur lors de l\'initiation du paiement. Utilisez WhatsApp.';
-              this.paymentProcessing = false;
+              this.resetPaymentState();
             }
           });
           return;
         }
 
         if (this.paymentMethod === 'cash') {
-          this.paymentService.processPayment({
-            orderId: res.id!, amount: this.total, paymentMethod: 'cash', status: 'completed'
-          } as any).subscribe({
-            next: () => {
-              this.paymentStatus = 'completed';
-              this.afterCheckout(orderData, res);
-            },
-            error: () => { this.paymentErrorMessage = 'Erreur lors du paiement.'; this.paymentProcessing = false; }
-          });
+          console.debug('[CHECKOUT] Mode cash, commande déjà traitée par le backend');
+          this.paymentStatus = 'completed';
+          this.paymentProcessing = false;
+          this.cdr.detectChanges();
+          setTimeout(() => {
+            console.debug('[CHECKOUT] Appel afterCheckout après cash');
+            this.afterCheckout(orderData, res);
+          }, 0);
           return;
         }
 
+        console.debug('[CHECKOUT] Autre méthode, finalisation');
         this.paymentStatus = 'completed';
-        this.afterCheckout(orderData, res);
+        this.paymentProcessing = false;
+        this.cdr.detectChanges();
+        setTimeout(() => this.afterCheckout(orderData, res), 0);
       },
       error: (err) => {
-        console.error('Checkout error:', err);
-        this.paymentErrorMessage = 'Erreur lors de la vente.';
-        this.paymentProcessing = false;
+        console.error('[CHECKOUT] ERREUR createOrder:', err);
+        if (err.error && err.error.error) {
+          console.error('[CHECKOUT] Message backend:', err.error.error);
+          this.paymentErrorMessage = 'Erreur: ' + err.error.error;
+        } else if (err.message) {
+          console.error('[CHECKOUT] Message erreur:', err.message);
+          this.paymentErrorMessage = 'Erreur: ' + err.message;
+        } else {
+          this.paymentErrorMessage = 'Erreur lors de la vente.';
+        }
+        this.resetPaymentState();
       }
     });
   }
 
+  printReceipt(): void {
+    if (!this.lastCompletedOrder || !this.lastCompletedOrder.orderData) {
+      alert('Aucune vente récente à imprimer. Effectuez d\'abord une vente.');
+      return;
+    }
+    const { orderNumber, id, orderData, cartItems } = this.lastCompletedOrder;
+    this.pdfService.generateReceipt({
+      ...orderData,
+      orderNumber: orderNumber || id,
+      items: cartItems || []
+    }).catch(err => console.error('[RECEIPT] Erreur génération reçu:', err));
+  }
+
   private startPaymentStatusPolling(depositId: string, orderId: string): void {
+    console.debug('[POLLING] Début polling depositId=', depositId, 'orderId=', orderId);
+    this.pollingAttempts = 0;
     this.statusInterval = setInterval(() => {
+      this.pollingAttempts++;
+      console.debug('[POLLING] Tentative', this.pollingAttempts, '/', this.MAX_POLLING_ATTEMPTS);
+      if (this.pollingAttempts > this.MAX_POLLING_ATTEMPTS) {
+        console.warn('[POLLING] Maximum tentatives atteint');
+        clearInterval(this.statusInterval);
+        this.paymentStatus = 'failed';
+        this.paymentErrorMessage = 'Le délai d\'attente du paiement est dépassé. Utilisez WhatsApp.';
+        this.resetPaymentState();
+        return;
+      }
       this.paymentService.checkPaymentStatus(depositId).subscribe({
         next: (status) => {
-          if (status.status === 'COMPLETED') {
+          console.debug('[POLLING] Statut reçu:', JSON.stringify(status));
+          const s = (status.status || '').toUpperCase();
+          if (s === 'COMPLETED') {
+            console.debug('[POLLING] Paiement COMPLETED');
             this.paymentStatus = 'completed';
             this.paymentProcessing = false;
+            try { this.cdr.detectChanges(); } catch (_) {}
             clearInterval(this.statusInterval);
+            const totalDiscount = (Number(this.discount) || 0) + (this.loyaltyDiscountRate || 0);
+            const orderData: OrderData = {
+              items: this.cart.map(item => ({ productId: item.product.id!, quantity: item.quantity, unitPrice: item.product.price })),
+              paymentMethod: this.paymentMethod as PaymentMethod,
+              discount: totalDiscount,
+              tax: Number(this.tax) || 0,
+              subtotal: this.subtotal,
+              totalAmount: this.total,
+              paidAmount: this.total
+            };
             this.paymentService.processPayment({
               orderId, amount: this.total, paymentMethod: this.paymentMethod as PaymentMethod, status: 'completed'
-            } as any).subscribe({
+            } as any).pipe(
+              timeout(15000)
+            ).subscribe({
               next: () => {
-                const orderData: OrderData = {
-                  items: this.cart.map(item => ({ productId: item.product.id!, quantity: item.quantity, unitPrice: item.product.price })),
-            paymentMethod: this.paymentMethod as PaymentMethod,
-                  discount: Number(this.discount) || 0,
-                  tax: Number(this.tax) || 0,
-                  subtotal: this.subtotal,
-                  totalAmount: this.total,
-                  paidAmount: this.total
-                };
+                console.debug('[POLLING] processPayment OK, finalisation');
+                this.afterCheckout(orderData, { id: orderId, orderNumber: this.lastOrderRef });
+              },
+              error: (err) => {
+                console.error('[POLLING] processPayment échoué mais on continue:', err);
                 this.afterCheckout(orderData, { id: orderId, orderNumber: this.lastOrderRef });
               }
             });
-          } else if (status.status === 'FAILED') {
+          } else if (s === 'FAILED') {
+            console.warn('[POLLING] Paiement FAILED');
             this.paymentStatus = 'failed';
             this.paymentErrorMessage = 'Le paiement a échoué. Réessayez ou utilisez WhatsApp.';
-            this.paymentProcessing = false;
+            this.resetPaymentState();
             clearInterval(this.statusInterval);
+          } else {
+            console.debug('[POLLING] Statut en cours:', s);
           }
         },
-        error: () => {
-          console.error('Status check error');
+        error: (err) => {
+          console.error('[POLLING] Erreur checkPaymentStatus:', err);
+          this.pollingAttempts++;
+          if (this.pollingAttempts > this.MAX_POLLING_ATTEMPTS) {
+            clearInterval(this.statusInterval);
+            this.paymentStatus = 'failed';
+            this.paymentErrorMessage = 'Le paiement a pris trop de temps. Utilisez WhatsApp.';
+            this.resetPaymentState();
+          }
         }
       });
     }, 5000);
@@ -287,17 +521,8 @@ export class SalesComponent implements OnInit, OnDestroy {
       }
     }
 
-    this.pdfService.generateReceipt({
-      ...orderData,
-      orderNumber: res.orderNumber,
-      items: this.cart.map(item => ({
-        productName: item.product.name,
-        quantity: item.quantity,
-        unitPrice: item.product.price
-      }))
-    });
-
     this.clearCart();
     this.loadProducts();
+    try { this.cdr.detectChanges(); } catch (_) {}
   }
 }

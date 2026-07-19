@@ -1,3 +1,5 @@
+/* Page-specific styles (design-system.css is loaded globally) */
+
 .cart-page {
   display: flex;
   flex-direction: column;
@@ -243,31 +245,6 @@
   margin: 24px 0 0;
 }
 
-.btn {
-  padding: 14px 20px;
-  border: none;
-  border-radius: 16px;
-  font-weight: 700;
-  font-size: 1rem;
-  cursor: pointer;
-  transition: all 0.25s ease;
-}
-
-.btn-primary {
-  background: #3b82f6;
-  color: #0f172a;
-}
-
-.btn-secondary {
-  background: rgba(255, 255, 255, 0.06);
-  color: #f8fafc;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-.btn-primary:hover {
-  background: #60a5fa;
-}
-
 .security-badge {
   display: inline-flex;
   align-items: center;
@@ -431,12 +408,6 @@
     gap: 10px;
   }
 
-  .btn {
-    padding: 12px 16px;
-    font-size: 0.9rem;
-    border-radius: 14px;
-  }
-
   .security-badge {
     padding: 12px 14px;
     border-radius: 14px;
@@ -469,11 +440,6 @@
   }
 
   .empty-cart p {
-    font-size: 0.85rem;
-  }
-
-  .empty-cart .btn {
-    padding: 10px 16px;
     font-size: 0.85rem;
   }
 
@@ -562,12 +528,6 @@
     border-radius: 12px;
   }
 
-  .btn {
-    padding: 10px 14px;
-    font-size: 0.85rem;
-    border-radius: 12px;
-  }
-
   .security-badge {
     padding: 10px 12px;
     border-radius: 12px;
@@ -575,4 +535,3 @@
     gap: 8px;
   }
 }
-

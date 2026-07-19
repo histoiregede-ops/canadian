@@ -17,7 +17,7 @@ RUN npm run build -- --configuration production
 
 FROM nginx:alpine AS production
 
-COPY --from=frontend /app/front/dist/front /usr/share/nginx/html
+COPY --from=frontend /app/front/dist/front/browser /usr/share/nginx/html
 COPY --from=backend /app/back /app/back
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 

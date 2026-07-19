@@ -23,13 +23,16 @@ export class LoginComponent {
   errorMessage = '';
   returnUrl = '';
 
+  private readonly validReturnUrls = ['/dashboard', '/sales', '/shop', '/admin', '/cart', '/checkout', '/orders', '/installations', '/client-dashboard'];
+
   constructor(
     private authService: AuthService,
     private customerAuth: CustomerAuthService,
     private router: Router,
     private route: ActivatedRoute
   ) {
-    this.returnUrl = this.route.snapshot.queryParamMap.get('returnUrl') || '';
+    const raw = this.route.snapshot.queryParamMap.get('returnUrl') || '';
+    this.returnUrl = this.isValidReturnUrl(raw) ? raw : '';
 
     if (this.authService.isLoggedIn()) {
       this.router.navigate([this.getDefaultStaffRoute()]);
@@ -37,6 +40,10 @@ export class LoginComponent {
     if (this.customerAuth.isAuthenticated()) {
       this.router.navigate([this.returnUrl || '/shop']);
     }
+  }
+
+  private isValidReturnUrl(url: string): boolean {
+    return this.validReturnUrls.some(valid => url.startsWith(valid));
   }
 
   switchMode(mode: 'staff' | 'client'): void {

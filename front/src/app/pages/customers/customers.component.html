@@ -1,142 +1,169 @@
-<div class="customers-page">
+<div class="page-container">
   <div class="page-header">
-    <div class="title-section">
-      <h1>Annuaire Clients</h1>
-      <p class="text-muted">Gérez vos relations clients et l'historique des contacts</p>
+    <div>
+      <h1 class="page-title">Annuaire Clients</h1>
+      <p class="page-subtitle">Gérez vos relations clients et l'historique des contacts</p>
     </div>
-    <button class="btn-primary" (click)="openAddModal()">
-      <span>➕</span> <span>Nouveau Client</span>
-    </button>
+    <button class="btn btn-primary" (click)="openAddModal()">➕ Nouveau Client</button>
   </div>
 
-  <!-- Stats Row -->
-  <div class="stats-row">
-    <div class="stat-item">
-      <span class="stat-icon total">👥</span>
-      <div>
-        <span class="stat-num">{{ customers.length }}</span>
-        <span class="stat-label">Total clients</span>
+  <div class="stats-grid">
+    <div class="stat-card">
+      <div class="stat-icon info">👥</div>
+      <div class="stat-content">
+        <p class="stat-label">Total clients</p>
+        <h3 class="stat-value">{{ customers.length }}</h3>
       </div>
     </div>
-    <div class="stat-item">
-      <span class="stat-icon email">📧</span>
-      <div>
-        <span class="stat-num">{{ getWithEmail() }}</span>
-        <span class="stat-label">Avec email</span>
+    <div class="stat-card">
+      <div class="stat-icon secondary">📧</div>
+      <div class="stat-content">
+        <p class="stat-label">Avec email</p>
+        <h3 class="stat-value">{{ getWithEmail() }}</h3>
       </div>
     </div>
-    <div class="stat-item">
-      <span class="stat-icon phone">📞</span>
-      <div>
-        <span class="stat-num">{{ getWithPhone() }}</span>
-        <span class="stat-label">Avec téléphone</span>
+    <div class="stat-card">
+      <div class="stat-icon success">📞</div>
+      <div class="stat-content">
+        <p class="stat-label">Avec téléphone</p>
+        <h3 class="stat-value">{{ getWithPhone() }}</h3>
       </div>
     </div>
-    <div class="stat-item">
-      <span class="stat-icon city">📍</span>
-      <div>
-        <span class="stat-num">{{ getUniqueCities() }}</span>
-        <span class="stat-label">Villes</span>
+    <div class="stat-card">
+      <div class="stat-icon warning">📍</div>
+      <div class="stat-content">
+        <p class="stat-label">Villes</p>
+        <h3 class="stat-value">{{ getUniqueCities() }}</h3>
       </div>
     </div>
-  </div>
-
-  <!-- Filter Bar -->
-  <div class="filter-bar">
-    <div class="search-box">
-      <span>🔍</span>
-      <input type="text" placeholder="Rechercher par nom, téléphone ou email..." [(ngModel)]="searchQuery" />
-    </div>
-  </div>
-
-  <!-- Customer Grid -->
-  <div class="customers-grid" *ngIf="!loading">
-    <div class="customer-card" *ngFor="let customer of filteredCustomers">
-      <div class="card-top">
-        <div class="avatar">{{ getInitials(customer) }}</div>
-        <div class="customer-main">
-          <h3>{{ customer.fullName || customer.name }}</h3>
-          <span class="customer-city" *ngIf="customer.city">{{ customer.city }}</span>
-        </div>
-      </div>
-
-      <div class="contact-info">
-        <div class="contact-item" *ngIf="customer.phone">
-          <span class="contact-icon">📞</span>
-          <span>{{ customer.phone }}</span>
-        </div>
-        <div class="contact-item" *ngIf="customer.email">
-          <span class="contact-icon">✉️</span>
-          <span>{{ customer.email }}</span>
-        </div>
-        <div class="contact-item" *ngIf="customer.address">
-          <span class="contact-icon">📍</span>
-          <span>{{ customer.address }}</span>
-        </div>
-        <div class="contact-item muted" *ngIf="!customer.phone && !customer.email && !customer.address">
-          <span>Aucun contact renseigné</span>
-        </div>
-      </div>
-
-      <div class="card-footer">
-        <div class="footer-actions">
-          <button class="btn-icon" (click)="openEditModal(customer)" title="Modifier">✏️</button>
-          <button class="btn-icon danger" (click)="deleteCustomer(customer.id!)" title="Supprimer">🗑️</button>
-        </div>
+    <div class="stat-card">
+      <div class="stat-icon primary">⭐</div>
+      <div class="stat-content">
+        <p class="stat-label">Gold/Platinum</p>
+        <h3 class="stat-value">{{ getLoyaltyCount('gold') + getLoyaltyCount('platinum') }}</h3>
       </div>
     </div>
   </div>
 
-  <!-- Empty State -->
+  <div class="filters-card">
+    <div class="filter-group">
+      <div class="search-box">
+        <span class="search-icon">🔍</span>
+        <input type="text" placeholder="Rechercher par nom, téléphone ou email..." [(ngModel)]="searchQuery" />
+      </div>
+      <select class="filter-select" [(ngModel)]="loyaltyFilter">
+        <option value="">Tous les niveaux</option>
+        <option value="bronze">🥉 Bronze</option>
+        <option value="silver">🥈 Silver</option>
+        <option value="gold">🥇 Gold</option>
+        <option value="platinum">💎 Platinum</option>
+      </select>
+    </div>
+  </div>
+
+  <div class="loading-state" *ngIf="loading">
+    <div class="spinner"></div>
+    <p>Chargement des clients...</p>
+  </div>
+
   <div class="empty-state" *ngIf="!loading && filteredCustomers.length === 0">
     <span class="empty-icon">👥</span>
-    <h3>{{ searchQuery ? 'Aucun résultat' : 'Aucun client enregistré' }}</h3>
-    <p>{{ searchQuery ? 'Aucun client ne correspond à votre recherche.' : 'Cliquez sur "Nouveau Client" pour ajouter votre premier client.' }}</p>
+    <h3 class="empty-title">{{ searchQuery ? 'Aucun résultat' : 'Aucun client enregistré' }}</h3>
+    <p class="empty-text">{{ searchQuery ? 'Aucun client ne correspond à votre recherche.' : 'Cliquez sur "Nouveau Client" pour ajouter votre premier client.' }}</p>
   </div>
 
-  <div class="loading-state" *ngIf="loading">Chargement des clients...</div>
+  <div class="customers-grid" *ngIf="!loading && filteredCustomers.length > 0">
+    <div class="card customer-card" *ngFor="let customer of filteredCustomers">
+      <div class="card-body">
+        <div class="customer-header">
+          <div class="customer-avatar">{{ getInitials(customer) }}</div>
+          <div class="customer-main">
+            <h3 class="customer-name">{{ customer.fullName || customer.name }}</h3>
+            <span class="customer-city" *ngIf="customer.city">{{ customer.city }}</span>
+          </div>
+        </div>
 
-  <!-- Modal for Add/Edit Customer -->
+        <div class="customer-contact">
+          <div class="contact-item" *ngIf="customer.phone">
+            <span class="contact-icon">📞</span>
+            <span>{{ customer.phone }}</span>
+          </div>
+          <div class="contact-item" *ngIf="customer.email">
+            <span class="contact-icon">✉️</span>
+            <span>{{ customer.email }}</span>
+          </div>
+          <div class="contact-item" *ngIf="customer.address">
+            <span class="contact-icon">📍</span>
+            <span>{{ customer.address }}</span>
+          </div>
+          <div class="contact-item muted" *ngIf="!customer.phone && !customer.email && !customer.address">
+            <span>Aucun contact renseigné</span>
+          </div>
+        </div>
+
+        <div class="loyalty-info" *ngIf="customer.loyaltyPoints !== undefined">
+          <span class="loyalty-badge" [class.bronze]="getLevel(customer) === 'bronze'"
+            [class.silver]="getLevel(customer) === 'silver'"
+            [class.gold]="getLevel(customer) === 'gold'"
+            [class.platinum]="getLevel(customer) === 'platinum'">
+            {{ getLevel(customer) }}
+          </span>
+          <span class="loyalty-points">{{ customer.loyaltyPoints }} pts</span>
+          <span class="loyalty-spent" *ngIf="customer.totalSpent">· {{ customer.totalSpent | number }} FCFA</span>
+          <span class="loyalty-orders" *ngIf="customer.orderCount !== undefined">· {{ customer.orderCount }} cmd(s)</span>
+        </div>
+
+        <div class="card-actions">
+          <button class="btn btn-outline btn-sm" (click)="openEditModal(customer)">✏️ Modifier</button>
+          <button class="btn btn-danger btn-sm" (click)="deleteCustomer(customer.id!)">🗑️ Supprimer</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <div class="modal-overlay" *ngIf="showModal">
     <div class="modal-card">
       <div class="modal-header">
-        <h2>{{ isEditing ? 'Modifier le Client' : 'Nouveau Client' }}</h2>
-        <button class="close-btn" (click)="showModal = false">×</button>
+        <h2 class="modal-title">{{ isEditing ? '✏️ Modifier le Client' : '➕ Nouveau Client' }}</h2>
+        <button class="modal-close" (click)="showModal = false">×</button>
       </div>
-      <form (submit)="saveCustomer()" class="modal-form">
-        <div class="form-group">
-          <label>Nom Complet</label>
-          <input type="text" [(ngModel)]="currentCustomer.fullName" name="fullName" required placeholder="Ex: Jean Dupont">
-        </div>
-        <div class="form-row">
+
+      <div class="modal-body">
+        <form (submit)="saveCustomer()" class="form">
           <div class="form-group">
-            <label>Téléphone</label>
-            <input type="text" [(ngModel)]="currentCustomer.phone" name="phone" placeholder="+228 90 00 00 00">
+            <label class="form-label">Nom Complet</label>
+            <input type="text" [(ngModel)]="currentCustomer.fullName" name="fullName" required placeholder="Ex: Jean Dupont" class="form-input" />
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Téléphone</label>
+              <input type="text" [(ngModel)]="currentCustomer.phone" name="phone" placeholder="+228 90 00 00 00" class="form-input" />
+            </div>
+            <div class="form-group">
+              <label class="form-label">Email</label>
+              <input type="email" [(ngModel)]="currentCustomer.email" name="email" placeholder="client@example.com" class="form-input" />
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Ville</label>
+              <input type="text" [(ngModel)]="currentCustomer.city" name="city" placeholder="Ex: Lomé" class="form-input" />
+            </div>
+            <div class="form-group">
+              <label class="form-label">Pays</label>
+              <input type="text" [(ngModel)]="currentCustomer.country" name="country" placeholder="Ex: Togo" class="form-input" />
+            </div>
           </div>
           <div class="form-group">
-            <label>Email</label>
-            <input type="email" [(ngModel)]="currentCustomer.email" name="email" placeholder="client@example.com">
+            <label class="form-label">Adresse</label>
+            <textarea [(ngModel)]="currentCustomer.address" name="address" rows="2" placeholder="Lomé, Togo" class="form-textarea"></textarea>
           </div>
-        </div>
-        <div class="form-row">
-          <div class="form-group">
-            <label>Ville</label>
-            <input type="text" [(ngModel)]="currentCustomer.city" name="city" placeholder="Ex: Lomé">
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" (click)="showModal = false">Annuler</button>
+            <button type="submit" class="btn btn-primary">{{ isEditing ? 'Mettre à jour' : 'Enregistrer' }}</button>
           </div>
-          <div class="form-group">
-            <label>Pays</label>
-            <input type="text" [(ngModel)]="currentCustomer.country" name="country" placeholder="Ex: Togo">
-          </div>
-        </div>
-        <div class="form-group">
-          <label>Adresse</label>
-          <textarea [(ngModel)]="currentCustomer.address" name="address" rows="2" placeholder="Lomé, Togo"></textarea>
-        </div>
-        <div class="modal-actions">
-          <button type="button" class="btn-secondary" (click)="showModal = false">Annuler</button>
-          <button type="submit" class="btn-primary">{{ isEditing ? 'Mettre à jour' : 'Enregistrer' }}</button>
-        </div>
-      </form>
+        </form>
+      </div>
     </div>
   </div>
 </div>

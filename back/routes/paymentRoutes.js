@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const { Order, CashTransaction, Payment } = require('../models');
 const sequelize = require('../config/database');
-const { authenticate } = require('../utils/auth');
+const { authenticate, authorize } = require('../utils/auth');
 const pawaPay = require('../services/paymentProvider');
 const PAWAPAY_WEBHOOK_SECRET = process.env.PAWAPAY_WEBHOOK_SECRET;
 
@@ -182,7 +182,7 @@ router.get('/order/:orderId', authenticate, async (req, res) => {
   res.json(payments);
 });
 
-router.post('/:id/refund', authenticate, async (req, res) => {
+router.post('/:id/refund', authenticate, authorize('admin'), async (req, res) => {
   try {
     const payment = await Payment.findByPk(req.params.id);
     if (!payment) return res.status(404).json({ error: 'Payment not found' });

@@ -1,6 +1,9 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { Subscription } from 'rxjs';
+import { ActivatedRoute } from '@angular/router';
 import { StatsService, DashboardStats, RecentOrder, UrgentRepair } from '../../services/stats';
+import { RefreshService } from '../../services/refresh.service';
 
 @Component({
   selector: 'app-dashboard',
@@ -9,7 +12,7 @@ import { StatsService, DashboardStats, RecentOrder, UrgentRepair } from '../../s
   templateUrl: './dashboard.component.html',
   styleUrls: ['./dashboard.component.css']
 })
-export class DashboardComponent implements OnInit {
+export class DashboardComponent implements OnInit, OnDestroy {
   stats: DashboardStats = {
     dailyIncome: 0,
     dailyExpense: 0,
@@ -24,13 +27,34 @@ export class DashboardComponent implements OnInit {
   loading = true;
   ordersLoading = true;
   repairsLoading = true;
+  private refreshSub?: Subscription;
 
-  constructor(private statsService: StatsService) {}
+  constructor(
+    private route: ActivatedRoute,
+    private statsService: StatsService,
+    private refreshService: RefreshService
+  ) {}
 
   ngOnInit(): void {
-    this.loadStats();
-    this.loadRecentOrders();
-    this.loadUrgentRepairs();
+    this.route.data.subscribe(({ data }) => {
+      if (data) {
+        this.stats = data.stats;
+        this.recentOrders = data.recentOrders;
+        this.urgentRepairs = data.urgentRepairs;
+        this.loading = false;
+        this.ordersLoading = false;
+        this.repairsLoading = false;
+      }
+    });
+    this.refreshSub = this.refreshService.refresh$.subscribe(() => {
+      this.loadStats();
+      this.loadRecentOrders();
+      this.loadUrgentRepairs();
+    });
+  }
+
+  ngOnDestroy(): void {
+    this.refreshSub?.unsubscribe();
   }
 
   loadStats(): void {
@@ -153,10 +177,6 @@ export class DashboardComponent implements OnInit {
     if (lower.includes('printer') || lower.includes('imprimante')) return '🖨️';
     if (lower.includes('solar') || lower.includes('panneau') || lower.includes('kit')) return '☀️';
     return '🔧';
-  }
-
-  formatAmount(amount: number): string {
-    return new Intl.NumberFormat('fr-FR').format(amount);
   }
 
   formatDate(dateStr: string): string {

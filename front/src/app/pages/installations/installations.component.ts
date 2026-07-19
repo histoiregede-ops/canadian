@@ -1,9 +1,13 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Subscription } from 'rxjs';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { ActivatedRoute } from '@angular/router';
 import { InstallationService, Installation } from '../../services/installation';
 import { CustomerService, Customer } from '../../services/customer';
-import { UserService } from '../../services/user';
+import { UserService } from '../../services/user.service';
+import { OrderService } from '../../services/order';
+import { RefreshService } from '../../services/refresh.service';
 
 @Component({
   selector: 'app-installations',
@@ -12,15 +16,17 @@ import { UserService } from '../../services/user';
   templateUrl: './installations.component.html',
   styleUrls: ['./installations.component.css']
 })
-export class InstallationsComponent implements OnInit {
+export class InstallationsComponent implements OnInit, OnDestroy {
   installations: Installation[] = [];
   customers: Customer[] = [];
   technicians: any[] = [];
+  orders: any[] = [];
   loading = true;
   showModal = false;
   isEditing = false;
 
   currentInstallation: Installation = this.initInstallation();
+  private refreshSub: Subscription | null = null;
 
   private statusWeight: any = { in_progress: 0, planned: 1, survey: 2, testing: 3, completed: 4, cancelled: 5 };
 
@@ -36,15 +42,29 @@ export class InstallationsComponent implements OnInit {
   }
 
   constructor(
+    private route: ActivatedRoute,
     private installationService: InstallationService,
     private customerService: CustomerService,
-    private userService: UserService
+    private userService: UserService,
+    private orderService: OrderService,
+    private refreshService: RefreshService
   ) {}
 
   ngOnInit(): void {
-    this.loadInstallations();
-    this.loadCustomers();
-    this.loadTechnicians();
+    this.route.data.subscribe(({ data }) => {
+      if (data) {
+        this.installations = data.installations;
+        this.customers = data.customers;
+        this.technicians = data.technicians;
+        this.orders = data.orders;
+        this.loading = false;
+      }
+    });
+    this.refreshSub = this.refreshService.refresh$.subscribe(() => this.loadInstallations());
+  }
+
+  ngOnDestroy(): void {
+    this.refreshSub?.unsubscribe();
   }
 
   initInstallation(): Installation {
@@ -52,6 +72,7 @@ export class InstallationsComponent implements OnInit {
       location: '',
       kitType: '',
       status: 'planned',
+      priority: 'normal',
       scheduledDate: new Date(),
       customerId: '',
       technicianId: '',
@@ -66,6 +87,13 @@ export class InstallationsComponent implements OnInit {
   loadTechnicians(): void {
     this.userService.getUsers().subscribe((users: any[]) => {
       this.technicians = users.filter((u: any) => u.role === 'technician');
+    });
+  }
+
+  loadOrders(): void {
+    this.orderService.getOrders().subscribe({
+      next: (data: any[]) => this.orders = data,
+      error: (err: any) => console.error('Error loading orders:', err)
     });
   }
 
@@ -140,6 +168,7 @@ export class InstallationsComponent implements OnInit {
   }
 
   getUrgencyBadge(install: Installation): string {
+    if (install.priority) return install.priority;
     const now = new Date().getTime();
     if (install.status === 'in_progress') return 'urgent';
     if (install.status === 'planned' && install.scheduledDate) {

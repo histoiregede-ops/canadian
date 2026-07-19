@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { Order, OrderItem, Product, CashTransaction, Customer } = require('../models');
+const { Order, OrderItem, Product, Category, CashTransaction, Customer, Installation } = require('../models');
 const sequelize = require('../config/database');
 const { authenticate, authorize } = require('../utils/auth');
 
@@ -37,7 +37,7 @@ const normalizeCustomerData = async (customerId, customerData, transaction) => {
   return customer.id;
 };
 
-router.post('/', async (req, res) => {
+router.post('/', authenticate, async (req, res) => {
   const t = await sequelize.transaction();
   try {
     const { items, customerId, customer, paymentMethod, discount = 0, tax = 0, subtotal = 0, totalAmount = 0, paidAmount = 0, deliveryAddress = '' } = req.body;
@@ -95,13 +95,12 @@ router.post('/', async (req, res) => {
         product.stockQuantity -= item.quantity;
         if (product.stockQuantity < 0) product.stockQuantity = 0;
         await product.save({ transaction: t });
-        // Log stock movement outside transaction to avoid deadlocks
+        const threshold = product.lowStockThreshold || 15;
         await sequelize.query(
           'INSERT INTO stock_movements (productId, previousQuantity, newQuantity, changeAmount, reason, reference, createdAt) VALUES (?, ?, ?, ?, ?, ?, NOW())',
           { replacements: [item.productId, prev, product.stockQuantity, product.stockQuantity - prev, 'sale', order.orderNumber] }
-        ).catch(() => {});
-        // Broadcast low stock alert
-        if (product.stockQuantity <= 15 && product.stockQuantity > 0 && global.broadcastNotification) {
+        ).catch(err => console.error('Failed to log stock movement:', err));
+        if (product.stockQuantity <= threshold && product.stockQuantity > 0 && global.broadcastNotification) {
           global.broadcastNotification({
             title: 'Stock faible',
             body: `${product.name}: ${product.stockQuantity} unité(s) restante(s)`,
@@ -148,6 +147,52 @@ router.post('/', async (req, res) => {
 
     await t.commit();
 
+    // Auto-create installation for solar kit orders
+    try {
+      const orderItems = await OrderItem.findAll({
+        where: { orderId: order.id },
+        include: [{ model: Product, include: [Category] }]
+      });
+      const solarItems = orderItems.filter(item => {
+        const cat = item.Product?.Category;
+        return cat && (cat.type === 'solar' || (cat.name && cat.name.toLowerCase().includes('solaire')));
+      });
+      if (solarItems.length > 0 && resolvedCustomerId) {
+        const [techs] = await sequelize.query(`
+          SELECT u.id, u."fullName", COUNT(i.id) as activeJobs
+          FROM Users u
+          LEFT JOIN Installations i ON i.technicianId = u.id AND i.status IN ('survey', 'planned', 'in_progress')
+          WHERE u.role = 'technician'
+          GROUP BY u.id
+          ORDER BY activeJobs ASC
+          LIMIT 1
+        `);
+        if (techs.length > 0) {
+          const tech = techs[0];
+          const customer = await Customer.findByPk(resolvedCustomerId);
+          await Installation.create({
+            orderId: order.id,
+            location: customer?.address || 'À définir',
+            kitType: solarItems.map(i => i.Product?.name || 'Kit Solaire').join(', '),
+            status: 'survey',
+            customerId: resolvedCustomerId,
+            technicianId: tech.id,
+            notes: `Installation auto-générée suite à la commande ${order.orderNumber}`,
+            scheduledDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
+          });
+          if (global.broadcastNotification) {
+            global.broadcastNotification({
+              title: 'Installation planifiée',
+              body: `Installation auto-assignée à ${tech.fullName || tech.id} pour commande ${order.orderNumber}`,
+              type: 'info'
+            });
+          }
+        }
+      }
+    } catch (installErr) {
+      console.error('Error auto-creating installation:', installErr.message);
+    }
+
     if (global.sendWebSocketNotification && resolvedCustomerId) {
       global.sendWebSocketNotification(resolvedCustomerId, {
         title: 'Commande enregistrée',
@@ -159,7 +204,8 @@ router.post('/', async (req, res) => {
     if (global.broadcastNotification) {
       global.broadcastNotification({
         title: 'Nouvelle commande',
-        body: `Une nouvelle commande (${order.orderNumber}) a été enregistrée.`
+        body: `Une nouvelle commande (${order.orderNumber}) a été enregistrée.`,
+        type: 'order'
       });
     }
 
@@ -170,13 +216,31 @@ router.post('/', async (req, res) => {
   }
 });
 
+// Get all orders
+router.get('/', authenticate, authorize('admin', 'cashier'), async (req, res) => {
+  try {
+    const orders = await Order.findAll({
+      include: [
+        { model: OrderItem, as: 'products' },
+        { model: Customer, attributes: ['id', 'name', 'phone'] },
+        { model: Installation, attributes: ['id', 'status', 'location'] }
+      ],
+      order: [['createdAt', 'DESC']]
+    });
+    res.json(orders);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // Get single order with items
-router.get('/:id', async (req, res) => {
+router.get('/:id', authenticate, async (req, res) => {
   try {
     const order = await Order.findByPk(req.params.id, {
       include: [
         { model: OrderItem, as: 'products' },
-        { model: Customer }
+        { model: Customer },
+        { model: Installation, attributes: ['id', 'status', 'location', 'scheduledDate'] }
       ]
     });
     if (!order) return res.status(404).json({ message: 'Order not found' });
@@ -187,7 +251,7 @@ router.get('/:id', async (req, res) => {
 });
 
 // Get orders for a customer
-router.get('/customer/:customerId', async (req, res) => {
+router.get('/customer/:customerId', authenticate, async (req, res) => {
   try {
     const orders = await Order.findAll({
       where: { customerId: req.params.customerId },
@@ -205,9 +269,71 @@ router.put('/:id', authenticate, authorize('admin', 'cashier'), async (req, res)
     const order = await Order.findByPk(req.params.id);
     if (!order) return res.status(404).json({ message: 'Order not found' });
 
-    await order.update(req.body);
+    const allowedOrderFields = ['paymentMethod', 'deliveryAddress', 'status'];
+    const safeData = {};
+    allowedOrderFields.forEach(f => { if (req.body[f] !== undefined) safeData[f] = req.body[f]; });
+    await order.update(safeData);
     res.json(order);
   } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
+});
+
+router.delete('/:id', authenticate, authorize('admin', 'cashier'), async (req, res) => {
+  const t = await sequelize.transaction();
+  try {
+    const order = await Order.findByPk(req.params.id, { transaction: t });
+    if (!order) {
+      await t.rollback();
+      return res.status(404).json({ message: 'Order not found' });
+    }
+
+    const orderItems = await OrderItem.findAll({ where: { orderId: order.id }, transaction: t });
+    for (const item of orderItems) {
+      const product = await Product.findByPk(item.productId, { transaction: t });
+      if (product) {
+        const prev = product.stockQuantity;
+        product.stockQuantity += item.quantity;
+        await product.save({ transaction: t });
+        await sequelize.query(
+          'INSERT INTO stock_movements (productId, previousQuantity, newQuantity, changeAmount, reason, reference, createdAt) VALUES (?, ?, ?, ?, ?, ?, NOW())',
+          { replacements: [item.productId, prev, product.stockQuantity, product.stockQuantity - prev, 'return', order.orderNumber] }
+        ).catch(err => console.error('Failed to log stock movement:', err));
+      }
+      await item.destroy({ transaction: t });
+    }
+
+    if (order.paidAmount > 0) {
+      let customerName = null;
+      if (order.customerId) {
+        const c = await Customer.findByPk(order.customerId, { transaction: t });
+        customerName = c ? (c.fullName || c.name) : null;
+      }
+      await CashTransaction.create({
+        type: 'expense',
+        amount: order.paidAmount,
+        description: `Remboursement annulation ${order.orderNumber}`,
+        category: 'Refunds',
+        date: new Date(),
+        customerId: order.customerId,
+        customerName
+      }, { transaction: t });
+    }
+
+    await order.destroy({ transaction: t });
+    await t.commit();
+
+    if (global.broadcastNotification) {
+      global.broadcastNotification({
+        title: 'Commande annulée',
+        body: `La commande ${order.orderNumber} a été annulée et le stock restauré.`,
+        type: 'info'
+      });
+    }
+
+    res.json({ message: 'Order cancelled', orderNumber: order.orderNumber });
+  } catch (error) {
+    await t.rollback();
     res.status(400).json({ error: error.message });
   }
 });

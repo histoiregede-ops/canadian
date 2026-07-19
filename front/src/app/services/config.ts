@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable, shareReplay } from 'rxjs';
+import { Observable } from 'rxjs';
 import { environment } from '../../environments/environment';
 
 export interface PaymentMethod {
@@ -9,6 +9,12 @@ export interface PaymentMethod {
   icon: string;
   operator: string;
   isMobileMoney: boolean;
+}
+
+export interface ExpenseCategory {
+  key: string;
+  name: string;
+  icon: string;
 }
 
 export interface AppConfig {
@@ -21,14 +27,14 @@ export interface AppConfig {
 @Injectable({ providedIn: 'root' })
 export class ConfigService {
   private apiUrl = `${environment.apiUrl}/api/config`;
-  private config$: Observable<AppConfig> | null = null;
 
   constructor(private http: HttpClient) {}
 
   getPaymentMethods(): Observable<AppConfig> {
-    if (!this.config$) {
-      this.config$ = this.http.get<AppConfig>(`${this.apiUrl}/payment-methods`).pipe(shareReplay(1));
-    }
-    return this.config$;
+    return this.http.get<AppConfig>(`${this.apiUrl}/payment-methods`);
+  }
+
+  getExpenseCategories(): Observable<ExpenseCategory[]> {
+    return this.http.get<ExpenseCategory[]>(`${this.apiUrl}/expense-categories`);
   }
 }

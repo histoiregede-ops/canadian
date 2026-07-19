@@ -3,6 +3,7 @@ const router = express.Router();
 const { v2: cloudinary } = require('cloudinary');
 const Category = require('../models/Category');
 const Product = require('../models/Product');
+const Supplier = require('../models/Supplier');
 const sequelize = require('../config/database');
 const { authenticate, authorize } = require('../utils/auth');
 
@@ -49,7 +50,7 @@ const isBase64Image = (str) => str && str.startsWith('data:image');
 
 router.get('/', async (req, res) => {
   try {
-    const products = await Product.findAll({ include: [Category] });
+    const products = await Product.findAll({ include: [Category, { model: Supplier, attributes: ['id', 'name'] }] });
     res.json(products);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -58,7 +59,7 @@ router.get('/', async (req, res) => {
 
 router.get('/:id', async (req, res) => {
   try {
-    const product = await Product.findByPk(req.params.id, { include: [Category] });
+    const product = await Product.findByPk(req.params.id, { include: [Category, { model: Supplier, attributes: ['id', 'name'] }] });
     if (product) {
       res.json(product);
     } else {
@@ -71,13 +72,16 @@ router.get('/:id', async (req, res) => {
 
 router.post('/', authenticate, authorize('admin', 'cashier'), async (req, res) => {
   try {
-    let { photo, name, description, price, stockQuantity, status, categoryId } = req.body;
+    let { photo, name, description, price, stockQuantity, status, categoryId, supplierId } = req.body;
 
     if (!name || !name.trim()) return res.status(400).json({ error: 'Le nom du produit est requis' });
     if (price === undefined || isNaN(price) || Number(price) <= 0) return res.status(400).json({ error: 'Le prix doit être supérieur à 0' });
     if (stockQuantity !== undefined && (isNaN(stockQuantity) || Number(stockQuantity) < 0)) return res.status(400).json({ error: 'Le stock ne peut pas être négatif' });
 
-    let productData = { name, description, price, stockQuantity, status, categoryId };
+    if (!categoryId || categoryId === '') categoryId = null;
+    if (!supplierId || supplierId === '') supplierId = null;
+
+    let productData = { name, description, price, stockQuantity, status, categoryId, supplierId };
 
     if (isBase64Image(photo)) {
       productData.photo = await uploadToCloudinary(photo);
@@ -96,7 +100,7 @@ router.post('/', authenticate, authorize('admin', 'cashier'), async (req, res) =
 router.put('/:id', authenticate, authorize('admin', 'cashier'), async (req, res) => {
   try {
     const { id } = req.params;
-    let { photo, name, description, price, stockQuantity, status, categoryId } = req.body;
+    let { photo, name, description, price, stockQuantity, status, categoryId, supplierId } = req.body;
 
     if (name !== undefined && !name.trim()) return res.status(400).json({ error: 'Le nom du produit est requis' });
     if (price !== undefined && (isNaN(price) || Number(price) <= 0)) return res.status(400).json({ error: 'Le prix doit être supérieur à 0' });
@@ -105,7 +109,10 @@ router.put('/:id', authenticate, authorize('admin', 'cashier'), async (req, res)
     const product = await Product.findByPk(id);
     if (!product) return res.status(404).json({ error: 'Product not found' });
 
-    let productData = { name, description, price, stockQuantity, status, categoryId };
+    if (!categoryId || categoryId === '') categoryId = null;
+    if (!supplierId || supplierId === '') supplierId = null;
+
+    let productData = { name, description, price, stockQuantity, status, categoryId, supplierId };
 
     if (isBase64Image(photo)) {
       if (isCloudinaryUrl(product.photo)) {
@@ -137,13 +144,12 @@ async function logStockMovement(productId, previousQuantity, newQuantity, reason
     'INSERT INTO stock_movements (productId, previousQuantity, newQuantity, changeAmount, reason, reference, createdBy, createdAt) VALUES (?, ?, ?, ?, ?, ?, ?, NOW())',
     { replacements: [productId, previousQuantity, newQuantity, changeAmount, reason, reference || null, createdBy || null] }
   );
-  if (newQuantity <= 15 && newQuantity > 0 && global.broadcastNotification) {
-    const [p] = await sequelize.query('SELECT name FROM Products WHERE id = ?', { replacements: [productId] });
-    const name = p[0]?.name || 'Produit';
+  const [p] = await sequelize.query('SELECT name, lowStockThreshold FROM Products WHERE id = ?', { replacements: [productId] });
+  const name = p[0]?.name || 'Produit';
+  const threshold = p[0]?.lowStockThreshold || 15;
+  if (newQuantity <= threshold && newQuantity > 0 && global.broadcastNotification) {
     global.broadcastNotification({ title: 'Stock faible', body: `${name}: ${newQuantity} unité(s) restante(s)`, type: 'low_stock' });
   } else if (newQuantity === 0 && global.broadcastNotification) {
-    const [p] = await sequelize.query('SELECT name FROM Products WHERE id = ?', { replacements: [productId] });
-    const name = p[0]?.name || 'Produit';
     global.broadcastNotification({ title: 'Rupture de stock', body: `${name} est en rupture de stock`, type: 'out_of_stock' });
   }
 }
@@ -160,6 +166,26 @@ router.post('/:id/restock', authenticate, authorize('admin', 'cashier'), async (
     const next = prev + quantity;
     await product.update({ stockQuantity: next, status: 'available' });
     await logStockMovement(id, prev, next, 'restock', null, req.user?.username);
+    res.json(product);
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
+});
+
+router.post('/:id/adjust-stock', authenticate, authorize('admin', 'cashier'), async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { quantity, reason = 'adjustment' } = req.body;
+    const product = await Product.findByPk(id);
+    if (!product) return res.status(404).json({ error: 'Product not found' });
+    if (quantity === undefined || quantity === null || isNaN(quantity) || Number(quantity) < 0) {
+      return res.status(400).json({ error: 'Quantité invalide' });
+    }
+
+    const prev = product.stockQuantity;
+    const next = Number(quantity);
+    await product.update({ stockQuantity: next, status: next > 0 ? 'available' : 'out_of_stock' });
+    await logStockMovement(id, prev, next, reason || 'adjustment', null, req.user?.username);
     res.json(product);
   } catch (error) {
     res.status(400).json({ error: error.message });

@@ -1,103 +1,81 @@
+/* Page-specific styles (design-system.css is loaded globally) */
+
 .dashboard {
   display: flex;
   flex-direction: column;
-  gap: 24px;
-}
-
-.welcome-header h1 {
-  font-size: 1.875rem;
-  margin-bottom: 4px;
-}
-
-.stats-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-  gap: 20px;
-}
-
-.stat-card {
-  background: white;
-  padding: 24px;
-  border-radius: 16px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
-  border: 1px solid var(--border-color);
-  transition: transform 0.2s ease;
-}
-
-.stat-card:hover {
-  transform: translateY(-4px);
-}
-
-.stat-card.gold { border-left: 6px solid var(--secondary-color); }
-.stat-card.blue { border-left: 6px solid var(--accent-color); }
-.stat-card.orange { border-left: 6px solid #f97316; }
-.stat-card.green { border-left: 6px solid var(--success); }
-
-.stat-info .label {
-  font-size: 0.875rem;
-  color: var(--text-muted);
-  font-weight: 500;
-}
-
-.stat-info .value {
-  font-size: 1.5rem;
-  margin: 8px 0;
-}
-
-.trend {
-  font-size: 0.75rem;
-  font-weight: 600;
-}
-
-.trend.positive { color: var(--success); }
-
-.stat-icon {
-  font-size: 2rem;
-  background: #f8fafc;
-  width: 56px;
-  height: 56px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 12px;
+  gap: var(--space-6);
 }
 
 .dashboard-grid {
   display: grid;
   grid-template-columns: 2fr 1fr;
-  gap: 24px;
+  gap: var(--space-6);
+  align-items: start;
 }
 
-.card-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 20px;
-}
-
-.btn-link {
-  background: none;
-  color: var(--accent-color);
-  font-weight: 600;
-  font-size: 0.875rem;
-}
-
-.repair-list, .alert-list {
+.dashboard-main {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: var(--space-5);
+}
+
+.dashboard-sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+}
+
+.mt-4 {
+  margin-top: var(--space-5);
+}
+
+/* Stat cards */
+.stat-card {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+}
+
+.stat-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.stat-trend {
+  font-size: var(--font-xs);
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.stat-trend.positive {
+  color: var(--success);
+}
+
+.stat-unit {
+  font-size: var(--font-sm);
+  font-weight: 500;
+  color: var(--text-muted);
+}
+
+/* Repairs */
+.repair-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
 }
 
 .repair-item {
   display: flex;
   align-items: center;
-  gap: 16px;
-  padding: 12px;
-  background: #f8fafc;
-  border-radius: 10px;
+  gap: var(--space-4);
+  padding: var(--space-3) var(--space-4);
+  background: var(--border-light);
+  border-radius: var(--radius-md);
+  transition: background var(--transition-fast);
+}
+
+.repair-item:hover {
+  background: var(--border);
 }
 
 .repair-icon {
@@ -110,194 +88,133 @@
   display: flex;
   flex-direction: column;
   min-width: 0;
+  gap: 2px;
 }
 
 .repair-details .device {
   font-weight: 600;
-  font-size: 0.875rem;
+  font-size: var(--font-sm);
+  color: var(--text-primary);
 }
 
 .repair-details .client {
-  font-size: 0.75rem;
+  font-size: var(--font-xs);
   color: var(--text-muted);
 }
 
 .repair-details .issue {
-  font-size: 0.75rem;
+  font-size: var(--font-xs);
   color: var(--text-muted);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  max-width: 250px;
+  max-width: 260px;
 }
 
 .repair-badges {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: var(--space-2);
   flex-shrink: 0;
 }
 
-.alert-item {
-  display: flex;
-  gap: 12px;
-  padding: 12px;
-  border-radius: 10px;
-}
-
-.alert-item.danger { background: #fee2e2; color: #991b1b; }
-.alert-item.warning { background: #fef9c3; color: #854d0e; }
-.alert-item.success { background: #dcfce7; color: #166534; }
-
-.alert-content .title {
-  font-weight: 700;
-  font-size: 0.875rem;
-}
-
-.alert-content p {
-  font-size: 0.75rem;
-}
-
+/* Cash summary */
 .cash-summary {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: var(--space-3);
 }
 
 .cash-row {
   display: flex;
   justify-content: space-between;
+  font-size: var(--font-sm);
   font-weight: 500;
+  color: var(--text-secondary);
 }
 
 .cash-row.total {
   font-weight: 700;
-  font-size: 1.125rem;
-  color: var(--primary-color);
+  font-size: var(--font-lg);
+  color: var(--primary);
 }
 
-.income { color: var(--success); }
-.expense { color: var(--danger); }
+.income {
+  color: var(--success);
+  font-weight: 600;
+}
+
+.expense {
+  color: var(--danger);
+  font-weight: 600;
+}
 
 .divider {
   height: 1px;
-  background: var(--border-color);
-  margin: 4px 0;
+  background: var(--border);
+  margin: var(--space-1) 0;
 }
 
-.mt-4 { margin-top: 1rem; }
-
-.table-responsive {
-  overflow-x: auto;
-  -webkit-overflow-scrolling: touch;
+/* Alerts */
+.alert-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
 }
 
+.alert-icon {
+  font-size: 1.25rem;
+  flex-shrink: 0;
+}
+
+/* Table overrides */
 .order-number {
-  font-family: monospace;
-  font-size: 0.8rem;
+  font-family: ui-monospace, monospace;
+  font-size: var(--font-sm);
+  color: var(--text-muted);
 }
 
 .amount {
   font-weight: 600;
   white-space: nowrap;
+  color: var(--text-primary);
 }
 
-.loading-spinner {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 40px 0;
-  color: var(--text-muted);
-}
-
-.spinner {
-  width: 40px;
-  height: 40px;
-  border: 4px solid var(--border-color);
-  border-top-color: var(--secondary-color);
-  border-radius: 50%;
-  animation: spin 0.8s linear infinite;
-}
-
-.spinner-sm {
-  width: 24px;
-  height: 24px;
-  border-width: 3px;
-}
-
-@keyframes spin {
-  to { transform: rotate(360deg); }
-}
-
-.empty-state {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 40px 0;
-  color: var(--text-muted);
-}
-
-.empty-icon {
-  font-size: 2.5rem;
-  margin-bottom: 12px;
-}
-
-.empty-state p {
-  font-size: 0.875rem;
-}
-
+/* Responsive */
 @media (max-width: 1024px) {
   .dashboard-grid {
     grid-template-columns: 1fr;
-  }
-
-  .stats-grid {
-    grid-template-columns: repeat(2, 1fr);
   }
 }
 
 @media (max-width: 768px) {
   .dashboard {
-    gap: 16px;
-  }
-
-  .welcome-header h1 {
-    font-size: 1.5rem;
+    gap: var(--space-4);
   }
 
   .stats-grid {
     grid-template-columns: repeat(2, 1fr);
-    gap: 12px;
+    gap: var(--space-3);
   }
 
   .stat-card {
-    padding: 16px;
-  }
-
-  .stat-info .value {
-    font-size: 1.25rem;
+    padding: var(--space-4);
   }
 
   .stat-icon {
     width: 44px;
     height: 44px;
-    font-size: 1.5rem;
+    font-size: 1.25rem;
   }
 
-  .card-header {
-    margin-bottom: 12px;
-  }
-
-  .card-header h3 {
-    font-size: 1rem;
+  .stat-value {
+    font-size: var(--font-xl);
   }
 
   .repair-item {
     flex-wrap: wrap;
-    gap: 8px;
-    padding: 10px;
+    gap: var(--space-3);
+    padding: var(--space-3);
   }
 
   .repair-details .issue {
@@ -308,86 +225,36 @@
     flex-direction: row;
     width: 100%;
     justify-content: flex-end;
-    gap: 8px;
+    gap: var(--space-2);
   }
 
   .dashboard-grid {
-    gap: 16px;
-  }
-
-  th, td {
-    padding: 8px 10px;
-    font-size: 0.8rem;
+    gap: var(--space-4);
   }
 }
 
 @media (max-width: 480px) {
-  .dashboard {
-    gap: 12px;
-  }
-
-  .welcome-header h1 {
-    font-size: 1.25rem;
-  }
-
-  .welcome-header .text-muted {
-    font-size: 0.8rem;
-  }
-
   .stats-grid {
-    grid-template-columns: 1fr 1fr;
-    gap: 8px;
+    grid-template-columns: 1fr;
   }
 
   .stat-card {
-    padding: 12px;
-    border-radius: 12px;
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 8px;
+    padding: var(--space-3);
   }
 
-  .stat-card .stat-icon {
-    display: none;
+  .stat-icon {
+    width: 40px;
+    height: 40px;
+    font-size: 1.1rem;
   }
 
-  .stat-info .label {
-    font-size: 0.7rem;
-  }
-
-  .stat-info .value {
-    font-size: 1rem;
-    margin: 4px 0;
-  }
-
-  .stat-info .trend {
-    font-size: 0.65rem;
-  }
-
-  .card {
-    padding: 12px;
-    border-radius: 12px;
-  }
-
-  .card-header {
-    margin-bottom: 8px;
-  }
-
-  .card-header h3 {
-    font-size: 0.9rem;
-  }
-
-  .btn-link {
-    font-size: 0.75rem;
-  }
-
-  .repair-list, .alert-list {
-    gap: 8px;
+  .stat-value {
+    font-size: var(--font-lg);
   }
 
   .repair-item {
-    padding: 8px;
-    gap: 8px;
+    padding: var(--space-2);
+    gap: var(--space-2);
   }
 
   .repair-icon {
@@ -395,7 +262,7 @@
   }
 
   .repair-details .device {
-    font-size: 0.8rem;
+    font-size: var(--font-xs);
   }
 
   .repair-details .client,
@@ -403,72 +270,8 @@
     font-size: 0.7rem;
   }
 
-  .repair-badges {
-    gap: 4px;
-  }
-
   .badge {
     padding: 2px 6px;
     font-size: 0.65rem;
-  }
-
-  .alert-item {
-    padding: 8px;
-    gap: 8px;
-  }
-
-  .alert-content .title {
-    font-size: 0.8rem;
-  }
-
-  .alert-content p {
-    font-size: 0.7rem;
-  }
-
-  .cash-summary {
-    gap: 8px;
-  }
-
-  .cash-row {
-    font-size: 0.8rem;
-  }
-
-  .cash-row.total {
-    font-size: 0.95rem;
-  }
-
-  th, td {
-    padding: 6px 8px;
-    font-size: 0.75rem;
-  }
-
-  .order-number {
-    font-size: 0.7rem;
-  }
-
-  .amount {
-    font-size: 0.75rem;
-  }
-
-  .empty-state {
-    padding: 24px 0;
-  }
-
-  .empty-icon {
-    font-size: 2rem;
-  }
-
-  .empty-state p {
-    font-size: 0.8rem;
-  }
-
-  .loading-spinner {
-    padding: 24px 0;
-  }
-
-  .spinner {
-    width: 28px;
-    height: 28px;
-    border-width: 3px;
   }
 }

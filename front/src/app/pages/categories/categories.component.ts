@@ -1,8 +1,12 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Subscription } from 'rxjs';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { ActivatedRoute } from '@angular/router';
 
 import { CategoryService, Category } from '../../services/category';
+import { ProductService } from '../../services/product';
+import { RefreshService } from '../../services/refresh.service';
 
 @Component({
   selector: 'app-categories',
@@ -11,7 +15,7 @@ import { CategoryService, Category } from '../../services/category';
   templateUrl: './categories.component.html',
   styleUrls: ['./categories.component.css']
 })
-export class CategoriesComponent implements OnInit {
+export class CategoriesComponent implements OnInit, OnDestroy {
   categories: Category[] = [];
 
   loading = true;
@@ -20,11 +24,26 @@ export class CategoriesComponent implements OnInit {
 
   currentCategory: Category = this.initCategory();
   errorMessage = '';
+  private refreshSub: Subscription | null = null;
+  private productCounts: Map<string, number> = new Map();
 
-  constructor(private categoryService: CategoryService) {}
+  constructor(private route: ActivatedRoute, private categoryService: CategoryService, private productService: ProductService, private refreshService: RefreshService) {}
 
   ngOnInit(): void {
-    this.loadCategories();
+    this.route.data.subscribe(({ data }) => {
+      if (data) {
+        this.categories = data.categories;
+        this.loading = false;
+        this.loadProductCounts();
+      }
+    });
+    this.refreshSub = this.refreshService.refresh$.subscribe(() => {
+      this.loadCategories();
+    });
+  }
+
+  ngOnDestroy(): void {
+    this.refreshSub?.unsubscribe();
   }
 
   private initCategory(): Category {
@@ -64,6 +83,21 @@ export class CategoriesComponent implements OnInit {
         console.error('Error loading categories:', err);
         this.loading = false;
       }
+    });
+    this.loadProductCounts();
+  }
+
+  loadProductCounts(): void {
+    this.productService.getProducts().subscribe({
+      next: (products) => {
+        this.productCounts.clear();
+        products.forEach(p => {
+          if (p.categoryId) {
+            this.productCounts.set(p.categoryId, (this.productCounts.get(p.categoryId) || 0) + 1);
+          }
+        });
+      },
+      error: (err) => console.error('Error loading products for category counts:', err)
     });
   }
 
@@ -140,9 +174,8 @@ export class CategoriesComponent implements OnInit {
   }
 
   getProductCount(categoryId?: string): number {
-    // This can be enhanced later to show actual product count per category
-    // For now, returning a placeholder
-    return 0;
+    if (!categoryId) return 0;
+    return this.productCounts.get(categoryId) || 0;
   }
 
   formatDate(date?: Date | string): string {

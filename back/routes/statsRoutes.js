@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { Product, Order, Repair, Installation, CashTransaction } = require('../models');
+const { Product, Order, OrderItem, Customer, Repair, Installation, CashTransaction } = require('../models');
 const sequelize = require('../config/database');
 const { Op } = require('sequelize');
 const { authenticate, authorize } = require('../utils/auth');
@@ -66,7 +66,8 @@ router.get('/dashboard/recent-orders', authenticate, authorize('admin', 'cashier
     const orders = await Order.findAll({
       include: [
         { model: Customer, attributes: ['name'] },
-        { model: OrderItem, as: 'products', include: [{ model: Product, attributes: ['name'] }] }
+        { model: OrderItem, as: 'products', include: [{ model: Product, attributes: ['name'] }] },
+        { model: Installation, attributes: ['id', 'status', 'location'] }
       ],
       order: [['createdAt', 'DESC']],
       limit: 10
@@ -82,7 +83,8 @@ router.get('/dashboard/recent-orders', authenticate, authorize('admin', 'cashier
         productName: firstProduct ? (firstProduct.Product ? firstProduct.Product.name : 'Produit') : 'Produit',
         totalAmount: order.totalAmount,
         status: order.status,
-        createdAt: order.createdAt
+        createdAt: order.createdAt,
+        Installations: order.Installations || []
       };
     });
 
@@ -100,7 +102,7 @@ router.get('/dashboard/urgent-repairs', authenticate, authorize('admin', 'techni
         status: { [Op.notIn]: ['delivered', 'cancelled'] }
       },
       order: [
-        [{ model: Customer }, 'name', 'ASC']
+        [Customer, 'name', 'ASC']
       ],
       limit: 10
     });

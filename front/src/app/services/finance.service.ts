@@ -66,4 +66,20 @@ export class FinanceService {
     updateComment(id: string, comment: string): Observable<any> {
         return this.http.put(`${this.apiUrl}/transactions/${id}/comment`, { comment });
     }
+
+    getTransaction(id: string): Observable<Transaction> {
+        return this.http.get<Transaction>(`${this.apiUrl}/transactions/${id}`);
+    }
+
+    updateTransaction(id: string, data: Partial<Transaction>): Observable<Transaction> {
+        return this.http.put<Transaction>(`${this.apiUrl}/transactions/${id}`, data);
+    }
+
+    deleteTransaction(id: string): Observable<any> {
+        return this.http.delete(`${this.apiUrl}/transactions/${id}`);
+    }
+
+    getTransactionStats(): Observable<any> {
+        return this.http.get<any>(`${this.apiUrl}/transactions/stats`);
+    }
 }

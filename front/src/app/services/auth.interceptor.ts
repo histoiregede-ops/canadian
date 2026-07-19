@@ -1,9 +1,13 @@
 import { Injectable } from '@angular/core';
 import { HttpInterceptor, HttpRequest, HttpHandler, HttpEvent } from '@angular/common/http';
-import { Observable } from 'rxjs';
+import { Observable, throwError } from 'rxjs';
+import { catchError } from 'rxjs/operators';
+import { Router } from '@angular/router';
 
 @Injectable()
 export class AuthInterceptor implements HttpInterceptor {
+  constructor(private router: Router) {}
+
   intercept(req: HttpRequest<any>, next: HttpHandler): Observable<HttpEvent<any>> {
     // Staff token takes priority
     let token = localStorage.getItem('token');
@@ -15,7 +19,16 @@ export class AuthInterceptor implements HttpInterceptor {
       const cloned = req.clone({
         setHeaders: { Authorization: `Bearer ${token}` }
       });
-      return next.handle(cloned);
+      return next.handle(cloned).pipe(
+        catchError(err => {
+          if (err.status === 401) {
+            localStorage.removeItem('token');
+            localStorage.removeItem('customer_token');
+            this.router.navigate(['/login']);
+          }
+          return throwError(() => err);
+        })
+      );
     }
     return next.handle(req);
   }

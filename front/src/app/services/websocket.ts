@@ -180,8 +180,7 @@ export class WebSocketService {
     this.playSound();
     if ('Notification' in window && Notification.permission === 'granted') {
       new Notification(notification.title, {
-        body: notification.body,
-        icon: '/favicon.ico'
+        body: notification.body
       });
     }
   }

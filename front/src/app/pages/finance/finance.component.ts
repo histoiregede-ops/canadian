@@ -1,9 +1,13 @@
-import { Component, AfterViewInit, ViewChild, ElementRef, OnInit } from '@angular/core';
+import { Component, AfterViewInit, ViewChild, ElementRef, OnInit, OnDestroy } from '@angular/core';
+import { Subscription } from 'rxjs';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Chart, registerables } from 'chart.js';
+import { ActivatedRoute } from '@angular/router';
 import { FinanceService, Transaction, FluxJournalier } from '../../services/finance.service';
 import { CustomerService, Customer } from '../../services/customer';
+import { ConfigService, ExpenseCategory } from '../../services/config';
+import { RefreshService } from '../../services/refresh.service';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import * as XLSX from 'xlsx';
@@ -17,7 +21,7 @@ Chart.register(...registerables);
   templateUrl: './finance.component.html',
   styleUrls: ['./finance.component.css']
 })
-export class FinanceComponent implements OnInit, AfterViewInit {
+export class FinanceComponent implements OnInit, OnDestroy, AfterViewInit {
   @ViewChild('revenueChart') private revenueChartRef!: ElementRef;
   @ViewChild('categoryChart') private categoryChartRef!: ElementRef;
 
@@ -37,6 +41,7 @@ export class FinanceComponent implements OnInit, AfterViewInit {
   };
 
   customers: Customer[] = [];
+  expenseCategories: ExpenseCategory[] = [];
   showReportModal = false;
   selectedStart = new Date().toISOString().split('T')[0];
   selectedEnd = new Date().toISOString().split('T')[0];
@@ -45,18 +50,45 @@ export class FinanceComponent implements OnInit, AfterViewInit {
   showCommentPopup = false;
   editingTransaction: Transaction | null = null;
   editingComment = '';
+  private refreshSub: Subscription | null = null;
 
-  constructor(private financeService: FinanceService, private customerService: CustomerService) { }
+  constructor(private route: ActivatedRoute, private financeService: FinanceService, private customerService: CustomerService, private configService: ConfigService, private refreshService: RefreshService) { }
 
   ngOnInit(): void {
-    this.loadFinanceData();
-    this.loadCustomers();
+    this.loadExpenseCategories();
+    this.route.data.subscribe(({ data }) => {
+      if (data) {
+        this.transactions = data.data.data;
+        this.stats = data.data.summary;
+        this.customers = data.customers;
+        setTimeout(() => {
+          if (data.data.chartData) {
+            this.renderRevenueChart(data.data.chartData.evolution);
+            if (data.data.chartData.categories && typeof data.data.chartData.categories === 'object') {
+              this.renderCategoryChart(data.data.chartData.categories);
+            }
+          }
+        }, 100);
+      }
+    });
+    this.refreshSub = this.refreshService.refresh$.subscribe(() => this.loadFinanceData());
+  }
+
+  ngOnDestroy(): void {
+    this.refreshSub?.unsubscribe();
   }
 
   loadCustomers(): void {
     this.customerService.getCustomers().subscribe({
       next: (data) => this.customers = data,
       error: (err) => console.error('Error loading customers:', err)
+    });
+  }
+
+  loadExpenseCategories(): void {
+    this.configService.getExpenseCategories().subscribe({
+      next: (data) => this.expenseCategories = data,
+      error: (err) => console.error('Error loading expense categories:', err)
     });
   }
 

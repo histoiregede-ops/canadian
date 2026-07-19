@@ -176,8 +176,11 @@ export class CustomerAuthService {
   }
 
   // Get customer loyalty points
-  getLoyaltyPoints(customerId: string): Observable<{ points: number; level: string; nextLevelPoints: number }> {
-    return this.http.get<{ points: number; level: string; nextLevelPoints: number }>(`${this.apiUrl}/${customerId}/loyalty`);
+  getLoyaltyPoints(customerId: string): Observable<{ points: number; level: string; nextLevelPoints: number; totalSpent?: number; orderCount?: number }> {
+    const token = this.getCustomerToken();
+    const headers: Record<string, string> = {};
+    if (token) headers['Authorization'] = `Bearer ${token}`;
+    return this.http.get<{ points: number; level: string; nextLevelPoints: number; totalSpent?: number; orderCount?: number }>(`${this.apiUrl}/${customerId}/loyalty`, { headers });
   }
 
   // Add loyalty points

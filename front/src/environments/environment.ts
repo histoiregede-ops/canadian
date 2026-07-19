@@ -1,6 +1,6 @@
 export const environment = {
-  production: true,
-  apiUrl: 'https://canadian-1.onrender.com',
-  socketUrl: 'wss://canadian-1.onrender.com'
+  production: false,
+  apiUrl: 'http://localhost:3000',
+  socketUrl: 'ws://localhost:3000'
 };
 

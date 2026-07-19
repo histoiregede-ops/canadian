@@ -1,26 +1,45 @@
-# Root git ignore for project deployment
+# Dependencies
 node_modules/
 back/node_modules/
 front/node_modules/
-front/dist/
+
+# Build outputs
 dist/
+front/dist/
+coverage/
+tmp/
+
+# Environment files
 .env
 .env.*
+
+# Logs
 *.log
+
+# Database files
 *.sqlite
 *.sqlite3
-*.local
-.vscode/
+
+# OS files
 .DS_Store
 Thumbs.db
+
+# IDE files
+.vscode/
 .idea/
 *.suo
 *.ntvs*
 *.njsproj
-*.log
+*.local
+
+# Angular cache
+/.angular/cache/
+
+# Misc
+backup/
+*.swp
 
 # Ignore nested git backup metadata
 front/.git_nested_backup/
-
 
 .vercel

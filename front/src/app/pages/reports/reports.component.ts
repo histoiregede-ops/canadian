@@ -1,7 +1,10 @@
-import { Component, OnInit, AfterViewInit, ViewChild, ElementRef } from '@angular/core';
+import { Component, OnInit, AfterViewInit, ViewChild, ElementRef, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Chart, registerables } from 'chart.js';
+import { Subscription } from 'rxjs';
+import { ActivatedRoute } from '@angular/router';
 import { ReportsService, ReportsData } from '../../services/reports.service';
+import { RefreshService } from '../../services/refresh.service';
 
 Chart.register(...registerables);
 
@@ -10,7 +13,7 @@ Chart.register(...registerables);
   standalone: true,
   imports: [CommonModule],
   template: `
-    <div class="reports-container">
+    <div class="container">
       <h1>Rapports commerciaux</h1>
 
       <div *ngIf="loading" class="loading">Chargement des rapports...</div>
@@ -35,7 +38,7 @@ Chart.register(...registerables);
           </div>
         </div>
 
-        <div class="charts-grid">
+        <div class="grid-2">
           <div class="chart-card">
             <h3>Évolution du CA mensuel</h3>
             <div class="chart-wrapper"><canvas #revenueChart></canvas></div>
@@ -54,46 +57,28 @@ Chart.register(...registerables);
           </div>
         </div>
 
-        <div class="table-section">
+        <div class="card mt-6">
           <h3>Top 10 produits</h3>
-          <table>
-            <thead>
-              <tr><th>Produit</th><th>Qté vendue</th><th>CA généré</th></tr>
-            </thead>
-            <tbody>
-              <tr *ngFor="let p of data.topProducts">
-                <td>{{ p.name }}</td>
-                <td>{{ p.totalSold }}</td>
-                <td>{{ p.totalRevenue | number }} FCFA</td>
-              </tr>
-            </tbody>
-          </table>
+          <div class="table-container">
+            <table class="table">
+              <thead>
+                <tr><th>Produit</th><th>Qté vendue</th><th>CA généré</th></tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let p of data.topProducts">
+                  <td>{{ p.name }}</td>
+                  <td>{{ p.totalSold }}</td>
+                  <td>{{ p.totalRevenue | number }} FCFA</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
         </div>
       </ng-container>
     </div>
-  `,
-  styles: [`
-    .reports-container { padding: 20px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
-    .reports-container h1 { margin: 0 0 24px; font-size: 24px; color: #1a1a2e; }
-    .loading { text-align: center; padding: 60px; color: #666; }
-    .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 24px; }
-    .stat-card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
-    .stat-label { display: block; font-size: 13px; color: #94a3b8; margin-bottom: 8px; }
-    .stat-value { display: block; font-size: 22px; font-weight: 700; color: #1a1a2e; }
-    .charts-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 24px; }
-    @media (max-width: 768px) { .charts-grid { grid-template-columns: 1fr; } }
-    .chart-card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
-    .chart-card h3 { margin: 0 0 16px; font-size: 15px; color: #1a1a2e; }
-    .chart-wrapper { height: 250px; }
-    .table-section { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
-    .table-section h3 { margin: 0 0 16px; font-size: 15px; color: #1a1a2e; }
-    table { width: 100%; border-collapse: collapse; }
-    th, td { text-align: left; padding: 10px 12px; border-bottom: 1px solid #f1f5f9; font-size: 14px; }
-    th { font-weight: 600; color: #64748b; font-size: 12px; text-transform: uppercase; }
-    td { color: #1a1a2e; }
-  `]
+  `
 })
-export class ReportsComponent implements OnInit, AfterViewInit {
+export class ReportsComponent implements OnInit, AfterViewInit, OnDestroy {
   @ViewChild('revenueChart') private revenueChartRef!: ElementRef;
   @ViewChild('topProductsChart') private topProductsChartRef!: ElementRef;
   @ViewChild('categoryChart') private categoryChartRef!: ElementRef;
@@ -101,18 +86,28 @@ export class ReportsComponent implements OnInit, AfterViewInit {
 
   data: ReportsData | null = null;
   loading = true;
+  private refreshSub: Subscription | null = null;
 
   private revenueChart: Chart | null = null;
   private topChart: Chart | null = null;
   private catChart: Chart | null = null;
   private techChart: Chart | null = null;
 
-  constructor(private reportsService: ReportsService) {}
+  constructor(private route: ActivatedRoute, private reportsService: ReportsService, private refreshService: RefreshService) {}
 
   ngOnInit() {
-    this.reportsService.getDashboard().subscribe({
-      next: (data) => { this.data = data; this.loading = false; },
-      error: () => { this.loading = false; }
+    this.route.data.subscribe(({ data }) => {
+      if (data) {
+        this.data = data.data;
+        this.loading = false;
+        setTimeout(() => this.renderCharts(), 500);
+      }
+    });
+    this.refreshSub = this.refreshService.refresh$.subscribe(() => {
+      this.reportsService.getDashboard().subscribe({
+        next: (data) => { this.data = data; this.loading = false; setTimeout(() => this.renderCharts(), 500); },
+        error: () => { this.loading = false; }
+      });
     });
   }
 
@@ -206,5 +201,9 @@ export class ReportsComponent implements OnInit, AfterViewInit {
 
   getTotalRepairs(): number {
     return this.data?.technicianPerformance.reduce((s, t) => s + t.totalInstallations, 0) || 0;
+  }
+
+  ngOnDestroy(): void {
+    this.refreshSub?.unsubscribe();
   }
 }

@@ -1,4 +1,6 @@
-﻿.messaging {
+﻿/* Page-specific styles (design-system.css is loaded globally) */
+
+.messaging {
   display: flex;
   flex-direction: column;
   height: 100vh;
@@ -223,18 +225,7 @@
   overflow: hidden;
 }
 
-.empty-state {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  color: #9e9e9e;
-  text-align: center;
-  padding: 40px 20px;
-}
-
-.empty-icon {
+.empty-state .empty-icon {
   font-size: 4rem;
   margin-bottom: 16px;
   opacity: 0.5;

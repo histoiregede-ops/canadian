@@ -42,13 +42,13 @@ router.get('/transactions', authenticate, authorize('admin'), async (req, res) =
     const sixMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 5, 1);
     const monthlyData = await CashTransaction.findAll({
       attributes: [
-        [fn('strftime', '%Y-%m', col('date')), 'month'],
+        [fn('DATE_FORMAT', col('date'), '%Y-%m'), 'month'],
         [fn('sum', literal("CASE WHEN type = 'income' THEN amount ELSE 0 END")), 'income'],
         [fn('sum', literal("CASE WHEN type = 'expense' THEN amount ELSE 0 END")), 'expense']
       ],
       where: { date: { [Op.gte]: sixMonthsAgo } },
-      group: [fn('strftime', '%Y-%m', col('date'))],
-      order: [[fn('strftime', '%Y-%m', col('date')), 'ASC']],
+      group: [fn('DATE_FORMAT', col('date'), '%Y-%m')],
+      order: [[fn('DATE_FORMAT', col('date'), '%Y-%m'), 'ASC']],
       raw: true
     });
 
@@ -191,8 +191,12 @@ router.post('/transactions', authenticate, authorize('admin'), async (req, res) 
     const { customerId, customerName, amount, type } = req.body;
     if (!amount || isNaN(amount) || Number(amount) <= 0) return res.status(400).json({ error: 'Le montant doit être supérieur à 0' });
     if (!type || !['income', 'expense'].includes(type)) return res.status(400).json({ error: 'Le type doit être income ou expense' });
-    const data = req.body;
-    const transaction = await CashTransaction.create({ ...data, customerId: customerId || null, customerName: customerName || null });
+    const allowedFields = ['type', 'amount', 'description', 'category', 'date', 'comment'];
+    const data = {};
+    allowedFields.forEach(f => { if (req.body[f] !== undefined) data[f] = req.body[f]; });
+    data.customerId = customerId || null;
+    data.customerName = customerName || null;
+    const transaction = await CashTransaction.create(data);
     res.status(201).json(transaction);
   } catch (error) {
     res.status(400).json({ error: error.message });
@@ -207,7 +211,10 @@ router.put('/transactions/:id', authenticate, authorize('admin'), async (req, re
     if (req.body.type !== undefined && !['income', 'expense'].includes(req.body.type)) {
       return res.status(400).json({ error: 'Le type doit être income ou expense' });
     }
-    const [updated] = await CashTransaction.update(req.body, { where: { id: req.params.id } });
+    const allowedFields = ['type', 'amount', 'description', 'category', 'date', 'comment', 'customerId', 'customerName'];
+    const data = {};
+    allowedFields.forEach(f => { if (req.body[f] !== undefined) data[f] = req.body[f]; });
+    const [updated] = await CashTransaction.update(data, { where: { id: req.params.id } });
     if (!updated) return res.status(404).json({ message: 'Transaction not found' });
     const transaction = await CashTransaction.findByPk(req.params.id);
     res.json(transaction);

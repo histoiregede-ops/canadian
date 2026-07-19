@@ -15,10 +15,32 @@
   </div>
 
   <div class="nav-actions">
-    <button class="action-btn" title="Notifications">
-      <span class="icon">&#x1F514;</span>
-      <span class="badge">3</span>
-    </button>
+    <div class="notification-wrapper" (click)="toggleNotifications()">
+      <button class="action-btn" title="Notifications">
+        <span class="icon">&#x1F514;</span>
+        <span class="badge" *ngIf="unreadCount > 0">{{ unreadCount > 99 ? '99+' : unreadCount }}</span>
+      </button>
+      <div class="notification-dropdown" *ngIf="showNotifications" (click)="$event.stopPropagation()">
+        <div class="notif-header">
+          <h3>Notifications</h3>
+          <button class="notif-mark-all" (click)="markAllAsRead()" *ngIf="unreadCount > 0">Tout marquer lu</button>
+        </div>
+        <div class="notif-list">
+          <div class="notif-item" *ngFor="let n of notifications" [class.unread]="!n.read">
+            <span class="notif-icon">{{ getNotificationIcon(n.type) }}</span>
+            <div class="notif-content">
+              <strong>{{ n.title }}</strong>
+              <p>{{ n.body }}</p>
+              <small>{{ n.createdAt | date:'dd/MM HH:mm' }}</small>
+            </div>
+            <button class="notif-close" (click)="closeNotification(n.id!)" title="Fermer">×</button>
+          </div>
+          <div class="notif-empty" *ngIf="notifications.length === 0">
+            <p>Aucune notification</p>
+          </div>
+        </div>
+      </div>
+    </div>
     <button class="action-btn" title="Aide">
       <span class="icon">&#x2753;</span>
     </button>

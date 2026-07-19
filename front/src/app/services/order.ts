@@ -22,6 +22,7 @@ export interface OrderData {
   paidAmount: number;
   deliveryAddress?: string;
   status?: string;
+  installationId?: string;
 }
 
 @Injectable({
@@ -32,11 +33,19 @@ export class OrderService {
 
   constructor(private http: HttpClient) { }
 
+  getOrders(): Observable<any[]> {
+    return this.http.get<any[]>(this.apiUrl);
+  }
+
   createOrder(order: OrderData): Observable<any> {
     return this.http.post<any>(this.apiUrl, order);
   }
 
   updateOrder(orderId: string, updateData: Partial<OrderData>): Observable<any> {
     return this.http.put<any>(`${this.apiUrl}/${orderId}`, updateData);
+  }
+
+  deleteOrder(orderId: string): Observable<any> {
+    return this.http.delete(`${this.apiUrl}/${orderId}`);
   }
 }

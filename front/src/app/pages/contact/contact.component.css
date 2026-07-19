@@ -1,3 +1,5 @@
+/* Page-specific styles (design-system.css is loaded globally) */
+
 .contact-container {
   max-width: 1200px;
   margin: 0 auto;
@@ -35,15 +37,12 @@
   }
 }
 
-.contact-form {
+.contact-form,
+.contact-info-section {
   background: white;
   padding: 30px;
   border-radius: 10px;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-}
-
-.form-group {
-  margin-bottom: 20px;
 }
 
 .form-group label {
@@ -100,29 +99,7 @@
   transform: none;
 }
 
-.spinner {
-  display: inline-block;
-  width: 16px;
-  height: 16px;
-  border: 2px solid #ffffff;
-  border-radius: 50%;
-  border-top-color: transparent;
-  animation: spin 1s ease-in-out infinite;
-  margin-right: 8px;
-}
-
-@keyframes spin {
-  to { transform: rotate(360deg); }
-}
-
-.contact-info-section {
-  background: white;
-  padding: 30px;
-  border-radius: 10px;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-}
-
-.contact-info h3 {
+.contact-info-section h3 {
   color: #2c3e50;
   margin-bottom: 20px;
 }
@@ -174,7 +151,7 @@
 }
 
 .contact-promise li:before {
-  content: "✓";
+  content: "\2713";
   color: #27ae60;
   font-weight: bold;
   position: absolute;

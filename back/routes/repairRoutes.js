@@ -13,10 +13,25 @@ router.get('/', authenticate, authorize('admin', 'technician'), async (req, res)
   }
 });
 
+// Get single repair
+router.get('/:id', authenticate, authorize('admin', 'technician'), async (req, res) => {
+  try {
+    const repair = await Repair.findByPk(req.params.id, { include: [Customer] });
+    if (!repair) return res.status(404).json({ message: 'Repair not found' });
+    res.json(repair);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // Create repair
 router.post('/', authenticate, authorize('admin', 'technician'), async (req, res) => {
   try {
-    const repair = await Repair.create(req.body);
+    const allowedFields = ['customerId', 'deviceType', 'brand', 'serialNumber', 'reportedIssue', 'diagnosis', 'resolution',
+      'estimatedCost', 'finalCost', 'status', 'priority', 'receivedAt', 'completedAt', 'notes'];
+    const data = {};
+    allowedFields.forEach(f => { if (req.body[f] !== undefined) data[f] = req.body[f]; });
+    const repair = await Repair.create(data);
     res.status(201).json(repair);
   } catch (error) {
     res.status(400).json({ error: error.message });
@@ -26,7 +41,11 @@ router.post('/', authenticate, authorize('admin', 'technician'), async (req, res
 // Update repair
 router.put('/:id', authenticate, authorize('admin', 'technician'), async (req, res) => {
   try {
-    const [updated] = await Repair.update(req.body, {
+    const allowedFields = ['deviceType', 'brand', 'serialNumber', 'reportedIssue', 'diagnosis', 'resolution',
+      'estimatedCost', 'finalCost', 'status', 'priority', 'receivedAt', 'completedAt', 'notes'];
+    const data = {};
+    allowedFields.forEach(f => { if (req.body[f] !== undefined) data[f] = req.body[f]; });
+    const [updated] = await Repair.update(data, {
       where: { id: req.params.id }
     });
     if (!updated) return res.status(404).json({ message: 'Repair not found' });
