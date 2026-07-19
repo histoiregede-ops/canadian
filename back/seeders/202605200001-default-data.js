@@ -12,6 +12,7 @@ module.exports = {
       { id: 'a0000001-0000-0000-0000-000000000002', username: 'cashier1', password: hashedCashier, role: 'cashier', fullName: 'Caissier Principal', email: 'cashier@solarerp.com' },
       { id: 'a0000001-0000-0000-0000-000000000003', username: 'tech1', password: hashedTech, role: 'technician', fullName: 'Amadou Diallo', email: 'tech1@solarerp.com' }
     ];
+    const now = new Date();
     for (const u of users) {
       const existing = await queryInterface.sequelize.query(
         `SELECT id FROM Users WHERE username = ? LIMIT 1`,
@@ -20,8 +21,8 @@ module.exports = {
       if (existing.length === 0) {
         await queryInterface.sequelize.query(
           `INSERT INTO Users (id, username, password, role, fullName, email, createdAt, updatedAt)
-           VALUES (?, ?, ?, ?, ?, ?, NOW(), NOW())`,
-          { replacements: [u.id, u.username, u.password, u.role, u.fullName, u.email] }
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+          { replacements: [u.id, u.username, u.password, u.role, u.fullName, u.email, now, now] }
         );
       }
     }
@@ -39,8 +40,8 @@ module.exports = {
       if (existing.length === 0) {
         await queryInterface.sequelize.query(
           `INSERT INTO Categories (id, name, type, createdAt, updatedAt)
-           VALUES (?, ?, ?, NOW(), NOW())`,
-          { replacements: [c.id, c.name, c.type] }
+           VALUES (?, ?, ?, ?, ?)`,
+          { replacements: [c.id, c.name, c.type, now, now] }
         );
       }
     }
@@ -58,8 +59,8 @@ module.exports = {
       if (existing.length === 0) {
         await queryInterface.sequelize.query(
           `INSERT INTO Products (id, name, description, price, stockQuantity, status, categoryId, createdAt, updatedAt)
-           VALUES (?, ?, ?, ?, ?, 'available', ?, NOW(), NOW())`,
-          { replacements: [p.id, p.name, p.description, p.price, p.stock, p.catId] }
+           VALUES (?, ?, ?, ?, ?, 'available', ?, ?, ?)`,
+          { replacements: [p.id, p.name, p.description, p.price, p.stock, p.catId, now, now] }
         );
       }
     }

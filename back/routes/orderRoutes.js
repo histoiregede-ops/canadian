@@ -97,7 +97,7 @@ router.post('/', authenticate, async (req, res) => {
         await product.save({ transaction: t });
         const threshold = product.lowStockThreshold || 15;
         await sequelize.query(
-          'INSERT INTO stock_movements (productId, previousQuantity, newQuantity, changeAmount, reason, reference, createdAt) VALUES (?, ?, ?, ?, ?, ?, NOW())',
+          'INSERT INTO stock_movements (productId, previousQuantity, newQuantity, changeAmount, reason, reference, createdAt) VALUES (?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)',
           { replacements: [item.productId, prev, product.stockQuantity, product.stockQuantity - prev, 'sale', order.orderNumber] }
         ).catch(err => console.error('Failed to log stock movement:', err));
         if (product.stockQuantity <= threshold && product.stockQuantity > 0 && global.broadcastNotification) {
@@ -296,7 +296,7 @@ router.delete('/:id', authenticate, authorize('admin', 'cashier'), async (req, r
         product.stockQuantity += item.quantity;
         await product.save({ transaction: t });
         await sequelize.query(
-          'INSERT INTO stock_movements (productId, previousQuantity, newQuantity, changeAmount, reason, reference, createdAt) VALUES (?, ?, ?, ?, ?, ?, NOW())',
+          'INSERT INTO stock_movements (productId, previousQuantity, newQuantity, changeAmount, reason, reference, createdAt) VALUES (?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)',
           { replacements: [item.productId, prev, product.stockQuantity, product.stockQuantity - prev, 'return', order.orderNumber] }
         ).catch(err => console.error('Failed to log stock movement:', err));
       }

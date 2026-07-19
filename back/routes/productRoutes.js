@@ -141,7 +141,7 @@ router.put('/:id', authenticate, authorize('admin', 'cashier'), async (req, res)
 async function logStockMovement(productId, previousQuantity, newQuantity, reason, reference, createdBy) {
   const changeAmount = newQuantity - previousQuantity;
   await sequelize.query(
-    'INSERT INTO stock_movements (productId, previousQuantity, newQuantity, changeAmount, reason, reference, createdBy, createdAt) VALUES (?, ?, ?, ?, ?, ?, ?, NOW())',
+    'INSERT INTO stock_movements (productId, previousQuantity, newQuantity, changeAmount, reason, reference, createdBy, createdAt) VALUES (?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)',
     { replacements: [productId, previousQuantity, newQuantity, changeAmount, reason, reference || null, createdBy || null] }
   );
   const [p] = await sequelize.query('SELECT name, lowStockThreshold FROM Products WHERE id = ?', { replacements: [productId] });

@@ -659,7 +659,7 @@ sequelize.sync()
         );
         for (const user of staffUsers) {
           await sequelize.query(
-            'INSERT INTO app_notifications (userId, title, body, type, createdAt) VALUES (?, ?, ?, ?, NOW())',
+            'INSERT INTO app_notifications (userId, title, body, type, createdAt) VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP)',
             { replacements: [user.id, notification.title, notification.body, notification.type || 'info'] }
           );
         }
