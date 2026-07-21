@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const multer = require('multer');
+const os = require('os');
 const { v2: cloudinary } = require('cloudinary');
 const path = require('path');
 const fs = require('fs');
@@ -19,7 +20,7 @@ if (process.env.CLOUDINARY_CLOUD_NAME) {
 }
 
 const upload = multer({
-  dest: path.join(__dirname, '..', 'tmp'),
+  dest: os.tmpdir(),
   limits: { fileSize: 10 * 1024 * 1024 }
 });
 
@@ -42,9 +43,6 @@ const deleteFromCloudinary = async (url) => {
 
 const isBase64Image = (str) => str && str.startsWith('data:image');
 const isCloudinaryUrl = (url) => url && url.includes('cloudinary.com');
-
-const tmpDir = path.join(__dirname, '..', 'tmp');
-if (!fs.existsSync(tmpDir)) fs.mkdirSync(tmpDir, { recursive: true });
 
 router.get('/', async (req, res) => {
   try {
@@ -93,7 +91,7 @@ router.post('/', authenticate, authorize('admin', 'cashier'), upload.single('pho
         fs.unlink(req.file.path, () => {});
       }
     } else if (isBase64Image(req.body.photo)) {
-      const tmp = path.join(__dirname, '..', 'tmp', `base64_${Date.now()}.jpg`);
+      const tmp = path.join(os.tmpdir(), `base64_${Date.now()}.jpg`);
       const raw = req.body.photo.replace(/^data:image\/\w+;base64,/, '');
       fs.writeFileSync(tmp, Buffer.from(raw, 'base64'));
       try {
@@ -150,7 +148,7 @@ router.put('/:id', authenticate, authorize('admin', 'cashier'), upload.single('p
       if (isCloudinaryUrl(product.photo)) {
         await deleteFromCloudinary(product.photo);
       }
-      const tmp = path.join(__dirname, '..', 'tmp', `base64_${Date.now()}.jpg`);
+      const tmp = path.join(os.tmpdir(), `base64_${Date.now()}.jpg`);
       const raw = req.body.photo.replace(/^data:image\/\w+;base64,/, '');
       fs.writeFileSync(tmp, Buffer.from(raw, 'base64'));
       try {
