@@ -28,9 +28,9 @@ const Product = sequelize.define('Product', {
     type: DataTypes.ENUM('available', 'out_of_stock', 'on_order'),
     defaultValue: 'available'
   },
-  photo: { // New field for image path
-    type: DataTypes.STRING,
-    allowNull: true // Image is optional
+  photo: {
+    type: DataTypes.TEXT,
+    allowNull: true
   },
   isFeatured: {
     type: DataTypes.BOOLEAN,
