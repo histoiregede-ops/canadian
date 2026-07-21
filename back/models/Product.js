@@ -56,9 +56,9 @@ const Product = sequelize.define('Product', {
 });
 
 // Associations
-Product.belongsTo(Category, { foreignKey: 'categoryId' });
-Category.hasMany(Product, { foreignKey: 'categoryId' });
-Product.belongsTo(Supplier, { foreignKey: 'supplierId' });
-Supplier.hasMany(Product, { foreignKey: 'supplierId' });
+Product.belongsTo(Category, { foreignKey: 'categoryId', constraints: false });
+Category.hasMany(Product, { foreignKey: 'categoryId', constraints: false });
+Product.belongsTo(Supplier, { foreignKey: 'supplierId', constraints: false });
+Supplier.hasMany(Product, { foreignKey: 'supplierId', constraints: false });
 
 module.exports = Product;
