@@ -354,7 +354,7 @@ export class InventoryComponent implements OnInit, OnDestroy, AfterViewInit {
     if (this.saving) return;
     this.saving = true;
 
-    if (!this.isEditing && !this.currentProduct.photo) {
+    if (!this.isEditing && !this.selectedFile) {
       alert("L'insertion d'une image est obligatoire pour enregistrer un produit !");
       this.saving = false;
       return;
