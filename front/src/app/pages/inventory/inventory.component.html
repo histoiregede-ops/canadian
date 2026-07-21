@@ -68,8 +68,8 @@
   <div class="product-grid" *ngIf="!loading && products.length > 0">
     <div class="card product-card" *ngFor="let product of filteredProducts">
       <div class="product-image">
-        <span class="placeholder-icon" *ngIf="!product.photo">📦</span>
-        <img [src]="getProductImage(product.photo)" *ngIf="product.photo" alt="Product Image" />
+        <span class="placeholder-icon" *ngIf="!product.photo || imgErrors.has(product.id!)">📦</span>
+        <img [src]="getProductImage(product.photo)" *ngIf="product.photo && !imgErrors.has(product.id!)" (error)="onImgError(product.id!)" alt="Product Image" />
       </div>
       <div class="product-info">
         <div class="product-header">

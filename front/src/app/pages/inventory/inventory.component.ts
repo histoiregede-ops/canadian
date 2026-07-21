@@ -33,6 +33,11 @@ export class InventoryComponent implements OnInit, OnDestroy, AfterViewInit {
   selectedSupplierId = '';
   selectedStatus: string = '';
   saving = false;
+  imgErrors = new Set<string>();
+
+  onImgError(productId: string): void {
+    this.imgErrors.add(productId);
+  }
 
   @ViewChild('stockCategoryChart') private categoryChartRef!: ElementRef;
   @ViewChild('stockStatusChart') private statusChartRef!: ElementRef;
