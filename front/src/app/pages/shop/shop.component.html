@@ -33,7 +33,7 @@
         <div class="service-icon">{{ service.icon }}</div>
         <h3>{{ service.title }}</h3>
         <p>{{ service.desc }}</p>
-        <a [routerLink]="service.link" class="service-link">{{ service.linkText }} →</a>
+        <a [href]="service.link" target="_blank" rel="noopener noreferrer" class="service-link">{{ service.linkText }} →</a>
       </div>
     </div>
   </div>

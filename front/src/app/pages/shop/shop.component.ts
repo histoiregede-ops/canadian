@@ -68,14 +68,14 @@ export class ShopComponent implements OnInit, OnDestroy {
       icon: '☀️',
       title: 'Installation de Panneaux Solaires',
       desc: 'Installation professionnelle de panneaux solaires pour maison, commerce et industrie. Étude, fourniture, pose et mise en service.',
-      link: '/contact',
+      link: 'https://wa.me/22879803856?text=' + encodeURIComponent("Bonjour, je souhaite obtenir un devis pour des panneaux solaires."),
       linkText: 'Demander un devis'
     },
     {
       icon: '🔧',
       title: 'Réparation Téléphones & Électronique',
       desc: 'Service de réparation expert pour smartphones, tablettes et appareils électroniques. Diagnostic gratuit, pièces de qualité.',
-      link: '/contact',
+      link: 'https://wa.me/22879803856?text=' + encodeURIComponent("Bonjour, j'ai besoin d'une réparation pour mon appareil."),
       linkText: 'Réparer maintenant'
     }
   ];
