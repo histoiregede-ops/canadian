@@ -1,5 +1,6 @@
 const express = require('express');
 const path = require('path');
+const fs = require('fs');
 const cors = require('cors');
 const bodyParser = require('body-parser');
 const morgan = require('morgan');
@@ -135,6 +136,16 @@ app.use('/api/notifications', notificationRoutes);
 app.use('/api/movements', movementRoutes);
 
 app.use('/api', seedRoutes);
+
+// Servir les images uploadées via l'API (évite les problèmes Nginx)
+app.get('/api/uploads/:filename', (req, res) => {
+  const filePath = path.join(__dirname, 'public', 'uploads', req.params.filename);
+  if (fs.existsSync(filePath)) {
+    res.sendFile(filePath);
+  } else {
+    res.status(404).json({ error: 'Image non trouvée' });
+  }
+});
 
 // Servir les fichiers statiques du dossier public
 app.use('/public', express.static(path.join(__dirname, 'public')));

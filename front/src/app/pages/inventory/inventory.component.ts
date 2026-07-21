@@ -32,6 +32,7 @@ export class InventoryComponent implements OnInit, OnDestroy, AfterViewInit {
   selectedCategoryId = '';
   selectedSupplierId = '';
   selectedStatus: string = '';
+  saving = false;
 
   @ViewChild('stockCategoryChart') private categoryChartRef!: ElementRef;
   @ViewChild('stockStatusChart') private statusChartRef!: ElementRef;
@@ -358,11 +359,16 @@ export class InventoryComponent implements OnInit, OnDestroy, AfterViewInit {
   }
 
   saveProduct(): void {
-    // Photo required only for new products, not edits
+    if (this.saving) return;
+    this.saving = true;
+
     if (!this.isEditing && !this.currentProduct.photo) {
       alert("L'insertion d'une image est obligatoire pour enregistrer un produit !");
+      this.saving = false;
       return;
     }
+
+    const finish = () => this.saving = false;
 
     if (this.isEditing && this.currentProduct.id) {
       this.productService
@@ -371,10 +377,12 @@ export class InventoryComponent implements OnInit, OnDestroy, AfterViewInit {
           next: () => {
             this.loadProducts();
             this.showModal = false;
+            finish();
           },
           error: (err) => {
             console.error('Erreur lors de la modification:', err);
             alert('Erreur lors de la mise à jour du produit.');
+            finish();
           }
         });
     } else {
@@ -385,11 +393,13 @@ export class InventoryComponent implements OnInit, OnDestroy, AfterViewInit {
         next: () => {
           this.loadProducts();
           this.showModal = false;
+          finish();
         },
         error: (err) => {
           console.error('Erreur lors de la création:', err);
           const msg = err.error?.error || err.message || 'Erreur lors de la création du produit.';
           alert(msg);
+          finish();
         }
       });
     }

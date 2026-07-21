@@ -1,6 +1,5 @@
 const express = require('express');
 const router = express.Router();
-const { v2: cloudinary } = require('cloudinary');
 const fs = require('fs');
 const path = require('path');
 const Category = require('../models/Category');
@@ -14,14 +13,6 @@ if (!fs.existsSync(UPLOADS_DIR)) {
   fs.mkdirSync(UPLOADS_DIR, { recursive: true });
 }
 
-if (process.env.CLOUDINARY_CLOUD_NAME) {
-  cloudinary.config({
-    cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-    api_key: process.env.CLOUDINARY_API_KEY,
-    api_secret: process.env.CLOUDINARY_API_SECRET
-  });
-}
-
 const saveImageLocally = (base64String) => {
   const base64Data = base64String.replace(/^data:image\/\w+;base64,/, '');
   const buffer = Buffer.from(base64Data, 'base64');
@@ -29,52 +20,9 @@ const saveImageLocally = (base64String) => {
   const ext = extMatch && extMatch[1] === 'jpeg' ? 'jpg' : (extMatch ? extMatch[1] : 'jpg');
   const filename = `product_${Date.now()}_${Math.random().toString(36).slice(2, 8)}.${ext}`;
   fs.writeFileSync(path.join(UPLOADS_DIR, filename), buffer);
-  return `/uploads/${filename}`;
+  return `/api/uploads/${filename}`;
 };
 
-const uploadToCloudinary = async (base64String) => {
-  if (!process.env.CLOUDINARY_CLOUD_NAME) {
-    return null;
-  }
-
-  const base64Data = base64String.replace(/^data:image\/\w+;base64,/, '');
-  const buffer = Buffer.from(base64Data, 'base64');
-
-  const extMatch = base64String.match(/^data:image\/(\w+);base64,/);
-  const ext = extMatch && extMatch[1] === 'jpeg' ? 'jpg' : (extMatch ? extMatch[1] : 'jpg');
-
-  const tempFile = path.join(UPLOADS_DIR, `temp_${Date.now()}.${ext}`);
-  fs.writeFileSync(tempFile, buffer);
-
-  try {
-    const result = await cloudinary.uploader.upload(tempFile, {
-      folder: 'canadian-products',
-      resource_type: 'image'
-    });
-    return result.secure_url;
-  } catch (error) {
-    console.error('Cloudinary upload error:', error.message || error);
-    return null;
-  } finally {
-    fs.unlink(tempFile, () => {});
-  }
-};
-
-const deleteFromCloudinary = async (url) => {
-  if (!url || !url.includes('cloudinary.com')) return;
-
-  const match = url.match(/\/upload\/(?:v\d+\/)?(.+)\.[a-z]+$/);
-  if (!match) return;
-
-  const publicId = match[1];
-  try {
-    await cloudinary.uploader.destroy(publicId);
-  } catch (err) {
-    console.error('Error deleting from Cloudinary:', err);
-  }
-};
-
-const isCloudinaryUrl = (url) => url && url.includes('cloudinary.com');
 const isBase64Image = (str) => str && str.startsWith('data:image');
 
 router.get('/', async (req, res) => {
@@ -113,8 +61,7 @@ router.post('/', authenticate, authorize('admin', 'cashier'), async (req, res) =
     let productData = { name, description, price, stockQuantity, status, categoryId, supplierId };
 
     if (isBase64Image(photo)) {
-      const uploaded = await uploadToCloudinary(photo);
-      productData.photo = uploaded || saveImageLocally(photo);
+      productData.photo = saveImageLocally(photo);
     } else if (photo === '') {
       productData.photo = null;
     }
@@ -145,15 +92,8 @@ router.put('/:id', authenticate, authorize('admin', 'cashier'), async (req, res)
     let productData = { name, description, price, stockQuantity, status, categoryId, supplierId };
 
     if (isBase64Image(photo)) {
-      if (isCloudinaryUrl(product.photo)) {
-        await deleteFromCloudinary(product.photo);
-      }
-      const uploaded = await uploadToCloudinary(photo);
-      productData.photo = uploaded || saveImageLocally(photo);
+      productData.photo = saveImageLocally(photo);
     } else if (photo === '') {
-      if (isCloudinaryUrl(product.photo)) {
-        await deleteFromCloudinary(product.photo);
-      }
       productData.photo = null;
     }
 
@@ -241,8 +181,14 @@ router.delete('/:id', authenticate, authorize('admin', 'cashier'), async (req, r
     const product = await Product.findByPk(id);
     if (!product) return res.status(404).json({ error: 'Product not found' });
 
-    if (isCloudinaryUrl(product.photo)) {
-      await deleteFromCloudinary(product.photo);
+    if (product.photo && product.photo.includes('cloudinary.com')) {
+      try {
+        const match = product.photo.match(/\/upload\/(?:v\d+\/)?(.+)\.[a-z]+$/);
+        if (match) {
+          const { v2: cloudinary } = require('cloudinary');
+          await cloudinary.uploader.destroy(match[1]);
+        }
+      } catch (_) {}
     }
 
     await product.destroy();
