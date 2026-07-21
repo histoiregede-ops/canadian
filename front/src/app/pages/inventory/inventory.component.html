@@ -175,7 +175,6 @@
               <button type="button" class="btn btn-sm btn-secondary" (click)="startBarcodeScan()">📷 Scanner</button>
               <button type="button" class="btn btn-sm btn-outline" (click)="downloadBarcode(currentProduct)" *ngIf="currentProduct.barcode" title="Télécharger code-barres">📎</button>
             </div>
-            <img *ngIf="currentProduct.barcode" [src]="getBarcodePreview(currentProduct.barcode)" alt="Aperçu code-barres" class="barcode-preview" />
           </div>
           <div class="form-group">
             <label class="form-label">Image du Produit</label>

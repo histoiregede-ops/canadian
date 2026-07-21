@@ -10,10 +10,8 @@ export class BarcodeService {
         format: 'CODE128',
         width,
         height,
-        displayValue: true,
-        fontOptions: 'bold',
-        font: 'monospace',
-        margin: 10
+        displayValue: false,
+        margin: 5
       });
       return canvas.toDataURL('image/png');
     } catch (e) {

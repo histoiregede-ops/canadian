@@ -20,14 +20,18 @@ const uploadToCloudinary = async (base64String) => {
     throw new Error('Cloudinary not configured. Set CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, CLOUDINARY_API_SECRET in .env');
   }
 
+  const base64Data = base64String.replace(/^data:image\/\w+;base64,/, '');
+  const buffer = Buffer.from(base64Data, 'base64');
+
   return new Promise((resolve, reject) => {
-    cloudinary.uploader.upload(base64String, {
-      folder: 'canadian-products',
-      resource_type: 'image'
-    }, (error, result) => {
-      if (error) reject(error);
-      else resolve(result.secure_url);
-    });
+    const uploadStream = cloudinary.uploader.upload_stream(
+      { folder: 'canadian-products', resource_type: 'image' },
+      (error, result) => {
+        if (error) reject(error);
+        else resolve(result.secure_url);
+      }
+    );
+    uploadStream.end(buffer);
   });
 };
 
