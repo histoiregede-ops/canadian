@@ -2,13 +2,17 @@ const express = require('express');
 const router = express.Router();
 const { v2: cloudinary } = require('cloudinary');
 const fs = require('fs');
-const os = require('os');
 const path = require('path');
 const Category = require('../models/Category');
 const Product = require('../models/Product');
 const Supplier = require('../models/Supplier');
 const sequelize = require('../config/database');
 const { authenticate, authorize } = require('../utils/auth');
+
+const UPLOADS_DIR = path.join(__dirname, '..', 'public', 'uploads');
+if (!fs.existsSync(UPLOADS_DIR)) {
+  fs.mkdirSync(UPLOADS_DIR, { recursive: true });
+}
 
 if (process.env.CLOUDINARY_CLOUD_NAME) {
   cloudinary.config({
@@ -18,9 +22,19 @@ if (process.env.CLOUDINARY_CLOUD_NAME) {
   });
 }
 
+const saveImageLocally = (base64String) => {
+  const base64Data = base64String.replace(/^data:image\/\w+;base64,/, '');
+  const buffer = Buffer.from(base64Data, 'base64');
+  const extMatch = base64String.match(/^data:image\/(\w+);base64,/);
+  const ext = extMatch && extMatch[1] === 'jpeg' ? 'jpg' : (extMatch ? extMatch[1] : 'jpg');
+  const filename = `product_${Date.now()}_${Math.random().toString(36).slice(2, 8)}.${ext}`;
+  fs.writeFileSync(path.join(UPLOADS_DIR, filename), buffer);
+  return `/uploads/${filename}`;
+};
+
 const uploadToCloudinary = async (base64String) => {
   if (!process.env.CLOUDINARY_CLOUD_NAME) {
-    throw new Error('Cloudinary not configured. Set CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, CLOUDINARY_API_SECRET in .env');
+    return null;
   }
 
   const base64Data = base64String.replace(/^data:image\/\w+;base64,/, '');
@@ -29,18 +43,18 @@ const uploadToCloudinary = async (base64String) => {
   const extMatch = base64String.match(/^data:image\/(\w+);base64,/);
   const ext = extMatch && extMatch[1] === 'jpeg' ? 'jpg' : (extMatch ? extMatch[1] : 'jpg');
 
-  const tempFile = path.join(os.tmpdir(), `product_${Date.now()}.${ext}`);
+  const tempFile = path.join(UPLOADS_DIR, `temp_${Date.now()}.${ext}`);
   fs.writeFileSync(tempFile, buffer);
 
   try {
     const result = await cloudinary.uploader.upload(tempFile, {
       folder: 'canadian-products',
-      resource_type: 'auto'
+      resource_type: 'image'
     });
     return result.secure_url;
   } catch (error) {
     console.error('Cloudinary upload error:', error.message || error);
-    throw error;
+    return null;
   } finally {
     fs.unlink(tempFile, () => {});
   }
@@ -99,11 +113,8 @@ router.post('/', authenticate, authorize('admin', 'cashier'), async (req, res) =
     let productData = { name, description, price, stockQuantity, status, categoryId, supplierId };
 
     if (isBase64Image(photo)) {
-      try {
-        productData.photo = await uploadToCloudinary(photo);
-      } catch (uploadErr) {
-        console.error('Image upload failed, creating product without image:', uploadErr.message || uploadErr);
-      }
+      const uploaded = await uploadToCloudinary(photo);
+      productData.photo = uploaded || saveImageLocally(photo);
     } else if (photo === '') {
       productData.photo = null;
     }
@@ -134,14 +145,11 @@ router.put('/:id', authenticate, authorize('admin', 'cashier'), async (req, res)
     let productData = { name, description, price, stockQuantity, status, categoryId, supplierId };
 
     if (isBase64Image(photo)) {
-      try {
-        if (isCloudinaryUrl(product.photo)) {
-          await deleteFromCloudinary(product.photo);
-        }
-        productData.photo = await uploadToCloudinary(photo);
-      } catch (uploadErr) {
-        console.error('Image upload failed during update, keeping existing image:', uploadErr.message || uploadErr);
+      if (isCloudinaryUrl(product.photo)) {
+        await deleteFromCloudinary(product.photo);
       }
+      const uploaded = await uploadToCloudinary(photo);
+      productData.photo = uploaded || saveImageLocally(photo);
     } else if (photo === '') {
       if (isCloudinaryUrl(product.photo)) {
         await deleteFromCloudinary(product.photo);

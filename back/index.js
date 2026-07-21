@@ -67,8 +67,8 @@ if (process.env.NODE_ENV === 'production') {
 } else {
   app.use(morgan('dev'));
 }
-app.use(bodyParser.json({ limit: '1mb' }));
-app.use(bodyParser.urlencoded({ limit: '1mb', extended: true }));
+app.use(bodyParser.json({ limit: '50mb' }));
+app.use(bodyParser.urlencoded({ limit: '50mb', extended: true }));
 app.use((req, res, next) => {
   if (req.body) {
     req.body = sanitize(req.body);
@@ -138,6 +138,7 @@ app.use('/api', seedRoutes);
 
 // Servir les fichiers statiques du dossier public
 app.use('/public', express.static(path.join(__dirname, 'public')));
+app.use('/uploads', express.static(path.join(__dirname, 'public', 'uploads')));
 
 // Basic Route
 app.get('/', (req, res) => {
