@@ -1,23 +1,50 @@
 const express = require('express');
 const router = express.Router();
-const fs = require('fs');
+const multer = require('multer');
+const { v2: cloudinary } = require('cloudinary');
 const path = require('path');
+const fs = require('fs');
 const Category = require('../models/Category');
 const Product = require('../models/Product');
 const Supplier = require('../models/Supplier');
 const sequelize = require('../config/database');
 const { authenticate, authorize } = require('../utils/auth');
 
-const UPLOADS_DIR = path.join(__dirname, '..', 'public', 'uploads');
-if (!fs.existsSync(UPLOADS_DIR)) {
-  fs.mkdirSync(UPLOADS_DIR, { recursive: true });
+if (process.env.CLOUDINARY_CLOUD_NAME) {
+  cloudinary.config({
+    cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+    api_key: process.env.CLOUDINARY_API_KEY,
+    api_secret: process.env.CLOUDINARY_API_SECRET
+  });
 }
 
-const saveImageLocally = (base64String) => {
-  return base64String;
+const upload = multer({
+  dest: path.join(__dirname, '..', 'tmp'),
+  limits: { fileSize: 10 * 1024 * 1024 }
+});
+
+const uploadToCloudinary = async (filePath) => {
+  const result = await cloudinary.uploader.upload(filePath, {
+    folder: 'easy-erp/produits',
+    resource_type: 'image'
+  });
+  return result.secure_url;
+};
+
+const deleteFromCloudinary = async (url) => {
+  if (!url || !url.includes('cloudinary.com')) return;
+  const match = url.match(/\/upload\/(?:v\d+\/)?(.+)\.[a-z]+$/);
+  if (!match) return;
+  try {
+    await cloudinary.uploader.destroy(match[1]);
+  } catch (_) {}
 };
 
 const isBase64Image = (str) => str && str.startsWith('data:image');
+const isCloudinaryUrl = (url) => url && url.includes('cloudinary.com');
+
+const tmpDir = path.join(__dirname, '..', 'tmp');
+if (!fs.existsSync(tmpDir)) fs.mkdirSync(tmpDir, { recursive: true });
 
 router.get('/', async (req, res) => {
   try {
@@ -41,23 +68,39 @@ router.get('/:id', async (req, res) => {
   }
 });
 
-router.post('/', authenticate, authorize('admin', 'cashier'), async (req, res) => {
+router.post('/', authenticate, authorize('admin', 'cashier'), upload.single('photo'), async (req, res) => {
   try {
-    let { photo, name, description, price, stockQuantity, status, categoryId, supplierId } = req.body;
+    const { name, description, price, stockQuantity, status, categoryId, supplierId } = req.body;
 
     if (!name || !name.trim()) return res.status(400).json({ error: 'Le nom du produit est requis' });
     if (price === undefined || isNaN(price) || Number(price) <= 0) return res.status(400).json({ error: 'Le prix doit être supérieur à 0' });
     if (stockQuantity !== undefined && (isNaN(stockQuantity) || Number(stockQuantity) < 0)) return res.status(400).json({ error: 'Le stock ne peut pas être négatif' });
 
-    if (!categoryId || categoryId === '') categoryId = null;
-    if (!supplierId || supplierId === '') supplierId = null;
+    let productData = {
+      name,
+      description,
+      price: Number(price),
+      stockQuantity: stockQuantity !== undefined ? Number(stockQuantity) : 0,
+      status: status || 'available',
+      categoryId: categoryId && categoryId !== '' ? categoryId : null,
+      supplierId: supplierId && supplierId !== '' ? Number(supplierId) : null
+    };
 
-    let productData = { name, description, price, stockQuantity, status, categoryId, supplierId };
-
-    if (isBase64Image(photo)) {
-      productData.photo = saveImageLocally(photo);
-    } else if (photo === '') {
-      productData.photo = null;
+    if (req.file) {
+      try {
+        productData.photo = await uploadToCloudinary(req.file.path);
+      } finally {
+        fs.unlink(req.file.path, () => {});
+      }
+    } else if (isBase64Image(req.body.photo)) {
+      const tmp = path.join(__dirname, '..', 'tmp', `base64_${Date.now()}.jpg`);
+      const raw = req.body.photo.replace(/^data:image\/\w+;base64,/, '');
+      fs.writeFileSync(tmp, Buffer.from(raw, 'base64'));
+      try {
+        productData.photo = await uploadToCloudinary(tmp);
+      } finally {
+        fs.unlink(tmp, () => {});
+      }
     }
 
     const product = await Product.create(productData);
@@ -68,27 +111,53 @@ router.post('/', authenticate, authorize('admin', 'cashier'), async (req, res) =
   }
 });
 
-router.put('/:id', authenticate, authorize('admin', 'cashier'), async (req, res) => {
+router.put('/:id', authenticate, authorize('admin', 'cashier'), upload.single('photo'), async (req, res) => {
   try {
     const { id } = req.params;
-    let { photo, name, description, price, stockQuantity, status, categoryId, supplierId } = req.body;
+    const product = await Product.findByPk(id);
+    if (!product) return res.status(404).json({ error: 'Product not found' });
+
+    const { name, description, price, stockQuantity, status, categoryId, supplierId } = req.body;
 
     if (name !== undefined && !name.trim()) return res.status(400).json({ error: 'Le nom du produit est requis' });
     if (price !== undefined && (isNaN(price) || Number(price) <= 0)) return res.status(400).json({ error: 'Le prix doit être supérieur à 0' });
     if (stockQuantity !== undefined && (isNaN(stockQuantity) || Number(stockQuantity) < 0)) return res.status(400).json({ error: 'Le stock ne peut pas être négatif' });
 
-    const product = await Product.findByPk(id);
-    if (!product) return res.status(404).json({ error: 'Product not found' });
+    let productData = {};
+    if (name !== undefined) productData.name = name;
+    if (description !== undefined) productData.description = description;
+    if (price !== undefined) productData.price = Number(price);
+    if (stockQuantity !== undefined) productData.stockQuantity = Number(stockQuantity);
+    if (status !== undefined) productData.status = status;
+    productData.categoryId = categoryId && categoryId !== '' ? categoryId : null;
+    productData.supplierId = supplierId && supplierId !== '' ? Number(supplierId) : null;
 
-    if (!categoryId || categoryId === '') categoryId = null;
-    if (!supplierId || supplierId === '') supplierId = null;
-
-    let productData = { name, description, price, stockQuantity, status, categoryId, supplierId };
-
-    if (isBase64Image(photo)) {
-      productData.photo = saveImageLocally(photo);
-    } else if (photo === '') {
+    if (req.file) {
+      if (isCloudinaryUrl(product.photo)) {
+        await deleteFromCloudinary(product.photo);
+      }
+      try {
+        productData.photo = await uploadToCloudinary(req.file.path);
+      } finally {
+        fs.unlink(req.file.path, () => {});
+      }
+    } else if (req.body.photo === '') {
+      if (isCloudinaryUrl(product.photo)) {
+        await deleteFromCloudinary(product.photo);
+      }
       productData.photo = null;
+    } else if (isBase64Image(req.body.photo)) {
+      if (isCloudinaryUrl(product.photo)) {
+        await deleteFromCloudinary(product.photo);
+      }
+      const tmp = path.join(__dirname, '..', 'tmp', `base64_${Date.now()}.jpg`);
+      const raw = req.body.photo.replace(/^data:image\/\w+;base64,/, '');
+      fs.writeFileSync(tmp, Buffer.from(raw, 'base64'));
+      try {
+        productData.photo = await uploadToCloudinary(tmp);
+      } finally {
+        fs.unlink(tmp, () => {});
+      }
     }
 
     const oldStock = product.stockQuantity;
@@ -175,14 +244,8 @@ router.delete('/:id', authenticate, authorize('admin', 'cashier'), async (req, r
     const product = await Product.findByPk(id);
     if (!product) return res.status(404).json({ error: 'Product not found' });
 
-    if (product.photo && product.photo.includes('cloudinary.com')) {
-      try {
-        const match = product.photo.match(/\/upload\/(?:v\d+\/)?(.+)\.[a-z]+$/);
-        if (match) {
-          const { v2: cloudinary } = require('cloudinary');
-          await cloudinary.uploader.destroy(match[1]);
-        }
-      } catch (_) {}
+    if (isCloudinaryUrl(product.photo)) {
+      await deleteFromCloudinary(product.photo);
     }
 
     await product.destroy();

@@ -179,9 +179,13 @@
           <div class="form-group">
             <label class="form-label">Image du Produit</label>
             <input type="file" (change)="onFileSelected($event)" accept="image/*" class="form-input" />
-            <div class="image-preview" *ngIf="currentProduct.photo">
-              <img [src]="currentProduct.photo" alt="Aperçu" />
+            <div class="image-preview" *ngIf="photoPreview">
+              <img [src]="photoPreview" alt="Aperçu" />
               <p class="image-preview-text">Aperçu du produit prêt</p>
+            </div>
+            <div class="image-preview existing-image" *ngIf="!photoPreview && currentProduct.photo && !currentProduct.photo.startsWith('data:')">
+              <img [src]="getProductImage(currentProduct.photo)" alt="Image actuelle" />
+              <p class="image-preview-text">Image actuelle</p>
             </div>
           </div>
           <div class="modal-footer">

@@ -34,6 +34,8 @@ export class InventoryComponent implements OnInit, OnDestroy, AfterViewInit {
   selectedStatus: string = '';
   saving = false;
   imgErrors = new Set<string>();
+  selectedFile: File | null = null;
+  photoPreview: string = '';
 
   onImgError(productId: string): void {
     this.imgErrors.add(productId);
@@ -173,6 +175,19 @@ export class InventoryComponent implements OnInit, OnDestroy, AfterViewInit {
     };
   }
 
+  private buildFormData(): FormData {
+    const fd = new FormData();
+    fd.append('name', this.currentProduct.name);
+    fd.append('description', this.currentProduct.description || '');
+    fd.append('price', String(this.currentProduct.price));
+    fd.append('stockQuantity', String(this.currentProduct.stockQuantity));
+    fd.append('status', this.currentProduct.status);
+    if (this.currentProduct.categoryId) fd.append('categoryId', this.currentProduct.categoryId);
+    if (this.currentProduct.supplierId) fd.append('supplierId', String(this.currentProduct.supplierId));
+    if (this.selectedFile) fd.append('photo', this.selectedFile);
+    return fd;
+  }
+
   private generateBarcode(): string {
     const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ';
     const part1 = Array.from({ length: 3 }, () => chars[Math.floor(Math.random() * chars.length)]).join('');
@@ -181,43 +196,11 @@ export class InventoryComponent implements OnInit, OnDestroy, AfterViewInit {
     return `ELEC-${part1}-${part2}-${part3}`;
   }
 
-  // Méthode pour capturer l'image sélectionnée et la convertir en Base64
   onFileSelected(event: any): void {
     const file = event.target.files[0];
     if (file) {
-      const reader = new FileReader();
-      reader.onload = (e: any) => {
-        const img = new Image();
-        img.onload = () => {
-          const canvas = document.createElement('canvas');
-          const MAX_WIDTH = 800;
-          const MAX_HEIGHT = 800;
-          let width = img.width;
-          let height = img.height;
-
-          if (width > height) {
-            if (width > MAX_WIDTH) {
-              height *= MAX_WIDTH / width;
-              width = MAX_WIDTH;
-            }
-          } else {
-            if (height > MAX_HEIGHT) {
-              width *= MAX_HEIGHT / height;
-              height = MAX_HEIGHT;
-            }
-          }
-
-          canvas.width = width;
-          canvas.height = height;
-          const ctx = canvas.getContext('2d');
-          ctx?.drawImage(img, 0, 0, width, height);
-
-          // Compression en JPEG (qualité 0.7) pour réduire drastiquement la taille du payload
-          this.currentProduct.photo = canvas.toDataURL('image/jpeg', 0.7);
-        };
-        img.src = e.target.result;
-      };
-      reader.readAsDataURL(file);
+      this.selectedFile = file;
+      this.photoPreview = URL.createObjectURL(file);
     }
   }
 
@@ -260,12 +243,16 @@ export class InventoryComponent implements OnInit, OnDestroy, AfterViewInit {
   openAddModal(): void {
     this.isEditing = false;
     this.currentProduct = this.initProduct();
+    this.selectedFile = null;
+    this.photoPreview = '';
     this.showModal = true;
   }
 
   openEditModal(product: Product): void {
     this.isEditing = true;
     this.currentProduct = { ...product };
+    this.selectedFile = null;
+    this.photoPreview = '';
     this.showModal = true;
   }
 
@@ -373,11 +360,16 @@ export class InventoryComponent implements OnInit, OnDestroy, AfterViewInit {
       return;
     }
 
-    const finish = () => this.saving = false;
+    const finish = () => {
+      this.saving = false;
+      this.selectedFile = null;
+      this.photoPreview = '';
+    };
 
     if (this.isEditing && this.currentProduct.id) {
+      const fd = this.buildFormData();
       this.productService
-        .updateProduct(this.currentProduct.id, this.currentProduct)
+        .updateProduct(this.currentProduct.id, fd)
         .subscribe({
           next: () => {
             this.loadProducts();
@@ -391,10 +383,8 @@ export class InventoryComponent implements OnInit, OnDestroy, AfterViewInit {
           }
         });
     } else {
-      const payload = { ...this.currentProduct };
-      if (!payload.categoryId) payload.categoryId = undefined;
-      if (!payload.supplierId) payload.supplierId = undefined;
-      this.productService.createProduct(payload).subscribe({
+      const fd = this.buildFormData();
+      this.productService.createProduct(fd).subscribe({
         next: () => {
           this.loadProducts();
           this.showModal = false;
