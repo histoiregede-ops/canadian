@@ -46,20 +46,29 @@ export class ShopComponent implements OnInit, OnDestroy {
   }
 
   sections = [
-    { 
-      image: '/installation pano maison.png', 
-      title: 'Installation Pano Maison', 
-      desc: 'Solutions d\'énergie solaire pour votre maison'
+    {
+      image: '/installation pano maison.png',
+      title: 'Installation Pano Maison',
+      desc: 'Solutions d\'énergie solaire pour votre maison',
+      badge: '☀️ Solaire',
+      ctaText: 'Demander un devis',
+      ctaLink: 'https://wa.me/22879803856?text=' + encodeURIComponent("Bonjour, je suis intéressé par une installation de panneaux solaires pour ma maison.")
     },
-    { 
-      image: '/installation pano.png', 
-      title: 'Installation Pano', 
-      desc: 'Panneaux solaires haute performance'
+    {
+      image: '/installation pano.png',
+      title: 'Installation Pano',
+      desc: 'Panneaux solaires haute performance',
+      badge: '⚡ Énergie',
+      ctaText: 'En savoir plus',
+      ctaLink: 'https://wa.me/22879803856?text=' + encodeURIComponent("Bonjour, j'aimerais plus d'informations sur vos panneaux solaires.")
     },
-    { 
-      image: '/vente installation electroménagrs.png', 
-      title: 'Vente Installation Électroménagers', 
-      desc: 'Électroménagers de qualité premium'
+    {
+      image: '/vente installation electroménagrs.png',
+      title: 'Vente Installation Électroménagers',
+      desc: 'Électroménagers de qualité premium',
+      badge: '🔧 Électroménager',
+      ctaText: 'Voir les offres',
+      ctaLink: 'https://wa.me/22879803856?text=' + encodeURIComponent("Bonjour, je cherche un électroménager. Pouvez-vous me renseigner ?")
     }
   ];
 

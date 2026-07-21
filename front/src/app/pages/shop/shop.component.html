@@ -44,9 +44,11 @@
       <div class="section-image">
         <img [src]="section.image" [alt]="section.title" />
         <div class="section-overlay"></div>
+        <span class="section-badge">{{ section.badge }}</span>
         <div class="section-content">
           <h2>{{ section.title }}</h2>
           <p>{{ section.desc }}</p>
+          <a [href]="section.ctaLink" target="_blank" rel="noopener noreferrer" class="section-cta">{{ section.ctaText }} →</a>
         </div>
       </div>
     </div>
