@@ -25,17 +25,21 @@ const uploadToCloudinary = async (base64String) => {
 
   const base64Data = base64String.replace(/^data:image\/\w+;base64,/, '');
   const buffer = Buffer.from(base64Data, 'base64');
-  const tempFile = path.join(os.tmpdir(), `product_${Date.now()}.jpg`);
+
+  const extMatch = base64String.match(/^data:image\/(\w+);base64,/);
+  const ext = extMatch && extMatch[1] === 'jpeg' ? 'jpg' : (extMatch ? extMatch[1] : 'jpg');
+
+  const tempFile = path.join(os.tmpdir(), `product_${Date.now()}.${ext}`);
   fs.writeFileSync(tempFile, buffer);
 
   try {
     const result = await cloudinary.uploader.upload(tempFile, {
       folder: 'canadian-products',
-      resource_type: 'image'
+      resource_type: 'auto'
     });
     return result.secure_url;
   } catch (error) {
-    console.error('Cloudinary upload error:', error);
+    console.error('Cloudinary upload error:', error.message || error);
     throw error;
   } finally {
     fs.unlink(tempFile, () => {});
@@ -95,7 +99,11 @@ router.post('/', authenticate, authorize('admin', 'cashier'), async (req, res) =
     let productData = { name, description, price, stockQuantity, status, categoryId, supplierId };
 
     if (isBase64Image(photo)) {
-      productData.photo = await uploadToCloudinary(photo);
+      try {
+        productData.photo = await uploadToCloudinary(photo);
+      } catch (uploadErr) {
+        console.error('Image upload failed, creating product without image:', uploadErr.message || uploadErr);
+      }
     } else if (photo === '') {
       productData.photo = null;
     }
@@ -126,10 +134,14 @@ router.put('/:id', authenticate, authorize('admin', 'cashier'), async (req, res)
     let productData = { name, description, price, stockQuantity, status, categoryId, supplierId };
 
     if (isBase64Image(photo)) {
-      if (isCloudinaryUrl(product.photo)) {
-        await deleteFromCloudinary(product.photo);
+      try {
+        if (isCloudinaryUrl(product.photo)) {
+          await deleteFromCloudinary(product.photo);
+        }
+        productData.photo = await uploadToCloudinary(photo);
+      } catch (uploadErr) {
+        console.error('Image upload failed during update, keeping existing image:', uploadErr.message || uploadErr);
       }
-      productData.photo = await uploadToCloudinary(photo);
     } else if (photo === '') {
       if (isCloudinaryUrl(product.photo)) {
         await deleteFromCloudinary(product.photo);
