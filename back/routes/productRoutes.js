@@ -14,13 +14,7 @@ if (!fs.existsSync(UPLOADS_DIR)) {
 }
 
 const saveImageLocally = (base64String) => {
-  const base64Data = base64String.replace(/^data:image\/\w+;base64,/, '');
-  const buffer = Buffer.from(base64Data, 'base64');
-  const extMatch = base64String.match(/^data:image\/(\w+);base64,/);
-  const ext = extMatch && extMatch[1] === 'jpeg' ? 'jpg' : (extMatch ? extMatch[1] : 'jpg');
-  const filename = `product_${Date.now()}_${Math.random().toString(36).slice(2, 8)}.${ext}`;
-  fs.writeFileSync(path.join(UPLOADS_DIR, filename), buffer);
-  return `/api/uploads/${filename}`;
+  return base64String;
 };
 
 const isBase64Image = (str) => str && str.startsWith('data:image');
