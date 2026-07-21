@@ -1,6 +1,9 @@
 const express = require('express');
 const router = express.Router();
 const { v2: cloudinary } = require('cloudinary');
+const fs = require('fs');
+const os = require('os');
+const path = require('path');
 const Category = require('../models/Category');
 const Product = require('../models/Product');
 const Supplier = require('../models/Supplier');
@@ -22,17 +25,21 @@ const uploadToCloudinary = async (base64String) => {
 
   const base64Data = base64String.replace(/^data:image\/\w+;base64,/, '');
   const buffer = Buffer.from(base64Data, 'base64');
+  const tempFile = path.join(os.tmpdir(), `product_${Date.now()}.jpg`);
+  fs.writeFileSync(tempFile, buffer);
 
-  return new Promise((resolve, reject) => {
-    const uploadStream = cloudinary.uploader.upload_stream(
-      { folder: 'canadian-products', resource_type: 'image' },
-      (error, result) => {
-        if (error) reject(error);
-        else resolve(result.secure_url);
-      }
-    );
-    uploadStream.end(buffer);
-  });
+  try {
+    const result = await cloudinary.uploader.upload(tempFile, {
+      folder: 'canadian-products',
+      resource_type: 'image'
+    });
+    return result.secure_url;
+  } catch (error) {
+    console.error('Cloudinary upload error:', error);
+    throw error;
+  } finally {
+    fs.unlink(tempFile, () => {});
+  }
 };
 
 const deleteFromCloudinary = async (url) => {
