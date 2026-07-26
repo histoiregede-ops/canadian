@@ -1,283 +1,177 @@
-/* Page-specific styles (design-system.css is loaded globally) */
+/* ==========================================
+   Contact Page - Canadian Pro
+   ========================================== */
 
-.contact-container {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 20px;
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-}
-
-.contact-header {
+/* ----- Hero ----- */
+.contact-hero {
+  background: linear-gradient(135deg, var(--primary-dark) 0%, #1A1A2E 50%, var(--accent-dark) 100%);
+  background-image: url('/assets/login background image.jpeg');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  position: relative;
+  overflow: hidden;
+  padding: 80px var(--space-6) 60px;
   text-align: center;
-  margin-bottom: 40px;
+  position: relative;
+  overflow: hidden;
 }
 
-.contact-header h1 {
-  color: #2c3e50;
-  font-size: 2.5rem;
-  margin-bottom: 10px;
+.contact-hero::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at 30% 40%, rgba(239, 83, 80, 0.1) 0%, transparent 60%);
+  pointer-events: none;
 }
 
-.contact-header p {
-  color: #7f8c8d;
+.contact-hero-content {
+  position: relative;
+  z-index: 1;
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.contact-hero-content .section-label {
+  background: rgba(255,255,255,0.12);
+  color: var(--secondary-light);
+}
+
+.contact-hero-content h1 {
+  font-size: clamp(2rem, 4vw, 2.8rem);
+  font-weight: 800;
+  color: #fff;
+  margin: var(--space-4) 0 var(--space-3);
+}
+
+.contact-hero-content p {
   font-size: 1.1rem;
+  color: rgba(255,255,255,0.7);
+  margin: 0;
 }
 
+/* ----- Content ----- */
 .contact-content {
   display: grid;
-  grid-template-columns: 2fr 1fr;
-  gap: 40px;
+  grid-template-columns: 1.5fr 1fr;
+  gap: var(--space-8);
+  max-width: var(--max-width);
+  margin: 0 auto;
+  padding: var(--space-8) var(--space-6) var(--space-12);
   align-items: start;
 }
 
-@media (max-width: 768px) {
-  .contact-content {
-    grid-template-columns: 1fr;
-    gap: 30px;
-  }
+/* ----- Form Section ----- */
+.contact-form-section .card-title {
+  margin-bottom: var(--space-6);
 }
 
-@media (max-width: 480px) {
-  .contact-container {
-    padding: 12px;
-  }
-
-  .contact-header h1 {
-    font-size: 1.75rem;
-  }
-
-  .contact-header p {
-    font-size: 0.9rem;
-  }
-
-  .contact-form,
-  .contact-info-section {
-    padding: 20px;
-  }
-
-  .info-item {
-    gap: 10px;
-  }
-
-  .info-icon {
-    font-size: 20px;
-    margin-right: 10px;
-    min-width: 24px;
-  }
+.contact-form-section form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
 }
 
-@media (max-width: 360px) {
-  .contact-header h1 {
-    font-size: 1.4rem;
-  }
-
-  .contact-header p {
-    font-size: 0.85rem;
-  }
-
-  .contact-form,
-  .contact-info-section {
-    padding: 16px;
-  }
-
-  .form-control {
-    padding: 10px;
-    font-size: 14px;
-  }
-
-  .btn-submit {
-    padding: 12px;
-    font-size: 14px;
-  }
-
-  .message-box {
-    padding: 20px;
-    width: 95%;
-  }
-
-  .message-icon {
-    font-size: 36px;
-  }
-}
-
-.contact-form,
-.contact-info-section {
-  background: white;
-  padding: 30px;
-  border-radius: 10px;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-}
-
-.form-group label {
-  display: block;
-  margin-bottom: 5px;
-  color: #2c3e50;
-  font-weight: 600;
-}
-
-.form-control {
-  width: 100%;
-  padding: 12px;
-  border: 2px solid #ecf0f1;
-  border-radius: 5px;
-  font-size: 16px;
-  transition: border-color 0.3s ease;
-}
-
-.form-control:focus {
-  outline: none;
-  border-color: #3498db;
-}
-
-.form-control.error {
-  border-color: #e74c3c;
-}
-
-.error-message {
-  color: #e74c3c;
-  font-size: 14px;
-  margin-top: 5px;
-}
-
-.btn-submit {
-  width: 100%;
-  padding: 15px;
-  background: linear-gradient(135deg, #3498db, #2980b9);
-  color: white;
-  border: none;
-  border-radius: 5px;
-  font-size: 16px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: transform 0.2s ease;
-}
-
-.btn-submit:hover:not(:disabled) {
-  transform: translateY(-2px);
-}
-
-.btn-submit:disabled {
-  opacity: 0.7;
-  cursor: not-allowed;
-  transform: none;
-}
-
-.contact-info-section h3 {
-  color: #2c3e50;
-  margin-bottom: 20px;
+/* ----- Info Section ----- */
+.info-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
 }
 
 .info-item {
   display: flex;
-  align-items: center;
-  margin-bottom: 20px;
+  align-items: flex-start;
+  gap: var(--space-4);
 }
 
 .info-icon {
-  font-size: 24px;
-  margin-right: 15px;
-  min-width: 30px;
+  font-size: 1.5rem;
+  flex-shrink: 0;
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--primary-bg);
+  border-radius: var(--radius-lg);
 }
 
 .info-content strong {
   display: block;
-  color: #2c3e50;
+  font-size: var(--font-sm);
+  color: var(--text-primary);
   margin-bottom: 2px;
 }
 
 .info-content p {
-  color: #7f8c8d;
   margin: 0;
+  font-size: var(--font-sm);
+  color: var(--text-muted);
 }
 
-.contact-promise {
-  margin-top: 30px;
-  padding-top: 20px;
-  border-top: 1px solid #ecf0f1;
+/* ----- Commitments ----- */
+.contact-commitments {
+  margin-top: var(--space-6);
+  padding-top: var(--space-6);
+  border-top: 1px solid var(--border);
 }
 
-.contact-promise h4 {
-  color: #2c3e50;
-  margin-bottom: 15px;
+.contact-commitments h4 {
+  font-size: var(--font-base);
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0 0 var(--space-4) 0;
 }
 
-.contact-promise ul {
+.commitment-list {
   list-style: none;
   padding: 0;
-}
-
-.contact-promise li {
-  color: #34495e;
-  margin-bottom: 8px;
-  padding-left: 20px;
-  position: relative;
-}
-
-.contact-promise li:before {
-  content: "\2713";
-  color: #27ae60;
-  font-weight: bold;
-  position: absolute;
-  left: 0;
-}
-
-.message-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.5);
+  margin: 0;
   display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1000;
+  flex-direction: column;
+  gap: var(--space-2);
 }
 
-.message-box {
-  background: white;
-  padding: 30px;
-  border-radius: 10px;
-  max-width: 400px;
-  width: 90%;
+.commitment-list li {
+  font-size: var(--font-sm);
+  color: var(--text-secondary);
+}
+
+/* ----- CTA ----- */
+.contact-cta {
+  margin-top: var(--space-6);
+  padding-top: var(--space-6);
+  border-top: 1px solid var(--border);
   text-align: center;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
 }
 
-.message-box.success {
-  border-top: 4px solid #27ae60;
+.contact-cta p {
+  font-size: var(--font-sm);
+  color: var(--text-muted);
+  margin: 0 0 var(--space-4) 0;
 }
 
-.message-box.error {
-  border-top: 4px solid #e74c3c;
+/* ===== RESPONSIVE ===== */
+@media (max-width: 900px) {
+  .contact-content {
+    grid-template-columns: 1fr;
+  }
 }
 
-.message-icon {
-  font-size: 48px;
-  margin-bottom: 15px;
+@media (max-width: 768px) {
+  .contact-hero {
+    padding: 60px var(--space-4) 40px;
+  }
+
+  .contact-content {
+    padding: var(--space-6) var(--space-4) var(--space-8);
+    gap: var(--space-6);
+  }
 }
 
-.message-box h3 {
-  color: #2c3e50;
-  margin-bottom: 10px;
-}
-
-.message-box p {
-  color: #7f8c8d;
-  line-height: 1.5;
-  margin-bottom: 20px;
-}
-
-.btn-close {
-  padding: 10px 20px;
-  background: #3498db;
-  color: white;
-  border: none;
-  border-radius: 5px;
-  cursor: pointer;
-  font-weight: 600;
-}
-
-.btn-close:hover {
-  background: #2980b9;
+@media (max-width: 480px) {
+  .contact-hero {
+    padding: 40px var(--space-3) 32px;
+  }
 }

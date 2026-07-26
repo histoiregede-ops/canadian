@@ -9,5 +9,6 @@
     <div class="page-content" [class.no-sidebar]="isPublicPage">
       <router-outlet></router-outlet>
     </div>
+<app-footer *ngIf="isPublicPage && !isLoginPage"></app-footer>
   </div>
 </div>

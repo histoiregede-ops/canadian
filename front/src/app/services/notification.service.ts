@@ -68,21 +68,27 @@ export class NotificationService {
     );
     this.notificationsSubject.next(current);
     this.updateUnreadCount();
-    this.http.patch(`${this.apiUrl}/${id}/read`, {}).subscribe();
+    this.http.patch(`${this.apiUrl}/${id}/read`, {}).subscribe({
+      error: (err) => console.error(`[Notifications] ${err.statusText || err.message}`)
+    });
   }
 
   removeNotification(id: string): void {
     const current = this.notificationsSubject.value.filter(n => n.id !== id);
     this.notificationsSubject.next(current);
     this.updateUnreadCount();
-    this.http.delete(`${this.apiUrl}/${id}`).subscribe();
+    this.http.delete(`${this.apiUrl}/${id}`).subscribe({
+      error: (err) => console.error(`[Notifications] ${err.statusText || err.message}`)
+    });
   }
 
   markAllAsRead(): void {
     const current = this.notificationsSubject.value.map(n => ({ ...n, read: true }));
     this.notificationsSubject.next(current);
     this.updateUnreadCount();
-    this.http.post(`${this.apiUrl}/read-all`, {}).subscribe();
+    this.http.post(`${this.apiUrl}/read-all`, {}).subscribe({
+      error: (err) => console.error(`[Notifications] ${err.statusText || err.message}`)
+    });
   }
 
   private updateUnreadCount(): void {

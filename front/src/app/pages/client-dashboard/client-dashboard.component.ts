@@ -84,7 +84,7 @@ interface LoyaltyInfo {
       <div class="orders-section">
         <h2>Mes Commandes Récentes</h2>
         <div class="orders-grid" *ngIf="recentOrders.length > 0; else noOrders">
-          <div class="order-card" *ngFor="let order of recentOrders">
+          <div class="order-card" *ngFor="let order of recentOrders; trackBy: trackByOrderId">
             <div class="order-header">
               <span class="order-id">Commande #{{ order.id }}</span>
               <span class="order-status" [class]="'status-' + order.status">{{ getStatusLabel(order.status) }}</span>
@@ -563,6 +563,10 @@ export class ClientDashboardComponent implements OnInit {
   loyaltyInfo: LoyaltyInfo | null = null;
   unreadMessages = 0;
   menuOpen = false;
+
+  trackByOrderId(index: number, item: any): string {
+    return item?.id ?? index;
+  }
 
   constructor(
     private customerAuth: CustomerAuthService,

@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { Resolve, ActivatedRouteSnapshot } from '@angular/router';
 import { Observable, forkJoin, of } from 'rxjs';
+import { catchError } from 'rxjs/operators';
 import { RepairService } from '../services/repair';
 import { CustomerService } from '../services/customer';
 import { AuthService } from '../services/auth';
@@ -19,8 +20,8 @@ export class RepairsResolver implements Resolve<RepairsResolved> {
       return of({ repairs: [], customers: [] });
     }
     return forkJoin({
-      repairs: this.repairService.getRepairs(),
-      customers: this.customerService.getCustomers()
+      repairs: this.repairService.getRepairs().pipe(catchError(() => of([]))),
+      customers: this.customerService.getCustomers().pipe(catchError(() => of([])))
     });
   }
 }

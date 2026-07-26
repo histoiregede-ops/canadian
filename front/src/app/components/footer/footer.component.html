@@ -1,0 +1,92 @@
+<footer class="footer">
+  <div class="footer-wave">
+    <svg viewBox="0 0 1440 60" preserveAspectRatio="none">
+      <path d="M0,30 C360,60 720,0 1080,30 C1260,45 1350,30 1440,30 L1440,60 L0,60 Z" fill="var(--footer-bg)"></path>
+    </svg>
+  </div>
+
+  <div class="footer-content">
+    <div class="footer-grid">
+      <!-- Brand -->
+      <div class="footer-col brand-col">
+        <div class="footer-logo">
+          <span class="footer-logo-icon">⚡</span>
+          <span class="footer-logo-text">{{ config.shop.name }}</span>
+        </div>
+        <p class="footer-desc">
+          Votre partenaire de confiance pour les solutions solaires, électroménagers et services électroniques. Qualité premium, service irréprochable.
+        </p>
+        <div class="footer-social">
+          <a *ngFor="let social of socialLinks"
+             [href]="social.url"
+             target="_blank"
+             rel="noopener noreferrer"
+             class="social-link"
+             [attr.title]="social.name">
+            {{ social.icon }}
+          </a>
+        </div>
+      </div>
+
+      <!-- Services -->
+      <div class="footer-col">
+        <h4 class="footer-heading">Nos Services</h4>
+        <ul class="footer-links">
+          <li *ngFor="let service of services">
+            <a [href]="service.link" target="_blank" rel="noopener noreferrer" class="footer-link">
+              {{ service.label }}
+            </a>
+          </li>
+        </ul>
+      </div>
+
+      <!-- Contact -->
+      <div class="footer-col">
+        <h4 class="footer-heading">Contact</h4>
+        <ul class="footer-contact">
+          <li>
+            <span class="contact-icon">📍</span>
+            <span>{{ config.shop.address }}</span>
+          </li>
+          <li>
+            <span class="contact-icon">📞</span>
+            <a [href]="'tel:' + config.shop.phone.replace(/ /g, '')" class="footer-link">{{ config.shop.phone }}</a>
+          </li>
+          <li>
+            <span class="contact-icon">✉️</span>
+            <a href="mailto:contact@electrocanadien.com" class="footer-link">contact@electrocanadien.com</a>
+          </li>
+          <li>
+            <span class="contact-icon">🕐</span>
+            <span>Lun-Sam: 08h00 - 19h00</span>
+          </li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- Newsletter -->
+    <div class="footer-newsletter">
+      <div class="newsletter-content">
+        <h4>Restez informé</h4>
+        <p>Soyez au courant de nos offres spéciales et nouveaux produits</p>
+      </div>
+      <form class="newsletter-form" (submit)="$event.preventDefault()">
+        <input type="email" placeholder="Votre adresse email" class="newsletter-input" />
+        <button type="submit" class="newsletter-btn">S'abonner</button>
+      </form>
+    </div>
+  </div>
+
+  <div class="footer-bottom">
+    <div class="footer-bottom-content">
+      <p class="footer-copyright">
+        &copy; {{ currentYear }} Electro Canadien. Tous droits réservés.
+      </p>
+      <div class="footer-bottom-links">
+        <a routerLink="/shop" class="footer-bottom-link">Mentions légales</a>
+        <a routerLink="/shop" class="footer-bottom-link">Confidentialité</a>
+        <a routerLink="/contact" class="footer-bottom-link">Contact</a>
+      </div>
+    </div>
+  </div>
+</footer>

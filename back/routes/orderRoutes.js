@@ -80,7 +80,17 @@ router.post('/', authenticate, async (req, res) => {
       deliveryAddress
     }, { transaction: t });
 
+    const productIds = items.map(i => i.productId);
+    const products = await Product.findAll({ where: { id: productIds } });
+    const productMap = new Map(products.map(p => [p.id, p]));
+
     for (const item of items) {
+      const product = productMap.get(item.productId);
+      if (!product) {
+        await t.rollback();
+        return res.status(400).json({ message: `Produit ${item.productId} introuvable` });
+      }
+
       await OrderItem.create({
         orderId: order.id,
         productId: item.productId,
@@ -89,30 +99,27 @@ router.post('/', authenticate, async (req, res) => {
         totalPrice: item.quantity * item.unitPrice
       }, { transaction: t });
 
-      const product = await Product.findByPk(item.productId);
-      if (product) {
-        const prev = product.stockQuantity;
-        product.stockQuantity -= item.quantity;
-        if (product.stockQuantity < 0) product.stockQuantity = 0;
-        await product.save({ transaction: t });
-        const threshold = product.lowStockThreshold || 15;
-        await sequelize.query(
-          'INSERT INTO stock_movements (productId, previousQuantity, newQuantity, changeAmount, reason, reference, createdAt) VALUES (?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)',
-          { replacements: [item.productId, prev, product.stockQuantity, product.stockQuantity - prev, 'sale', order.orderNumber] }
-        ).catch(err => console.error('Failed to log stock movement:', err));
-        if (product.stockQuantity <= threshold && product.stockQuantity > 0 && global.broadcastNotification) {
-          global.broadcastNotification({
-            title: 'Stock faible',
-            body: `${product.name}: ${product.stockQuantity} unité(s) restante(s)`,
-            type: 'low_stock'
-          });
-        } else if (product.stockQuantity === 0 && global.broadcastNotification) {
-          global.broadcastNotification({
-            title: 'Rupture de stock',
-            body: `${product.name} est en rupture de stock`,
-            type: 'out_of_stock'
-          });
-        }
+      const prev = product.stockQuantity;
+      product.stockQuantity -= item.quantity;
+      if (product.stockQuantity < 0) product.stockQuantity = 0;
+      await product.save({ transaction: t });
+      const threshold = product.lowStockThreshold || 15;
+      await sequelize.query(
+        'INSERT INTO stock_movements (productId, previousQuantity, newQuantity, changeAmount, reason, reference, createdAt) VALUES (?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)',
+        { replacements: [item.productId, prev, product.stockQuantity, product.stockQuantity - prev, 'sale', order.orderNumber] }
+      ).catch(err => console.error('Failed to log stock movement:', err));
+      if (product.stockQuantity <= threshold && product.stockQuantity > 0 && global.broadcastNotification) {
+        global.broadcastNotification({
+          title: 'Stock faible',
+          body: `${product.name}: ${product.stockQuantity} unité(s) restante(s)`,
+          type: 'low_stock'
+        });
+      } else if (product.stockQuantity === 0 && global.broadcastNotification) {
+        global.broadcastNotification({
+          title: 'Rupture de stock',
+          body: `${product.name} est en rupture de stock`,
+          type: 'out_of_stock'
+        });
       }
     }
 
@@ -219,15 +226,27 @@ router.post('/', authenticate, async (req, res) => {
 // Get all orders
 router.get('/', authenticate, authorize('admin', 'cashier'), async (req, res) => {
   try {
-    const orders = await Order.findAll({
+    const page = Math.max(1, parseInt(req.query.page) || 1);
+    const limit = Math.min(100, Math.max(1, parseInt(req.query.limit) || 20));
+    const offset = (page - 1) * limit;
+
+    const { count, rows } = await Order.findAndCountAll({
       include: [
-        { model: OrderItem, as: 'products' },
+        { model: OrderItem, as: 'products', include: [{ model: Product, attributes: ['id', 'name', 'photo', 'price'] }] },
         { model: Customer, attributes: ['id', 'name', 'phone'] },
         { model: Installation, attributes: ['id', 'status', 'location'] }
       ],
-      order: [['createdAt', 'DESC']]
+      order: [['createdAt', 'DESC']],
+      limit,
+      offset
     });
-    res.json(orders);
+
+    res.json({
+      data: rows,
+      total: count,
+      page,
+      pages: Math.ceil(count / limit)
+    });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -238,7 +257,7 @@ router.get('/:id', authenticate, async (req, res) => {
   try {
     const order = await Order.findByPk(req.params.id, {
       include: [
-        { model: OrderItem, as: 'products' },
+        { model: OrderItem, as: 'products', include: [{ model: Product, attributes: ['id', 'name', 'photo', 'price'] }] },
         { model: Customer },
         { model: Installation, attributes: ['id', 'status', 'location', 'scheduledDate'] }
       ]
@@ -255,7 +274,7 @@ router.get('/customer/:customerId', authenticate, async (req, res) => {
   try {
     const orders = await Order.findAll({
       where: { customerId: req.params.customerId },
-      include: [{ model: OrderItem, as: 'products' }],
+      include: [{ model: OrderItem, as: 'products', include: [{ model: Product, attributes: ['id', 'name', 'photo', 'price'] }] }],
       order: [['createdAt', 'DESC']]
     });
     res.json(orders);

@@ -76,6 +76,10 @@ export class SuppliersComponent implements OnInit, OnDestroy {
     });
   }
 
+  trackBySupplierId(index: number, item: any): string {
+    return item?.id ?? index;
+  }
+
   private applyFilter(): void {
     const q = this.searchQuery.toLowerCase();
     this.filteredSuppliers = q
@@ -100,12 +104,12 @@ export class SuppliersComponent implements OnInit, OnDestroy {
   saveSupplier(): void {
     if (this.isEditing && this.currentSupplier.id) {
       this.supplierService.updateSupplier(this.currentSupplier.id, this.currentSupplier).subscribe({
-        next: () => { this.showModal = false; this.loadSuppliers(); },
+        next: () => { this.showModal = false; this.loadSuppliers(); this.refreshService.triggerRefresh(); },
         error: (err) => alert('Erreur: ' + err.error?.error || err.message)
       });
     } else {
       this.supplierService.createSupplier(this.currentSupplier).subscribe({
-        next: () => { this.showModal = false; this.loadSuppliers(); },
+        next: () => { this.showModal = false; this.loadSuppliers(); this.refreshService.triggerRefresh(); },
         error: (err) => alert('Erreur: ' + err.error?.error || err.message)
       });
     }
@@ -114,7 +118,7 @@ export class SuppliersComponent implements OnInit, OnDestroy {
   deleteSupplier(id: string): void {
     if (confirm('Supprimer ce fournisseur ?')) {
       this.supplierService.deleteSupplier(id).subscribe({
-        next: () => this.loadSuppliers(),
+        next: () => { this.loadSuppliers(); this.refreshService.triggerRefresh(); },
         error: (err) => alert('Erreur: ' + err.error?.error || err.message)
       });
     }

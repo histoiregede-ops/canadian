@@ -19,6 +19,10 @@ router.get('/', authenticate, authorize('admin'), async (req, res) => {
 router.post('/', authenticate, authorize('admin'), async (req, res) => {
   try {
     const { username, password, email, fullName, role } = req.body;
+    const validRoles = ['admin', 'cashier', 'technician'];
+    if (role && !validRoles.includes(role)) {
+      return res.status(400).json({ error: 'Rôle invalide' });
+    }
     const user = await User.create({ username, password, email, fullName, role });
     res.status(201).json({ id: user.id, username: user.username, email: user.email, fullName: user.fullName, role: user.role });
   } catch (error) {

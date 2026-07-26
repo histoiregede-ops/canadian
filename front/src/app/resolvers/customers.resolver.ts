@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { Resolve, ActivatedRouteSnapshot } from '@angular/router';
 import { Observable, of } from 'rxjs';
-import { map } from 'rxjs/operators';
+import { map, catchError } from 'rxjs/operators';
 import { CustomerService } from '../services/customer';
 import { AuthService } from '../services/auth';
 
@@ -18,7 +18,8 @@ export class CustomersResolver implements Resolve<CustomersResolved> {
       return of({ customers: [] });
     }
     return this.customerService.getCustomers().pipe(
-      map(customers => ({ customers }))
+      map(customers => ({ customers })),
+      catchError(() => of({ customers: [] }))
     );
   }
 }

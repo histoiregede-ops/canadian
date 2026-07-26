@@ -1,8 +1,7 @@
-import { Component, Output, EventEmitter, OnInit, OnDestroy } from '@angular/core';
+import { Component, Output, EventEmitter, OnInit, OnDestroy, ChangeDetectorRef } from '@angular/core';
 import { CommonModule, DatePipe } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { Subscription } from 'rxjs';
-import { delay } from 'rxjs/operators';
 import { NotificationService, AppNotification } from '../../services/notification.service';
 
 @Component({
@@ -22,11 +21,17 @@ export class NavbarComponent implements OnInit, OnDestroy {
   private notifSub?: Subscription;
   private unreadSub?: Subscription;
 
-  constructor(private notifService: NotificationService) {}
+  constructor(private notifService: NotificationService, private cdr: ChangeDetectorRef) {}
 
   ngOnInit(): void {
-    this.notifSub = this.notifService.notifications$.pipe(delay(0)).subscribe(n => this.notifications = n);
-    this.unreadSub = this.notifService.unreadCount$.pipe(delay(0)).subscribe(c => this.unreadCount = c);
+    this.notifSub = this.notifService.notifications$.subscribe(n => {
+      this.notifications = n;
+      this.cdr.markForCheck();
+    });
+    this.unreadSub = this.notifService.unreadCount$.subscribe(c => {
+      this.unreadCount = c;
+      this.cdr.markForCheck();
+    });
     this.notifService.loadNotifications();
   }
 

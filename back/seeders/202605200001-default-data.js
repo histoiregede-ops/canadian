@@ -3,14 +3,16 @@ const bcrypt = require('bcryptjs');
 
 module.exports = {
   up: async (queryInterface) => {
-    const hashedPassword = await bcrypt.hash('admin123', 10);
+    const hashedPassword = await bcrypt.hash('admin', 10);
     const hashedCashier = await bcrypt.hash('cashier123', 10);
     const hashedTech = await bcrypt.hash('password', 10);
+    const hashedAdmin2 = await bcrypt.hash('admin', 10);
 
     const users = [
       { id: 'a0000001-0000-0000-0000-000000000001', username: 'admin', password: hashedPassword, role: 'admin', fullName: 'Administrateur', email: 'admin@solarerp.com' },
-      { id: 'a0000001-0000-0000-0000-000000000002', username: 'cashier1', password: hashedCashier, role: 'cashier', fullName: 'Caissier Principal', email: 'cashier@solarerp.com' },
-      { id: 'a0000001-0000-0000-0000-000000000003', username: 'tech1', password: hashedTech, role: 'technician', fullName: 'Amadou Diallo', email: 'tech1@solarerp.com' }
+      { id: 'a0000001-0000-0000-0000-000000000002', username: 'admin2', password: hashedAdmin2, role: 'admin', fullName: 'Administrateur 2', email: 'admin2@solarerp.com' },
+      { id: 'a0000001-0000-0000-0000-000000000003', username: 'cashier1', password: hashedCashier, role: 'cashier', fullName: 'Caissier Principal', email: 'cashier@solarerp.com' },
+      { id: 'a0000001-0000-0000-0000-000000000004', username: 'tech1', password: hashedTech, role: 'technician', fullName: 'Amadou Diallo', email: 'tech1@solarerp.com' }
     ];
     const now = new Date();
     for (const u of users) {

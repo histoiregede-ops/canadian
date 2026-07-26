@@ -43,7 +43,7 @@
   </div>
 
   <div class="tech-grid" *ngIf="!loading && filteredTechnicians.length > 0">
-    <div class="card tech-card" *ngFor="let tech of filteredTechnicians">
+    <div class="card tech-card" *ngFor="let tech of filteredTechnicians; trackBy: trackByTechnicianId">
       <div class="card-body">
         <div class="tech-header">
           <div class="tech-avatar">{{ getInitials(tech.fullName || '') }}</div>

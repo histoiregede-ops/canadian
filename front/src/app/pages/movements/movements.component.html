@@ -12,12 +12,12 @@
         <span class="search-icon">🔍</span>
         <select class="form-select" [(ngModel)]="filters.productId" (change)="onFilterChange()">
           <option value="">Tous les produits</option>
-          <option *ngFor="let p of products" [value]="p.id">{{ p.name }}</option>
+          <option *ngFor="let p of products; trackBy: trackByProductId" [value]="p.id">{{ p.name }}</option>
         </select>
       </div>
       <select class="form-select" [(ngModel)]="filters.reason" (change)="onFilterChange()">
         <option value="">Toutes les raisons</option>
-        <option *ngFor="let r of reasons" [value]="r">{{ getReasonLabel(r) }}</option>
+        <option *ngFor="let r of reasons; trackBy: trackByReason" [value]="r">{{ getReasonLabel(r) }}</option>
       </select>
       <input type="date" class="form-input" [(ngModel)]="filters.startDate" (change)="onFilterChange()" placeholder="Du" />
       <input type="date" class="form-input" [(ngModel)]="filters.endDate" (change)="onFilterChange()" placeholder="Au" />
@@ -82,7 +82,7 @@
         </tr>
       </thead>
       <tbody>
-        <tr *ngFor="let m of movements">
+        <tr *ngFor="let m of movements; trackBy: trackByMovementId">
           <td>{{ m.createdAt | date:'dd/MM/yy HH:mm' }}</td>
           <td>
             <div class="product-cell">

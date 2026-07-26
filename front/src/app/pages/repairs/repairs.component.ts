@@ -50,13 +50,17 @@ export class RepairsComponent implements OnInit, OnDestroy {
   }
 
   private priorityWeight: any = { urgent: 0, high: 1, normal: 2, low: 3 };
-  private statusWeight: any = { received: 0, in_diagnosis: 1, repairing: 2, waiting_for_parts: 3, ready: 4, delivered: 5, cancelled: 6 };
+  private statusWeight: any = { received: 0, diagnosing: 1, in_diagnosis: 1, repairing: 2, waiting_parts: 3, waiting_for_parts: 3, ready: 4, delivered: 5, cancelled: 6 };
 
   get filteredRepairs(): Repair[] {
     const q = (this.searchQuery || '').toLowerCase();
     return this.repairs.filter(r => {
       const matchesQuery = !q || (r.brand || '').toLowerCase().includes(q) || (r.deviceType || '').toLowerCase().includes(q) || (r.serialNumber || '').toLowerCase().includes(q);
-      const matchesStatus = !this.selectedStatus || r.status === this.selectedStatus;
+      const matchesStatus = !this.selectedStatus || r.status === this.selectedStatus
+        || (this.selectedStatus === 'diagnosing' && r.status === 'in_diagnosis')
+        || (this.selectedStatus === 'in_diagnosis' && r.status === 'diagnosing')
+        || (this.selectedStatus === 'waiting_parts' && r.status === 'waiting_for_parts')
+        || (this.selectedStatus === 'waiting_for_parts' && r.status === 'waiting_parts');
       const matchesPriority = !this.selectedPriority || r.priority === this.selectedPriority;
       return matchesQuery && matchesStatus && matchesPriority;
     }).sort((a, b) => {
@@ -67,6 +71,14 @@ export class RepairsComponent implements OnInit, OnDestroy {
       const sB = this.statusWeight[b.status] ?? 9;
       return sA - sB;
     });
+  }
+
+  trackByRepairId(index: number, item: any): string {
+    return item?.id ?? index;
+  }
+
+  trackByCustomerId(index: number, item: any): string {
+    return item?.id ?? index;
   }
 
   getActiveCount(): number {
@@ -148,11 +160,13 @@ export class RepairsComponent implements OnInit, OnDestroy {
       this.repairService.updateRepair(this.currentRepair.id, this.currentRepair).subscribe(() => {
         this.loadRepairs();
         this.showModal = false;
+        this.refreshService.triggerRefresh();
       });
     } else {
       this.repairService.createRepair(this.currentRepair).subscribe(() => {
         this.loadRepairs();
         this.showModal = false;
+        this.refreshService.triggerRefresh();
       });
     }
   }
@@ -161,6 +175,7 @@ export class RepairsComponent implements OnInit, OnDestroy {
     if (confirm('Êtes-vous sûr de vouloir supprimer ce dossier de réparation ?')) {
       this.repairService.deleteRepair(id).subscribe(() => {
         this.loadRepairs();
+        this.refreshService.triggerRefresh();
       });
     }
   }
@@ -168,8 +183,11 @@ export class RepairsComponent implements OnInit, OnDestroy {
   getStatusClass(status: string): string {
     switch (status) {
       case 'received': return 'badge-info';
-      case 'in_diagnosis': return 'badge-warning';
+      case 'in_diagnosis':
+      case 'diagnosing': return 'badge-warning';
       case 'repairing': return 'badge-warning';
+      case 'waiting_for_parts':
+      case 'waiting_parts': return 'badge-warning';
       case 'ready': return 'badge-success';
       case 'delivered': return 'badge-success';
       case 'cancelled': return 'badge-danger';
@@ -180,8 +198,10 @@ export class RepairsComponent implements OnInit, OnDestroy {
   getStatusLabel(status: string): string {
     const labels: any = {
       received: 'Reçu',
+      diagnosing: 'Diagnostic',
       in_diagnosis: 'Diagnostic',
       repairing: 'En réparation',
+      waiting_parts: 'Attente pièces',
       waiting_for_parts: 'Attente pièces',
       ready: 'Prêt',
       delivered: 'Livré',

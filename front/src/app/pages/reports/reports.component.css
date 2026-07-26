@@ -1,6 +1,14 @@
 .container {
   max-width: 1200px;
   margin: 0 auto;
+  padding: var(--page-padding, var(--space-6));
+}
+
+.container h1 {
+  font-size: var(--font-2xl);
+  font-weight: 800;
+  color: var(--text-primary);
+  margin: 0 0 var(--space-8) 0;
 }
 
 .stats-grid {
@@ -57,7 +65,7 @@
 
 .chart-wrapper {
   position: relative;
-  height: 300px;
+  height: 280px;
   width: 100%;
 }
 

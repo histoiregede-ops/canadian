@@ -28,6 +28,17 @@ module.exports = {
       roofType: {
         type: Sequelize.STRING
       },
+      priority: {
+        type: Sequelize.ENUM('low', 'normal', 'high', 'urgent'),
+        defaultValue: 'normal'
+      },
+      orderId: {
+        type: Sequelize.UUID,
+        allowNull: true,
+        references: { model: 'Orders', key: 'id' },
+        onUpdate: 'CASCADE',
+        onDelete: 'SET NULL'
+      },
       status: {
         type: Sequelize.ENUM('survey', 'planned', 'in_progress', 'testing', 'completed', 'cancelled'),
         defaultValue: 'planned'

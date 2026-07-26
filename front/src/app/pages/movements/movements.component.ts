@@ -35,6 +35,18 @@ export class MovementsComponent implements OnInit {
   pages = 1;
   currentPage = 1;
 
+  trackByProductId(index: number, item: any): string {
+    return item?.id ?? index;
+  }
+
+  trackByReason(index: number, item: any): string {
+    return item ?? index;
+  }
+
+  trackByMovementId(index: number, item: any): string {
+    return item?.id ?? index;
+  }
+
   constructor(
     private route: ActivatedRoute,
     private movementService: MovementService,
@@ -46,12 +58,15 @@ export class MovementsComponent implements OnInit {
     this.products = resolved?.products || [];
     this.reasons = resolved?.reasons || [];
 
+    this.loadMovements();
+    this.loadSummary();
+
     this.route.queryParams.subscribe(params => {
       if (params['productId']) {
         this.filters.productId = params['productId'];
+        this.loadMovements();
+        this.loadSummary();
       }
-      this.loadMovements();
-      this.loadSummary();
     });
   }
 

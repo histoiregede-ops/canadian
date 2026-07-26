@@ -69,7 +69,7 @@
           </tr>
         </thead>
         <tbody>
-          <tr *ngFor="let t of transactions">
+          <tr *ngFor="let t of transactions; trackBy: trackByTransactionId">
             <td>{{ t.date | date:'dd/MM/yyyy' }}</td>
             <td>{{ t.description }}</td>
             <td><span class="badge" [class.badge-success]="t.type === 'income'" [class.badge-danger]="t.type === 'expense'">{{ t.type === 'income' ? 'Encaissement' : 'Décaissement' }}</span></td>
@@ -111,7 +111,7 @@
             <label class="form-label">Client</label>
             <select [(ngModel)]="newTransaction.customerId" name="customerId" (change)="updateCustomerName($event)" class="form-select">
               <option value="">Sélectionner un client</option>
-              <option *ngFor="let c of customers" [value]="c.id">{{ c.fullName || c.name }}</option>
+              <option *ngFor="let c of customers; trackBy: trackByCustomerId" [value]="c.id">{{ c.fullName || c.name }}</option>
             </select>
           </div>
           <div class="form-row">
@@ -191,7 +191,7 @@
               </tr>
             </thead>
             <tbody>
-              <tr *ngFor="let t of fluxData.transactions">
+              <tr *ngFor="let t of fluxData.transactions; trackBy: trackByTransactionId">
                 <td>{{ t.time || '-' }}</td>
                 <td>{{ t.customerName || '-' }}</td>
                 <td>{{ t.description }}</td>

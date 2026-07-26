@@ -50,7 +50,7 @@
   </div>
 
   <div class="suppliers-grid" *ngIf="!loading && filteredSuppliers.length > 0">
-    <div class="card supplier-card" *ngFor="let s of filteredSuppliers">
+    <div class="card supplier-card" *ngFor="let s of filteredSuppliers; trackBy: trackBySupplierId">
       <div class="card-header">
         <div class="supplier-header-info">
           <h3 class="supplier-name">{{ s.name }}</h3>

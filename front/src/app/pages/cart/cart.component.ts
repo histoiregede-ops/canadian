@@ -19,6 +19,10 @@ export class CartComponent implements OnInit, OnDestroy {
   cartTotal = 0;
   private subscriptions: Subscription = new Subscription();
 
+  trackByCartItemId(index: number, item: any): string {
+    return item?.product?.id ?? index;
+  }
+
   // Pricing
   taxRate = 0.18; // 18% VAT
   shippingCost = 5000; // 5000 FCFA

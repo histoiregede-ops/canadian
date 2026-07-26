@@ -3,19 +3,19 @@ const router = express.Router();
 const { Order, CashTransaction, Payment } = require('../models');
 const sequelize = require('../config/database');
 const { authenticate, authorize } = require('../utils/auth');
-const pawaPay = require('../services/paymentProvider');
-const PAWAPAY_WEBHOOK_SECRET = process.env.PAWAPAY_WEBHOOK_SECRET;
+const cinetpay = require('../services/cinetpayProvider');
 
-const validateWebhookSecret = (req) => {
-  if (!PAWAPAY_WEBHOOK_SECRET) return true;
-  const incomingSecret = req.headers['x-pawapay-signature'] || req.headers['x-webhook-secret'] || req.headers.authorization?.split(' ')[1];
-  return incomingSecret === PAWAPAY_WEBHOOK_SECRET;
-};
+// =============================================
+// Routes Paiement — CinetPay
+// =============================================
 
-// Initiate a mobile money payment via PawaPay
+/**
+ * Initier un paiement mobile money via CinetPay
+ * POST /api/payments/initiate
+ */
 router.post('/initiate', authenticate, async (req, res) => {
   try {
-    const { orderId, amount, paymentMethod, phoneNumber, customerId } = req.body;
+    const { orderId, amount, paymentMethod, phoneNumber, customerId, customerName, customerEmail } = req.body;
 
     if (!orderId) return res.status(400).json({ error: 'orderId requis' });
     const order = await Order.findByPk(orderId);
@@ -35,106 +35,156 @@ router.post('/initiate', authenticate, async (req, res) => {
       return res.status(400).json({ error: 'Moyen de paiement invalide' });
     }
 
-    const result = await pawaPay.initiateDeposit({
+    // Carte des canaux CinetPay selon le mode de paiement
+    const CHANNEL_MAP = {
+      orange_money: 'MOBILE_MONEY',
+      moov_money: 'MOBILE_MONEY',
+      wave: 'MOBILE_MONEY'
+    };
+
+    const result = await cinetpay.initiatePayment({
       amount: requestedAmount,
       phoneNumber,
-      providerMethod: paymentMethod,
-      orderId: orderId,
-      customerId: customerId || ''
+      channel: CHANNEL_MAP[paymentMethod] || 'MOBILE_MONEY',
+      orderId,
+      customerName: customerName || '',
+      customerEmail: customerEmail || '',
+      notifyUrl: `${req.protocol}://${req.get('host')}/api/payments/webhook`
     });
 
+    // Sauvegarder la transaction en base
     const payment = await Payment.create({
       orderId: orderId || null,
       amount,
       paymentMethod,
       currency: 'XOF',
       status: 'pending',
-      transactionId: pawaPay.isSandboxMode() ? `sandbox_${result.depositId}` : result.depositId,
-      notes: `PawaPay depositId: ${result.depositId}`
+      transactionId: result.transactionId,
+      notes: `CinetPay transId: ${result.transactionId} | canal: ${paymentMethod}`
     });
 
     res.json({
-      success: result.status === 'ACCEPTED',
+      success: result.success,
       paymentId: payment.id,
-      depositId: result.depositId,
+      transactionId: result.transactionId,
+      paymentUrl: result.paymentUrl,
+      token: result.token,
       status: result.status,
-      message: result.status === 'ACCEPTED'
+      message: result.success
         ? 'Paiement initié. Confirmez sur votre téléphone.'
-        : `Échec: ${result.failureReason?.failureMessage || 'Erreur inconnue'}`
+        : `Échec: ${result.message}`
     });
   } catch (error) {
-    console.error('Payment initiation error:', error.response?.data || error.message);
+    console.error('[CinetPay] Erreur initiation:', error.response?.data || error.message);
     res.status(500).json({
       success: false,
-      error: 'Impossible d\'initier le paiement',
-      details: pawaPay.isSandboxMode() ? error.message : undefined
+      error: "Impossible d'initier le paiement",
+      details: cinetpay.isSandboxMode() ? error.message : undefined
     });
   }
 });
 
-// Webhook pour les notifications PawaPay
+/**
+ * Webhook IPN CinetPay — notifications de statut
+ * POST /api/payments/webhook
+ */
 router.post('/webhook', express.raw({ type: 'application/json' }), async (req, res) => {
   try {
-    if (!validateWebhookSecret(req)) {
-      return res.status(403).json({ error: 'Webhook non autorisé' });
+    // CinetPay peut envoyer du JSON ou du form-urlencoded
+    let body = req.body;
+    if (typeof body === 'string') {
+      body = JSON.parse(body);
     }
 
-    const body = typeof req.body === 'string' ? JSON.parse(req.body) : req.body;
-    const { depositId, status, metadata } = body;
+    const ipnResult = cinetpay.processIPN(body);
 
-    if (!depositId) return res.status(400).json({ error: 'Missing depositId' });
+    // Toujours répondre 200 à CinetPay pour accuser réception
+    if (!ipnResult.transactionId) {
+      return res.status(400).json({ error: 'Missing transaction ID' });
+    }
 
     const payment = await Payment.findOne({
-      where: { transactionId: pawaPay.isSandboxMode() ? `sandbox_${depositId}` : depositId }
+      where: { transactionId: ipnResult.transactionId }
     });
 
     if (!payment) {
+      console.warn('[CinetPay IPN] Paiement introuvable pour transId:', ipnResult.transactionId);
       return res.status(404).json({ error: 'Payment not found' });
     }
 
-    const isCompleted = status === 'COMPLETED';
-    const newStatus = isCompleted ? 'completed' : (status === 'FAILED' ? 'failed' : payment.status);
+    // Ne traiter que si le statut a changé
+    if (payment.status !== 'pending') {
+      return res.json({ received: true, alreadyProcessed: true });
+    }
+
+    const newStatus = ipnResult.isCompleted ? 'completed' : (ipnResult.isFailed ? 'failed' : payment.status);
     await payment.update({ status: newStatus });
 
-    if (isCompleted && payment.orderId) {
+    if (ipnResult.isCompleted && payment.orderId) {
       const order = await Order.findByPk(payment.orderId);
       if (order) {
-        await order.update({ status: 'paid', paidAmount: payment.amount });
+        await order.update({
+          status: 'paid',
+          paidAmount: ipnResult.amount || payment.amount
+        });
         await CashTransaction.create({
           type: 'income',
-          amount: payment.amount,
-          description: `Paiement ${order.orderNumber || order.id}`,
+          amount: ipnResult.amount || payment.amount,
+          description: `Paiement CinetPay ${order.orderNumber || order.id}`,
           category: 'Sales',
           date: new Date(),
           customerId: order.customerId || null,
           customerName: null
         });
+        if (global.broadcastNotification) {
+          global.broadcastNotification({
+            title: 'Paiement confirmé',
+            body: `Paiement de ${(ipnResult.amount || payment.amount).toLocaleString()} FCFA confirmé pour ${order.orderNumber || order.id}`,
+            type: 'payment_success'
+          });
+        }
+        if (global.sendWebSocketNotification && order.customerId) {
+          global.sendWebSocketNotification(order.customerId, {
+            title: 'Paiement confirmé',
+            body: `Votre paiement de ${(ipnResult.amount || payment.amount).toLocaleString()} FCFA a été confirmé.`,
+            type: 'payment_success'
+          });
+        }
       }
     }
 
     res.json({ received: true });
   } catch (error) {
-    console.error('Webhook error:', error.message);
-    res.status(500).json({ error: 'Webhook processing failed' });
+    console.error('[CinetPay IPN] Erreur:', error.message);
+    // Toujours répondre 200 pour éviter les renvois
+    res.json({ received: true, error: error.message });
   }
 });
 
-// Vérifier le statut d'un paiement
-router.get('/status/:depositId', authenticate, async (req, res) => {
+/**
+ * Vérifier le statut d'une transaction CinetPay
+ * GET /api/payments/status/:transactionId
+ */
+router.get('/status/:transactionId', authenticate, async (req, res) => {
   try {
-    const { depositId } = req.params;
-    const status = await pawaPay.checkDepositStatus(depositId);
+    const { transactionId } = req.params;
+    const status = await cinetpay.checkTransactionStatus(transactionId);
     res.json(status);
   } catch (error) {
+    console.error('[CinetPay] Erreur check status:', error.message);
     res.status(500).json({ error: error.message });
   }
 });
 
-// Process payment (legacy cash)
+/**
+ * Créer un paiement (cash / legacy)
+ * POST /api/payments
+ */
 router.post('/', authenticate, async (req, res) => {
   const t = await sequelize.transaction();
   try {
     const { orderId, amount, paymentMethod, currency = 'XOF', status = 'pending', notes } = req.body;
+
     if (!orderId) {
       await t.rollback();
       return res.status(400).json({ error: 'orderId requis' });
@@ -151,16 +201,18 @@ router.post('/', authenticate, async (req, res) => {
       return res.status(400).json({ error: 'Montant invalide' });
     }
 
-    const transactionId = `txn_${Date.now()}`;
+    const transactionId = `TXN-${Date.now()}-${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
 
     const payment = await Payment.create({
-      orderId, amount: requestedAmount, paymentMethod, currency, status, transactionId, notes
+      orderId, amount: requestedAmount, paymentMethod, currency, status,
+      transactionId, notes
     }, { transaction: t });
 
     await order.update({ status: 'paid', paidAmount: requestedAmount }, { transaction: t });
+
     await CashTransaction.create({
       type: 'income', amount: requestedAmount,
-      description: `Paiement ${order.orderNumber}`,
+      description: `Paiement ${order.orderNumber || order.id}`,
       category: 'Sales', date: new Date()
     }, { transaction: t });
 
@@ -172,16 +224,28 @@ router.post('/', authenticate, async (req, res) => {
   }
 });
 
+/**
+ * Récupérer un paiement par ID
+ * GET /api/payments/:id
+ */
 router.get('/:id', authenticate, async (req, res) => {
   const payment = await Payment.findByPk(req.params.id);
   payment ? res.json(payment) : res.status(404).json({ error: 'Payment not found' });
 });
 
+/**
+ * Récupérer les paiements d'une commande
+ * GET /api/payments/order/:orderId
+ */
 router.get('/order/:orderId', authenticate, async (req, res) => {
   const payments = await Payment.findAll({ where: { orderId: req.params.orderId } });
   res.json(payments);
 });
 
+/**
+ * Rembourser un paiement (admin only)
+ * POST /api/payments/:id/refund
+ */
 router.post('/:id/refund', authenticate, authorize('admin'), async (req, res) => {
   try {
     const payment = await Payment.findByPk(req.params.id);
@@ -193,8 +257,10 @@ router.post('/:id/refund', authenticate, authorize('admin'), async (req, res) =>
     await payment.update({ status: refundStatus });
 
     res.json({
-      id: `ref_${Date.now()}`, paymentId: payment.id,
-      amount: refundAmount, status: 'completed',
+      id: `REF-${Date.now()}`,
+      paymentId: payment.id,
+      amount: refundAmount,
+      status: 'completed',
       refundDate: new Date(),
       originalAmount: parseFloat(payment.amount),
       remainingBalance: parseFloat(payment.amount) - refundAmount
@@ -204,6 +270,10 @@ router.post('/:id/refund', authenticate, authorize('admin'), async (req, res) =>
   }
 });
 
+/**
+ * Vérifier un paiement mobile money
+ * POST /api/payments/verify-mobile-money
+ */
 router.post('/verify-mobile-money', authenticate, async (req, res) => {
   try {
     const { transactionId, phoneNumber } = req.body;
@@ -212,11 +282,28 @@ router.post('/verify-mobile-money', authenticate, async (req, res) => {
     const payment = await Payment.findOne({ where: { transactionId } });
     if (!payment) return res.status(404).json({ error: 'Paiement introuvable', success: false });
 
+    // Vérifier le statut en temps réel via CinetPay
+    const liveStatus = await cinetpay.checkTransactionStatus(transactionId);
+
+    // Mettre à jour si nécessaire
+    if (liveStatus.isCompleted && payment.status === 'pending') {
+      await payment.update({ status: 'completed' });
+      if (payment.orderId) {
+        const order = await Order.findByPk(payment.orderId);
+        if (order) {
+          await order.update({ status: 'paid', paidAmount: payment.amount });
+        }
+      }
+    } else if (liveStatus.isFailed && payment.status === 'pending') {
+      await payment.update({ status: 'failed' });
+    }
+
     res.json({
-      success: payment.status === 'completed',
+      success: payment.status === 'completed' || liveStatus.isCompleted,
       transactionId: payment.transactionId,
       phoneNumber,
       status: payment.status,
+      liveStatus: liveStatus.status,
       amount: payment.amount,
       timestamp: payment.updatedAt
     });

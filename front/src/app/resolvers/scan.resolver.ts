@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { Resolve, ActivatedRouteSnapshot } from '@angular/router';
 import { Observable, of } from 'rxjs';
-import { map } from 'rxjs/operators';
+import { map, catchError } from 'rxjs/operators';
 import { ProductService } from '../services/product';
 import { AuthService } from '../services/auth';
 
@@ -18,7 +18,8 @@ export class ScanResolver implements Resolve<ScanResolved> {
       return of({ products: [] });
     }
     return this.productService.getProducts().pipe(
-      map(products => ({ products }))
+      map(products => ({ products })),
+      catchError(() => of({ products: [] }))
     );
   }
 }

@@ -6,6 +6,7 @@ import { Subscription } from 'rxjs';
 import { ActivatedRoute } from '@angular/router';
 
 import { environment } from '../../../environments/environment';
+import { APP_CONFIG, whatsappLink } from '../../services/app-config';
 import { Category, CategoryService } from '../../services/category';
 import { CartService } from '../../services/cart';
 import { Product, ProductService } from '../../services/product';
@@ -47,49 +48,77 @@ export class ShopComponent implements OnInit, OnDestroy {
 
   sections = [
     {
-      image: '/installation pano maison.png',
+      image: '/installation-pano-maison.png',
       title: 'Installation Pano Maison',
       desc: 'Solutions d\'énergie solaire pour votre maison',
       badge: '☀️ Solaire',
       ctaText: 'Demander un devis',
-      ctaLink: 'https://wa.me/22879803856?text=' + encodeURIComponent("Bonjour, je suis intéressé par une installation de panneaux solaires pour ma maison.")
+      ctaLink: whatsappLink("Bonjour, je suis intéressé par une installation de panneaux solaires pour ma maison.")
     },
     {
-      image: '/installation pano.png',
+      image: '/installation-pano.png',
       title: 'Installation Pano',
       desc: 'Panneaux solaires haute performance',
       badge: '⚡ Énergie',
       ctaText: 'En savoir plus',
-      ctaLink: 'https://wa.me/22879803856?text=' + encodeURIComponent("Bonjour, j'aimerais plus d'informations sur vos panneaux solaires.")
+      ctaLink: whatsappLink("Bonjour, j'aimerais plus d'informations sur vos panneaux solaires.")
     },
     {
-      image: '/vente installation electroménagrs.png',
+      image: '/vente-electromenagers.png',
       title: 'Vente Installation Électroménagers',
       desc: 'Électroménagers de qualité premium',
       badge: '🔧 Électroménager',
       ctaText: 'Voir les offres',
-      ctaLink: 'https://wa.me/22879803856?text=' + encodeURIComponent("Bonjour, je cherche un électroménager. Pouvez-vous me renseigner ?")
+      ctaLink: whatsappLink("Bonjour, je cherche un électroménager. Pouvez-vous me renseigner ?")
     }
   ];
+
+  carouselSlides = [
+    {
+      icon: '☀️',
+      title: 'Installation Panneaux Solaires',
+      desc: 'Installation professionnelle de panneaux solaires pour votre maison, commerce ou industrie',
+      image: '/shop-installation-solaire.jpeg',
+      link: whatsappLink("Bonjour, je souhaite obtenir un devis pour des panneaux solaires.")
+    },
+    {
+      icon: '🔧',
+      title: 'Réparation & Maintenance',
+      desc: 'Service de réparation expert pour smartphones, tablettes et appareils électroniques',
+      image: '/reparation-telephones.jpeg',
+      link: whatsappLink("Bonjour, j'ai besoin d'une réparation pour mon appareil.")
+    },
+    {
+      icon: '🛒',
+      title: 'Vente de Matériels',
+      desc: 'Équipements solaires, électroménagers et accessoires de qualité premium',
+      image: '/vente-electromenagers.png',
+      link: whatsappLink("Bonjour, je suis intéressé par vos produits.")
+    }
+  ];
+
+  currentSlide = 0;
+  carouselErrors = new Set<number>();
+  private carouselInterval: any;
 
   services = [
     {
       icon: '☀️',
       title: 'Installation de Panneaux Solaires',
       desc: 'Installation professionnelle de panneaux solaires pour maison, commerce et industrie. Étude, fourniture, pose et mise en service.',
-      link: 'https://wa.me/22879803856?text=' + encodeURIComponent("Bonjour, je souhaite obtenir un devis pour des panneaux solaires."),
+      link: whatsappLink("Bonjour, je souhaite obtenir un devis pour des panneaux solaires."),
       linkText: 'Demander un devis'
     },
     {
       icon: '🔧',
       title: 'Réparation Téléphones & Électronique',
       desc: 'Service de réparation expert pour smartphones, tablettes et appareils électroniques. Diagnostic gratuit, pièces de qualité.',
-      link: 'https://wa.me/22879803856?text=' + encodeURIComponent("Bonjour, j'ai besoin d'une réparation pour mon appareil."),
+      link: whatsappLink("Bonjour, j'ai besoin d'une réparation pour mon appareil."),
       linkText: 'Réparer maintenant'
     }
   ];
 
-  whatsappNumber = '+22879803856';
+  config = APP_CONFIG;
 
   constructor(
     private route: ActivatedRoute,
@@ -134,10 +163,26 @@ export class ShopComponent implements OnInit, OnDestroy {
       this.loadProducts();
       this.loadCategories();
     });
+    this.startCarousel();
   }
 
   ngOnDestroy(): void {
     this.refreshSub?.unsubscribe();
+    if (this.carouselInterval) clearInterval(this.carouselInterval);
+  }
+
+  startCarousel(): void {
+    this.carouselInterval = setInterval(() => {
+      this.currentSlide = (this.currentSlide + 1) % this.carouselSlides.length;
+    }, 5000);
+  }
+
+  goToSlide(index: number): void {
+    this.currentSlide = index;
+    if (this.carouselInterval) {
+      clearInterval(this.carouselInterval);
+      this.startCarousel();
+    }
   }
 
   goToShop(): void {
@@ -159,7 +204,7 @@ export class ShopComponent implements OnInit, OnDestroy {
 
   getWhatsAppLink(product: Product): string {
     const message = `Bonjour, je suis intéressé par le produit ${product.name}. Pouvez-vous m'envoyer plus d'informations ?`;
-    return `https://wa.me/${this.whatsappNumber.replace(/\D/g, '')}?text=${encodeURIComponent(message)}`;
+    return whatsappLink(message);
   }
 
   loadProducts(): void {
@@ -197,19 +242,30 @@ export class ShopComponent implements OnInit, OnDestroy {
   }
 
   loadProductReviews(): void {
-    this.products.forEach((product) => {
-      if (!product.id) return;
+    const productIds = this.products
+      .map((p) => p.id)
+      .filter((id): id is string => !!id);
 
-      this.reviewService.getProductReviews(product.id, 1, 3).subscribe({
-        next: (reviewsData) => {
-          product.reviews = reviewsData;
-        },
-        error: (err) =>
-          console.error(
-            `Error loading reviews for product ${product.id}:`,
-            err
-          ),
-      });
+    if (productIds.length === 0) return;
+
+    this.reviewService.getBatchReviews(productIds).subscribe({
+      next: (batchData) => {
+        for (const product of this.products) {
+          if (product.id && batchData[product.id]) {
+            product.reviews = {
+              reviews: batchData[product.id].reviews.slice(0, 3),
+              pagination: {
+                total: batchData[product.id].stats.totalReviews,
+                page: 1,
+                limit: 3,
+                pages: Math.ceil(batchData[product.id].stats.totalReviews / 3),
+              },
+              stats: batchData[product.id].stats,
+            };
+          }
+        }
+      },
+      error: (err) => console.error('Error loading batch reviews:', err),
     });
   }
 
@@ -280,6 +336,48 @@ export class ShopComponent implements OnInit, OnDestroy {
 
   formatRating(rating: string): string {
     return this.reviewService.formatRating(parseFloat(rating));
+  }
+
+  trackBySlideId(index: number, item: any): string {
+    return item?.title ?? index;
+  }
+
+  trackByServiceTitle(index: number, item: any): string {
+    return item?.title ?? index;
+  }
+
+  trackBySectionIndex(index: number, item: any): string {
+    return `section-${index}`;
+  }
+
+  trackById(index: number, item: any): string {
+    return item?.id ?? index;
+  }
+
+  trackByCategoryId(index: number, item: any): string {
+    return item?.id ?? index;
+  }
+
+  trackByReviewId(index: number, item: any): string {
+    return item?.id ?? index;
+  }
+
+  trackByProductId(index: number, item: any): string {
+    return item?.id ?? index;
+  }
+
+  trackByIndex(index: number): number {
+    return index;
+  }
+
+  getCarouselImage(image: string): string {
+    if (!image) return '';
+    if (image.startsWith('http://') || image.startsWith('https://')) return image;
+    return encodeURI(image);
+  }
+
+  onCarouselImgError(index: number): void {
+    this.carouselErrors.add(index);
   }
 
   onSortChange(): void {

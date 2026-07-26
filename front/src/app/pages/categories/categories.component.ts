@@ -30,11 +30,17 @@ export class CategoriesComponent implements OnInit, OnDestroy {
   constructor(private route: ActivatedRoute, private categoryService: CategoryService, private productService: ProductService, private refreshService: RefreshService) {}
 
   ngOnInit(): void {
-    this.route.data.subscribe(({ data }) => {
-      if (data) {
-        this.categories = data.categories;
+    this.route.data.subscribe({
+      next: ({ data }) => {
+        if (data) {
+          this.categories = data.categories || [];
+          this.loading = false;
+          this.loadProductCounts();
+        }
+      },
+      error: () => {
         this.loading = false;
-        this.loadProductCounts();
+        this.loadCategories();
       }
     });
     this.refreshSub = this.refreshService.refresh$.subscribe(() => {
@@ -120,6 +126,7 @@ export class CategoriesComponent implements OnInit, OnDestroy {
         next: () => {
           this.loadCategories();
           this.showModal = false;
+          this.refreshService.triggerRefresh();
         },
         error: (err) => {
           console.error('Error updating category:', err);
@@ -131,6 +138,7 @@ export class CategoriesComponent implements OnInit, OnDestroy {
         next: () => {
           this.loadCategories();
           this.showModal = false;
+          this.refreshService.triggerRefresh();
         },
         error: (err) => {
           console.error('Error creating category:', err);
@@ -145,7 +153,7 @@ export class CategoriesComponent implements OnInit, OnDestroy {
 
     if (confirm('Êtes-vous sûr de vouloir supprimer cette catégorie ?')) {
       this.categoryService.deleteCategory(category.id).subscribe({
-        next: () => this.loadCategories(),
+        next: () => { this.loadCategories(); this.refreshService.triggerRefresh(); },
         error: (err) => {
           console.error('Error deleting category:', err);
           this.errorMessage = 'Impossible de supprimer la catégorie.';

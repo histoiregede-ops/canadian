@@ -4,6 +4,7 @@ import { Subscription } from 'rxjs';
 import { ActivatedRoute } from '@angular/router';
 import { StatsService, DashboardStats, RecentOrder, UrgentRepair } from '../../services/stats';
 import { RefreshService } from '../../services/refresh.service';
+import { TransferService, TransferSummary } from '../../services/transfer';
 
 @Component({
   selector: 'app-dashboard',
@@ -24,15 +25,18 @@ export class DashboardComponent implements OnInit, OnDestroy {
 
   recentOrders: RecentOrder[] = [];
   urgentRepairs: UrgentRepair[] = [];
+  transferSummary: TransferSummary | null = null;
   loading = true;
   ordersLoading = true;
   repairsLoading = true;
+  transfersLoading = true;
   private refreshSub?: Subscription;
 
   constructor(
     private route: ActivatedRoute,
     private statsService: StatsService,
-    private refreshService: RefreshService
+    private refreshService: RefreshService,
+    private transferService: TransferService
   ) {}
 
   ngOnInit(): void {
@@ -46,10 +50,12 @@ export class DashboardComponent implements OnInit, OnDestroy {
         this.repairsLoading = false;
       }
     });
+    this.loadTransfersSummary();
     this.refreshSub = this.refreshService.refresh$.subscribe(() => {
       this.loadStats();
       this.loadRecentOrders();
       this.loadUrgentRepairs();
+      this.loadTransfersSummary();
     });
   }
 
@@ -95,6 +101,20 @@ export class DashboardComponent implements OnInit, OnDestroy {
       error: (err) => {
         console.error('Error loading urgent repairs:', err);
         this.repairsLoading = false;
+      }
+    });
+  }
+
+  loadTransfersSummary(): void {
+    this.transfersLoading = true;
+    this.transferService.getDailySummary().subscribe({
+      next: (data) => {
+        this.transferSummary = data;
+        this.transfersLoading = false;
+      },
+      error: (err) => {
+        console.error('Error loading transfer summary:', err);
+        this.transfersLoading = false;
       }
     });
   }
@@ -169,6 +189,14 @@ export class DashboardComponent implements OnInit, OnDestroy {
     return map[status] || 'badge-warning';
   }
 
+  trackByOrderNumber(index: number, item: any): string {
+    return item?.orderNumber ?? item?.id ?? index;
+  }
+
+  trackByRepairId(index: number, item: any): string {
+    return item?.id ?? index;
+  }
+
   getDeviceIcon(deviceType: string): string {
     const lower = deviceType.toLowerCase();
     if (lower.includes('phone') || lower.includes('iphone') || lower.includes('smartphone')) return '📱';
@@ -182,5 +210,10 @@ export class DashboardComponent implements OnInit, OnDestroy {
   formatDate(dateStr: string): string {
     const date = new Date(dateStr);
     return date.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' });
+  }
+
+  operatorLabel(op: string): string {
+    const map: Record<string, string> = { orange_money: 'Orange Money', wave: 'Wave', moov_money: 'Moov Money' };
+    return map[op] || op;
   }
 }

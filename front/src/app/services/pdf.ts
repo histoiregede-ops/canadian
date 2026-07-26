@@ -2,6 +2,14 @@ import { Injectable } from '@angular/core';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 
+const SHOP = {
+  name: 'Electro Canadien',
+  address: 'Mali Hamdalaye aci 2000 pres du terrain de foot',
+  phone: '+223 77 44 78 44',
+  email: 'contact@electrocanadien.com',
+  whatsapp: '22377447844'
+};
+
 @Injectable({
   providedIn: 'root'
 })
@@ -9,14 +17,13 @@ export class PdfService {
 
   private formatCurrency(amount: number): string {
     const val = Math.round(amount || 0);
-    // On utilise une expression régulière pour ajouter les espaces des milliers.
-    // On utilise un espace simple " " qui est parfaitement supporté par jsPDF.
     return val.toString().replace(/\B(?=(\d{3})+(?!\d))/g, " ") + " FCFA";
   }
 
   async generateReceipt(order: any): Promise<void> {
     const doc = new jsPDF();
 
+    // Logo
     try {
       const resp = await fetch('/logo_projet.png');
       const blob = await resp.blob();
@@ -30,17 +37,28 @@ export class PdfService {
       console.warn('Logo non chargé pour le reçu:', e);
     }
 
+    // Cachet / Stamp — chargé en parallèle
+    let cachetData: string | null = null;
+    try {
+      const cachetResp = await fetch('/cachet.svg');
+      const svgText = await cachetResp.text();
+      cachetData = await this.svgToPngDataUrl(svgText, 300, 300);
+    } catch (e) {
+      console.warn('Cachet non chargé pour le reçu:', e);
+    }
+
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(22);
-    doc.text('ELECTRO CANADIEN', 105, 20, { align: 'center' });
-    doc.setFontSize(10);
+    doc.text(SHOP.name.toUpperCase(), 105, 20, { align: 'center' });
+    doc.setFontSize(9);
     doc.setFont('helvetica', 'normal');
-    doc.text('Lome, Togo | Tel: +228 90 00 00 00', 105, 28, { align: 'center' });
+    doc.text(SHOP.address, 105, 28, { align: 'center' });
+    doc.text(`Tel: ${SHOP.phone}  |  WhatsApp: ${SHOP.whatsapp}`, 105, 34, { align: 'center' });
 
     doc.setFontSize(12);
-    doc.text(`RECU DE VENTE: ${order.orderNumber || 'PROV-001'}`, 14, 45);
-    doc.text(`Date: ${new Date().toLocaleDateString('fr-FR')}`, 14, 52);
-    doc.text(`Moyen de paiement: ${order.paymentMethod || 'cash'}`, 14, 59);
+    doc.text(`RECU DE VENTE: ${order.orderNumber || 'PROV-001'}`, 14, 48);
+    doc.text(`Date: ${new Date().toLocaleDateString('fr-FR')}`, 14, 55);
+    doc.text(`Moyen de paiement: ${order.paymentMethod || 'cash'}`, 14, 62);
 
     const safeItems = Array.isArray(order.items) ? order.items : [];
     const tableData = safeItems.map((item: any) => {
@@ -54,7 +72,7 @@ export class PdfService {
     });
 
     autoTable(doc, {
-      startY: 70,
+      startY: 72,
       head: [['Designation', 'Qte', 'Prix Unitaire', 'Total']],
       body: tableData,
       columnStyles: {
@@ -89,11 +107,44 @@ export class PdfService {
     doc.setFont('helvetica', 'bold');
     doc.text(`TOTAL NET: ${this.formatCurrency(order.totalAmount)}`, rightX, finalY + 34, { align: 'right' });
 
+    // Cachet / Stamp miniaturisé
+    if (cachetData) {
+      const cachetSize = 38; // pixels sur le PDF
+      const cachetX = 148;   // à droite, centré sous le total
+      const cachetY = finalY + 12;
+      doc.addImage(cachetData, 'PNG', cachetX, cachetY, cachetSize, cachetSize);
+    }
+
     doc.setFontSize(8);
     doc.setFont('helvetica', 'normal');
     doc.text('Merci de votre confiance !', 105, finalY + 50, { align: 'center' });
 
     doc.save(`Recu_${order.orderNumber || 'PROV-001'}.pdf`);
+  }
+
+  /** Convertit un SVG text en PNG data URL via canvas */
+  private async svgToPngDataUrl(svgText: string, width: number, height: number): Promise<string> {
+    return new Promise((resolve, reject) => {
+      // Encoder le SVG en base64 pour l'utiliser comme source d'image
+      const encoded = btoa(unescape(encodeURIComponent(svgText)));
+      const svgDataUrl = `data:image/svg+xml;base64,${encoded}`;
+
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) { reject(new Error('Canvas 2D context unavailable')); return; }
+        // Fond blanc pour éviter la transparence
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(0, 0, width, height);
+        ctx.drawImage(img, 0, 0, width, height);
+        resolve(canvas.toDataURL('image/png'));
+      };
+      img.onerror = () => reject(new Error('Failed to load SVG image'));
+      img.src = svgDataUrl;
+    });
   }
 
   private formatNumber(amount: number): string {

@@ -35,6 +35,14 @@ export interface ProductReviewsResponse {
   stats: ReviewStats;
 }
 
+/** Map of productId → mini reviews + stats (for batch display) */
+export interface BatchReviewsResponse {
+  [productId: string]: {
+    reviews: ProductReview[];
+    stats: ReviewStats;
+  };
+}
+
 @Injectable({
   providedIn: 'root'
 })
@@ -58,6 +66,12 @@ export class ProductReviewService {
       .set('order', order);
 
     return this.http.get<ProductReviewsResponse>(`${this.apiUrl}/product/${productId}`, { params });
+  }
+
+  // Get reviews for multiple products in a single call (batch)
+  getBatchReviews(productIds: string[]): Observable<BatchReviewsResponse> {
+    const params = new HttpParams().set('productIds', productIds.join(','));
+    return this.http.get<BatchReviewsResponse>(`${this.apiUrl}/batch`, { params });
   }
 
   // Create a new review

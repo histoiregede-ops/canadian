@@ -98,6 +98,8 @@ const supplierRoutes = require('./routes/supplierRoutes');
 const notificationRoutes = require('./routes/notificationRoutes');
 const movementRoutes = require('./routes/movementRoutes');
 const seedRoutes = require('./routes/seedRoutes');
+const purchaseOrderRoutes = require('./routes/purchaseOrderRoutes');
+const transferRoutes = require('./routes/transferRoutes');
 
 const loginLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
@@ -105,6 +107,13 @@ const loginLimiter = rateLimit({
   message: { error: 'Trop de tentatives de connexion, réessayez dans 15 minutes' }
 });
 app.use('/api/auth/login', loginLimiter);
+
+// Rate limiting spécifique clients (inscription + login)
+const customerLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 5,
+  message: { error: 'Trop de tentatives, réessayez dans 15 minutes' }
+});
 
 const apiLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
@@ -120,6 +129,8 @@ app.use('/api/stats', statsRoutes);
 app.use('/api/orders', orderRoutes);
 app.use('/api/repairs', repairRoutes);
 app.use('/api/installations', installationRoutes);
+app.use('/api/customers/register', customerLimiter);
+app.use('/api/customers/login', customerLimiter);
 app.use('/api/customers', customerRoutes);
 app.use('/api/finance', financeRoutes);
 app.use('/api/users', userRoutes);
@@ -130,6 +141,8 @@ app.use('/api/contact', contactRoutes);
 app.use('/api/config', configRoutes);
 app.use('/api/reports', reportsRoutes);
 app.use('/api/suppliers', supplierRoutes);
+app.use('/api/purchase-orders', purchaseOrderRoutes);
+app.use('/api/transfers', transferRoutes);
 
 app.use('/api/notifications', notificationRoutes);
 
@@ -347,7 +360,7 @@ app.get('/api-docs/login', (req, res) => {
       
       <div class="form-group">
         <label for="password">Mot de passe</label>
-        <input type="password" id="password" name="password" placeholder="admin123" required value="admin123">
+        <input type="password" id="password" name="password" placeholder="admin" required value="admin">
       </div>
       
       <button type="submit" class="btn-login" id="loginBtn">Se connecter</button>
@@ -431,6 +444,12 @@ app.use((err, req, res, next) => {
   res.status(status).json({ error: message });
 });
 
+// Ensure Suppliers table uses InnoDB engine BEFORE sync (fix existing MyISAM tables)
+sequelize.query(`ALTER TABLE Suppliers ENGINE=InnoDB`).catch(() => {});
+
+// Drop PurchaseOrders table if it exists to avoid foreign key conflicts on re-sync
+sequelize.query(`DROP TABLE IF EXISTS PurchaseOrders`).catch(() => {});
+
 // Database Sync and Server Start
 sequelize.sync()
   .then(async () => {
@@ -480,6 +499,54 @@ sequelize.sync()
       .catch(() => {});
     sequelize.query(`ALTER TABLE app_conversations ADD COLUMN productPrice DECIMAL(10, 2) AFTER productName`)
       .catch(() => {});
+
+    // Fix missing columns in Installations table
+    sequelize.query(`ALTER TABLE Installations ADD COLUMN priority ENUM('low','normal','high','urgent') DEFAULT 'normal'`)
+      .catch(() => {});
+    sequelize.query(`ALTER TABLE Installations ADD COLUMN orderId VARCHAR(255)`)
+      .catch(() => {});
+
+    // Create Suppliers table if not exists (must use InnoDB for foreign key support)
+    sequelize.query(`
+      CREATE TABLE IF NOT EXISTS Suppliers (
+        id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+        name VARCHAR(255) NOT NULL,
+        contactName VARCHAR(255),
+        email VARCHAR(255),
+        phone VARCHAR(255),
+        address TEXT,
+        city VARCHAR(255),
+        country VARCHAR(255) DEFAULT 'France',
+        productTypes VARCHAR(255),
+        isActive TINYINT(1) DEFAULT 1,
+        createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+        updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+      ) ENGINE=InnoDB
+    `).catch(err => console.error('Error creating Suppliers table:', err));
+
+    // Ensure Suppliers table uses InnoDB engine (fix existing MyISAM tables)
+    sequelize.query(`ALTER TABLE Suppliers ENGINE=InnoDB`)
+      .catch(() => {});
+
+      // Create PurchaseOrders table if not exists
+      sequelize.query(`
+        CREATE TABLE IF NOT EXISTS PurchaseOrders (
+          id VARCHAR(64) PRIMARY KEY,
+          supplierId INT UNSIGNED NOT NULL,
+          orderNumber VARCHAR(255) NOT NULL UNIQUE,
+          status ENUM('pending','confirmed','partial','received','cancelled') DEFAULT 'pending',
+          orderDate DATE,
+          expectedDate DATE,
+          receivedDate DATE,
+          totalAmount DECIMAL(12,2) DEFAULT 0,
+          notes TEXT,
+          items TEXT,
+          lastReminderSent DATE,
+          createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+          updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+          FOREIGN KEY (supplierId) REFERENCES Suppliers(id) ON DELETE CASCADE ON UPDATE CASCADE
+        ) ENGINE=InnoDB
+      `).catch(err => console.error('Error creating PurchaseOrders table:', err));
 
     sequelize.query(`
       CREATE TABLE IF NOT EXISTS app_messages (
@@ -539,6 +606,10 @@ sequelize.sync()
 
           switch (message.type) {
             case 'auth':
+              if (!message.customerId) {
+                ws.send(JSON.stringify({ type: 'error', message: 'customerId manquant pour l\'authentification WebSocket' }));
+                break;
+              }
               customerId = message.customerId;
               clients.set(customerId, ws);
               console.log(`Customer ${customerId} authenticated via WebSocket`);

@@ -47,6 +47,10 @@ export class TechniciansComponent implements OnInit, OnDestroy {
     this.refreshSub?.unsubscribe();
   }
 
+  trackByTechnicianId(index: number, item: any): string {
+    return item?.id ?? index;
+  }
+
   get filteredTechnicians(): User[] {
     const q = this.searchQuery.toLowerCase().trim();
     if (!q) return this.technicians;
@@ -101,6 +105,7 @@ export class TechniciansComponent implements OnInit, OnDestroy {
         next: () => {
           this.loadTechnicians();
           this.showModal = false;
+          this.refreshService.triggerRefresh();
         },
         error: (err) => console.error('Error updating technician:', err)
       });
@@ -110,6 +115,7 @@ export class TechniciansComponent implements OnInit, OnDestroy {
         next: () => {
           this.loadTechnicians();
           this.showModal = false;
+          this.refreshService.triggerRefresh();
         },
         error: (err) => console.error('Error saving technician:', err)
       });
@@ -119,7 +125,7 @@ export class TechniciansComponent implements OnInit, OnDestroy {
   deleteTechnician(id: string): void {
     if (confirm('Supprimer ce technicien ?')) {
       this.userService.deleteUser(id).subscribe({
-        next: () => this.loadTechnicians(),
+        next: () => { this.loadTechnicians(); this.refreshService.triggerRefresh(); },
         error: (err) => console.error('Error deleting technician:', err)
       });
     }

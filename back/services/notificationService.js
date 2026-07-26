@@ -1,3 +1,4 @@
+const escapeHtml = require('escape-html');
 const nodemailer = require('nodemailer');
 const twilio = require('twilio');
 
@@ -157,14 +158,14 @@ class NotificationService {
     return `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
         <h1 style="color: #2c3e50;">Confirmation de commande</h1>
-        <p>Bonjour ${customer.name},</p>
+        <p>Bonjour ${escapeHtml(customer.name)},</p>
         <p>Votre commande a été confirmée avec succès !</p>
 
         <div style="background: #f8f9fa; padding: 20px; margin: 20px 0; border-radius: 5px;">
-          <h3>Détails de la commande #${order.id}</h3>
-          <p><strong>Total:</strong> ${order.total}€</p>
-          <p><strong>Date:</strong> ${new Date(order.createdAt).toLocaleDateString('fr-FR')}</p>
-          <p><strong>Statut:</strong> ${order.status}</p>
+          <h3>Détails de la commande #${escapeHtml(order.id)}</h3>
+          <p><strong>Total:</strong> ${escapeHtml(order.total)}€</p>
+          <p><strong>Date:</strong> ${escapeHtml(new Date(order.createdAt).toLocaleDateString('fr-FR'))}</p>
+          <p><strong>Statut:</strong> ${escapeHtml(order.status)}</p>
         </div>
 
         <p>Vous pouvez suivre votre commande depuis votre <a href="${process.env.FRONTEND_URL}/dashboard">dashboard client</a>.</p>
@@ -179,13 +180,13 @@ class NotificationService {
     return `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
         <h1 style="color: #2c3e50;">Votre commande est en route !</h1>
-        <p>Bonjour ${customer.name},</p>
-        <p>Bonne nouvelle ! Votre commande #${order.id} est en cours de livraison.</p>
+        <p>Bonjour ${escapeHtml(customer.name)},</p>
+        <p>Bonne nouvelle ! Votre commande #${escapeHtml(order.id)} est en cours de livraison.</p>
 
         <div style="background: #f8f9fa; padding: 20px; margin: 20px 0; border-radius: 5px;">
           <h3>Informations de livraison</h3>
-          <p><strong>Transporteur:</strong> ${order.shipping?.carrier || 'À définir'}</p>
-          <p><strong>Numéro de suivi:</strong> ${order.shipping?.trackingNumber || 'À venir'}</p>
+          <p><strong>Transporteur:</strong> ${escapeHtml(order.shipping?.carrier || 'À définir')}</p>
+          <p><strong>Numéro de suivi:</strong> ${escapeHtml(order.shipping?.trackingNumber || 'À venir')}</p>
         </div>
 
         <p>Suivez votre colis en temps réel depuis votre <a href="${process.env.FRONTEND_URL}/dashboard">dashboard client</a>.</p>
@@ -200,15 +201,15 @@ class NotificationService {
     return `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
         <h1 style="color: #2c3e50;">🎉 Félicitations !</h1>
-        <p>Bonjour ${customer.name},</p>
-        <p>Vous avez gagné <strong>${points} points de fidélité</strong> !</p>
+        <p>Bonjour ${escapeHtml(customer.name)},</p>
+        <p>Vous avez gagné <strong>${escapeHtml(points)} points de fidélité</strong> !</p>
 
         <div style="background: #f8f9fa; padding: 20px; margin: 20px 0; border-radius: 5px;">
           <h3>Vos points de fidélité</h3>
-          <p><strong>Points gagnés:</strong> ${points}</p>
-          <p><strong>Total actuel:</strong> ${customer.points} points</p>
-          <p><strong>Niveau:</strong> ${customer.loyaltyLevel}</p>
-          <p><strong>Raison:</strong> ${reason}</p>
+          <p><strong>Points gagnés:</strong> ${escapeHtml(points)}</p>
+          <p><strong>Total actuel:</strong> ${escapeHtml(customer.points)} points</p>
+          <p><strong>Niveau:</strong> ${escapeHtml(customer.loyaltyLevel)}</p>
+          <p><strong>Raison:</strong> ${escapeHtml(reason)}</p>
         </div>
 
         <p>Continuez vos achats pour monter en niveau et bénéficier d'avantages exclusifs !</p>
@@ -222,8 +223,8 @@ class NotificationService {
   generatePromotionHTML(customer, promotion) {
     return `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-        <h1 style="color: #2c3e50;">${promotion.title}</h1>
-        <p>Bonjour ${customer.name},</p>
+        <h1 style="color: #2c3e50;">${escapeHtml(promotion.title)}</h1>
+        <p>Bonjour ${escapeHtml(customer.name)},</p>
 
         <div style="background: #f8f9fa; padding: 20px; margin: 20px 0; border-radius: 5px;">
           ${promotion.content}

@@ -19,6 +19,14 @@ export class UserManagementComponent implements OnInit {
   editingUser: User | null = null;
   form = { username: '', password: '', fullName: '', email: '', role: 'cashier' };
   roles = ['admin', 'seller', 'cashier', 'technician', 'delivery'];
+
+  trackByRole(index: number, item: any): string {
+    return item ?? index;
+  }
+
+  trackByUserId(index: number, item: any): string {
+    return item?.id ?? index;
+  }
   searchQuery = '';
   roleFilter = '';
 

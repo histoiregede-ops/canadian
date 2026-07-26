@@ -6,8 +6,17 @@ const { authenticate, authorize } = require('../utils/auth');
 // Get all repairs
 router.get('/', authenticate, authorize('admin', 'technician'), async (req, res) => {
   try {
-    const repairs = await Repair.findAll({ include: [Customer] });
-    res.json(repairs);
+    const page = Math.max(1, parseInt(req.query.page) || 1);
+    const limit = Math.min(100, Math.max(1, parseInt(req.query.limit) || 20));
+    const offset = (page - 1) * limit;
+
+    const { count, rows } = await Repair.findAndCountAll({ 
+      include: [Customer],
+      order: [['createdAt', 'DESC']],
+      limit,
+      offset
+    });
+    res.json({ data: rows, total: count, page, pages: Math.ceil(count / limit) });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }

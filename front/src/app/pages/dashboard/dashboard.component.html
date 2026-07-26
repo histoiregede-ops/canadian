@@ -79,7 +79,7 @@
                 </tr>
               </thead>
               <tbody>
-                <tr *ngFor="let order of recentOrders">
+                <tr *ngFor="let order of recentOrders; trackBy: trackByOrderNumber">
                   <td class="order-number">{{ order.orderNumber }}</td>
                   <td>{{ order.customerName }}</td>
                   <td class="amount">{{ order.totalAmount | number:'1.0-0' }} FCFA</td>
@@ -107,7 +107,7 @@
           </div>
 
           <div class="repair-list" *ngIf="!repairsLoading && urgentRepairs.length > 0">
-            <div class="repair-item" *ngFor="let repair of urgentRepairs">
+            <div class="repair-item" *ngFor="let repair of urgentRepairs; trackBy: trackByRepairId">
               <div class="repair-icon">{{ getDeviceIcon(repair.deviceType) }}</div>
               <div class="repair-details">
                 <span class="device">{{ repair.deviceType }}{{ repair.brand ? ' - ' + repair.brand : '' }}</span>
@@ -163,6 +163,41 @@
             <div class="cash-row total">
               <span>Solde Net</span>
               <span>{{ (stats.dailyIncome - stats.dailyExpense) | number:'1.0-0' }} FCFA</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="card mt-4" *ngIf="transferSummary">
+          <div class="card-header">
+            <h3 class="card-title">Transferts du jour</h3>
+            <button class="btn btn-ghost btn-sm" routerLink="/transfers">Voir tout →</button>
+          </div>
+          <div class="transfer-summary">
+            <div class="summary-row">
+              <span>Envoyés</span>
+              <span class="sent">+ {{ transferSummary.totalSent | number:'1.0-0' }}</span>
+            </div>
+            <div class="summary-row">
+              <span>Reçus</span>
+              <span class="received">+ {{ transferSummary.totalReceived | number:'1.0-0' }}</span>
+            </div>
+            <div class="summary-row">
+              <span>Frais</span>
+              <span class="fees">- {{ transferSummary.totalFees | number:'1.0-0' }}</span>
+            </div>
+            <div class="summary-row total">
+              <span>Transactions</span>
+              <span>{{ transferSummary.count }}</span>
+            </div>
+          </div>
+          <div class="divider"></div>
+          <div class="operator-list" *ngIf="transferSummary.byOperator | keyvalue as ops">
+            <div class="operator-item" *ngFor="let op of ops">
+              <div class="operator-label">{{ operatorLabel(op.key) }}</div>
+              <div class="operator-meta">
+                <span>{{ op.value.count }} tx</span>
+                <span class="text-muted">Frais: {{ op.value.fees | number:'1.0-0' }}</span>
+              </div>
             </div>
           </div>
         </div>

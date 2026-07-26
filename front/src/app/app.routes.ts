@@ -27,6 +27,9 @@ import { HomeRedirectComponent } from './pages/home-redirect/home-redirect.compo
 import { ClientAuthGuard } from './services/client-auth.guard';
 import { ScanComponent } from './pages/scan/scan.component';
 import { MovementsComponent } from './pages/movements/movements.component';
+import { ReceiptsComponent } from './pages/receipts/receipts.component';
+import { PurchaseOrdersComponent } from './pages/purchase-orders/purchase-orders.component';
+import { TransfersComponent } from './pages/transfers/transfers.component';
 
 import { DashboardResolver } from './resolvers/dashboard.resolver';
 import { InventoryResolver } from './resolvers/inventory.resolver';
@@ -63,6 +66,9 @@ export const routes: Routes = [
   { path: 'settings', component: SettingsComponent, canActivate: [RoleGuard], data: { roles: ['admin'] } },
   { path: 'users', component: UserManagementComponent, canActivate: [RoleGuard], resolve: { data: UserManagementResolver }, data: { roles: ['admin'] } },
   { path: 'movements', component: MovementsComponent, canActivate: [RoleGuard], resolve: { data: MovementsResolver }, data: { roles: ['admin', 'cashier'] } },
+  { path: 'receipts', component: ReceiptsComponent, canActivate: [RoleGuard], data: { roles: ['admin', 'cashier'] } },
+  { path: 'purchase-orders', component: PurchaseOrdersComponent, canActivate: [RoleGuard], data: { roles: ['admin'] } },
+  { path: 'transfers', component: TransfersComponent, canActivate: [RoleGuard], data: { roles: ['admin', 'cashier'] } },
   // Client Routes
   { path: 'client', canActivate: [ClientAuthGuard], children: [
     { path: 'dashboard', component: ClientDashboardComponent },

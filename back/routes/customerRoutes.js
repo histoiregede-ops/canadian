@@ -1,6 +1,7 @@
 const express = require('express');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
+const { Op } = require('sequelize');
 const router = express.Router();
 const { Customer, Order } = require('../models');
 
@@ -135,6 +136,13 @@ router.post('/login', async (req, res) => {
 // Get customer orders (for dashboard)
 router.get('/:id/orders', verifyToken, async (req, res) => {
   try {
+    // Vérifier que le client demande ses propres commandes (ou est admin)
+    const customerId = req.params.id;
+    const tokenCustomerId = req.customer?.id?.toString();
+    const isAdmin = req.customer?.role === 'admin';
+    if (tokenCustomerId !== customerId && !isAdmin) {
+      return res.status(403).json({ message: 'Accès non autorisé à ces commandes' });
+    }
     const orders = await Order.findAll({
       where: { customerId: req.params.id },
       include: ['products'],
@@ -202,6 +210,13 @@ router.get('/:id/loyalty', async (req, res, next) => {
 // Add loyalty points
 router.post('/:id/loyalty', verifyToken, async (req, res) => {
   try {
+    // Vérifier que le client modifie ses propres points (ou est admin)
+    const customerId = req.params.id;
+    const tokenCustomerId = req.customer?.id?.toString();
+    const isAdmin = req.customer?.role === 'admin';
+    if (tokenCustomerId !== customerId && !isAdmin) {
+      return res.status(403).json({ message: 'Accès non autorisé' });
+    }
     const { points, reason } = req.body;
     const customer = await Customer.findByPk(req.params.id);
 
@@ -240,16 +255,18 @@ router.post('/:id/loyalty', verifyToken, async (req, res) => {
 // Search customers (admin only)
 router.get('/search', authenticate, authorize('admin', 'cashier'), async (req, res) => {
   try {
-    const q = (req.query.q || '').toLowerCase();
+    const q = req.query.q || '';
     if (!q) return res.json([]);
-    const customers = await Customer.findAll();
-    const filtered = customers.filter(c => {
-      const name = (c.name || '').toLowerCase();
-      const phone = (c.phone || '').toLowerCase();
-      const email = (c.email || '').toLowerCase();
-      return name.includes(q) || phone.includes(q) || email.includes(q);
+    const customers = await Customer.findAll({
+      where: {
+        [Op.or]: [
+          { name: { [Op.like]: `%${q}%` } },
+          { phone: { [Op.like]: `%${q}%` } },
+          { email: { [Op.like]: `%${q}%` } }
+        ]
+      }
     });
-    res.json(filtered.map(serializeCustomer));
+    res.json(customers.map(serializeCustomer));
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -258,8 +275,16 @@ router.get('/search', authenticate, authorize('admin', 'cashier'), async (req, r
 // Get all customers (admin only)
 router.get('/', authenticate, authorize('admin', 'cashier'), async (req, res) => {
   try {
-    const customers = await Customer.findAll();
-    res.json(customers.map(serializeCustomer));
+    const page = Math.max(1, parseInt(req.query.page) || 1);
+    const limit = Math.min(100, Math.max(1, parseInt(req.query.limit) || 20));
+    const offset = (page - 1) * limit;
+
+    const { count, rows } = await Customer.findAndCountAll({
+      order: [['createdAt', 'DESC']],
+      limit,
+      offset
+    });
+    res.json({ data: rows.map(serializeCustomer), total: count, page, pages: Math.ceil(count / limit) });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }

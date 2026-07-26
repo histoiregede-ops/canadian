@@ -50,6 +50,14 @@ export class CheckoutComponent implements OnInit, OnDestroy {
   successMessage = '';
 
   whatsappNumber = '+22879803856';
+
+  trackByMethod(index: number, item: any): string {
+    return item ?? index;
+  }
+
+  trackByCartItemId(index: number, item: any): string {
+    return item?.product?.id ?? index;
+  }
   createdOrderId = '';
   createdOrderRef = '';
   paymentStatus = '';
@@ -109,17 +117,17 @@ export class CheckoutComponent implements OnInit, OnDestroy {
     return `https://wa.me/${this.whatsappNumber.replace(/\D/g, '')}?text=${encodeURIComponent(message)}`;
   }
 
-  private startStatusPolling(depositId: string): void {
+  private startStatusPolling(transactionId: string): void {
     this.statusInterval = setInterval(() => {
-      this.paymentService.checkPaymentStatus(depositId).subscribe({
+      this.paymentService.checkPaymentStatus(transactionId).subscribe({
         next: (status) => {
-          if (status.status === 'COMPLETED') {
+          if (status.isCompleted || status.status === 'ACCEPTED') {
             this.paymentStatus = 'completed';
             this.successMessage = '✅ Paiement confirmé ! Merci pour votre achat.';
             this.cartService.clearCart();
             this.processing = false;
             clearInterval(this.statusInterval);
-          } else if (status.status === 'FAILED') {
+          } else if (status.isFailed || status.status === 'REFUSED') {
             this.paymentStatus = 'failed';
             this.errorMessage = '❌ Le paiement a échoué. Réessayez ou utilisez WhatsApp.';
             this.processing = false;
@@ -127,7 +135,7 @@ export class CheckoutComponent implements OnInit, OnDestroy {
           }
         }
       });
-    }, 5000);
+    }, 3000);
   }
 
   async processCheckout(): Promise<void> {
@@ -177,7 +185,7 @@ export class CheckoutComponent implements OnInit, OnDestroy {
                 next: (initResult) => {
                   if (initResult.success) {
                     this.successMessage = `✅ Paiement ${PAYMENT_LABELS[this.paymentMethod].name} initié ! Confirmez sur votre téléphone.`;
-                    this.startStatusPolling(initResult.depositId);
+                    this.startStatusPolling(initResult.transactionId);
                   } else {
                     this.errorMessage = initResult.message || 'Le paiement mobile n’a pas pu être initié. Réessayez.';
                     this.processing = false;

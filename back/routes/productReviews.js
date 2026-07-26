@@ -4,6 +4,67 @@ const { ProductReview, Product, Customer, Order } = require('../models');
 const sequelize = require('../config/database');
 const { authenticate, authorize } = require('../utils/auth');
 
+// Get reviews for multiple products (batch)
+router.get('/batch', async (req, res) => {
+  try {
+    const { productIds } = req.query;
+    if (!productIds) {
+      return res.status(400).json({ error: 'productIds parameter is required' });
+    }
+
+    const ids = productIds.split(',').filter(Boolean);
+    if (ids.length === 0) {
+      return res.json({});
+    }
+
+    // Get all reviews for these products
+    const reviews = await ProductReview.findAll({
+      where: { productId: ids },
+      include: [{
+        model: Customer,
+        attributes: ['name']
+      }],
+      order: [['createdAt', 'DESC']]
+    });
+
+    // Group reviews by productId
+    const grouped = {};
+    for (const id of ids) {
+      grouped[id] = { reviews: [], stats: { averageRating: '0.0', totalReviews: 0, ratingDistribution: {} } };
+    }
+
+    for (const review of reviews) {
+      const pid = review.productId;
+      if (!grouped[pid]) continue;
+      grouped[pid].reviews.push(review);
+    }
+
+    // Calculate stats per product
+    for (const pid of ids) {
+      const productReviews = grouped[pid].reviews;
+      const total = productReviews.length;
+      if (total === 0) continue;
+
+      let sum = 0;
+      const dist = {};
+      for (const r of productReviews) {
+        sum += r.rating;
+        dist[r.rating] = (dist[r.rating] || 0) + 1;
+      }
+
+      grouped[pid].stats = {
+        averageRating: (sum / total).toFixed(1),
+        totalReviews: total,
+        ratingDistribution: dist
+      };
+    }
+
+    res.json(grouped);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // Get all reviews for a product
 router.get('/product/:productId', async (req, res) => {
   try {
@@ -68,7 +129,8 @@ router.get('/product/:productId', async (req, res) => {
 // Create a new review
 router.post('/', authenticate, async (req, res) => {
   try {
-    const { productId, customerId, rating, title, comment } = req.body;
+    const { productId, rating, title, comment } = req.body;
+    const customerId = req.user.id;
 
     if (!rating || isNaN(rating) || rating < 1 || rating > 5) {
       return res.status(400).json({ message: 'La note doit être comprise entre 1 et 5' });
@@ -196,7 +258,12 @@ router.post('/:id/helpful', authenticate, async (req, res) => {
 // Get customer's reviews
 router.get('/customer/:customerId', authenticate, async (req, res) => {
   try {
-    const { customerId } = req.params;
+    const customerId = req.params.customerId;
+    const tokenCustomerId = req.user?.id?.toString();
+    const isAdmin = req.user?.role === 'admin';
+    if (tokenCustomerId !== customerId && !isAdmin) {
+      return res.status(403).json({ message: 'Accès non autorisé' });
+    }
 
     const reviews = await ProductReview.findAll({
       where: { customerId },

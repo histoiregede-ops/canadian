@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { Resolve, ActivatedRouteSnapshot } from '@angular/router';
 import { Observable, of } from 'rxjs';
-import { map } from 'rxjs/operators';
+import { map, catchError } from 'rxjs/operators';
 import { CategoryService } from '../services/category';
 import { AuthService } from '../services/auth';
 
@@ -18,7 +18,8 @@ export class CategoriesResolver implements Resolve<CategoriesResolved> {
       return of({ categories: [] });
     }
     return this.categoryService.getCategories().pipe(
-      map(categories => ({ categories }))
+      map(categories => ({ categories })),
+      catchError(() => of({ categories: [] }))
     );
   }
 }

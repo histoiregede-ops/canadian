@@ -1,173 +1,185 @@
 <div class="checkout-page">
-  <div class="page-header">
-    <button class="back-btn" (click)="goBack()">&#8592; Retour</button>
-    <h1>&#128179; Finaliser la Commande</h1>
+  <!-- Header -->
+  <div class="checkout-header">
+    <button class="btn btn-ghost" (click)="goBack()">← Retour</button>
+    <h1 class="page-title">💳 Finaliser la Commande</h1>
   </div>
 
-  <div *ngIf="errorMessage" class="alert alert-error">
-    <span class="alert-icon">&#9888;&#65039;</span>
+  <!-- Alerts -->
+  <div class="alert alert-danger" *ngIf="errorMessage">
+    <span>⚠️</span>
     <span>{{ errorMessage }}</span>
   </div>
-
-  <div *ngIf="successMessage" class="alert alert-success">
-    <span class="alert-icon">&#9989;</span>
+  <div class="alert alert-success" *ngIf="successMessage">
+    <span>✅</span>
     <span>{{ successMessage }}</span>
   </div>
 
+  <!-- Content -->
   <div class="checkout-container">
-    <div class="checkout-form">
-      <form (ngSubmit)="processCheckout()">
-        <!-- Customer Info -->
-        <div class="form-section">
-          <h2>&#128203; Informations Personnelles</h2>
-          <div class="form-group">
-            <label>Nom Complet</label>
-            <input type="text" [(ngModel)]="customerName" name="name" placeholder="Votre nom complet" required />
-          </div>
-          <div class="form-row">
-            <div class="form-group">
-              <label>Email</label>
-              <input type="email" [(ngModel)]="customerEmail" name="email" placeholder="email@exemple.com" required />
-            </div>
-            <div class="form-group">
-              <label>Téléphone</label>
-              <input type="tel" [(ngModel)]="customerPhone" name="phone" placeholder="+223 XX XX XX XX" required />
-            </div>
-          </div>
-        </div>
-
-        <!-- Shipping Address -->
-        <div class="form-section">
-          <h2>&#128205; Adresse de Livraison</h2>
-          <div class="form-group">
-            <label>Adresse</label>
-            <input type="text" [(ngModel)]="shippingAddress" name="address" placeholder="123 Rue de la Paix" required />
-          </div>
-          <div class="form-row">
-            <div class="form-group">
-              <label>Ville</label>
-              <input type="text" [(ngModel)]="city" name="city" placeholder="Bamako" required />
-            </div>
-            <div class="form-group">
-              <label>Code Postal</label>
-              <input type="text" [(ngModel)]="zipCode" name="zip" placeholder="BP 2000" required />
-            </div>
-          </div>
-        </div>
-
-        <!-- Payment Method -->
-        <div class="form-section">
-          <h2>&#128176; Méthode de Paiement</h2>
-
-          <div class="payment-options">
-            <label class="payment-option" *ngFor="let method of mobileMoneyMethods">
-              <input type="radio" [(ngModel)]="paymentMethod" [value]="method" name="payment" />
-              <span class="option-label">
-                <span class="option-icon">{{ paymentLabels[method].icon }}</span>
-                <span>
-                  <span class="option-name">{{ paymentLabels[method].name }}</span>
-                  <span class="option-desc">Paiement via {{ paymentLabels[method].operator }}</span>
-                </span>
-              </span>
-            </label>
-
-            <!-- Mobile money phone input -->
-            <div class="mobile-money-info" *ngIf="isMobileMoney">
-              <div class="phone-display">
-                <span class="phone-label">&#128222; Votre numéro {{ paymentLabels[paymentMethod].name }}</span>
-                <input type="tel" [(ngModel)]="payerPhone" name="payerPhone"
-                  placeholder="+223 XXXX XXXX" class="phone-input" />
+    <!-- Form -->
+    <div class="checkout-form-section">
+      <div class="card">
+        <div class="card-body">
+          <form (ngSubmit)="processCheckout()">
+            <!-- Personal Info -->
+            <div class="checkout-section">
+              <h3>📋 Informations Personnelles</h3>
+              <div class="form-group">
+                <label class="form-label">Nom Complet *</label>
+                <input type="text" class="form-input" [(ngModel)]="customerName" name="name" placeholder="Votre nom complet" required />
               </div>
-              <p class="phone-hint">
-                Vous recevrez une demande de paiement sur votre téléphone via {{ paymentLabels[paymentMethod].operator }}
-              </p>
-              <a [href]="getWhatsAppLink(total, createdOrderRef)" target="_blank" class="whatsapp-btn"
-                *ngIf="createdOrderId && paymentStatus !== 'completed'">
-                &#128172; WhatsApp (fallback)
-              </a>
+              <div class="form-row">
+                <div class="form-group">
+                  <label class="form-label">Email *</label>
+                  <input type="email" class="form-input" [(ngModel)]="customerEmail" name="email" placeholder="email@exemple.com" required />
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Téléphone *</label>
+                  <input type="tel" class="form-input" [(ngModel)]="customerPhone" name="phone" placeholder="+228 XX XX XX XX" required />
+                </div>
+              </div>
             </div>
 
-            <label class="payment-option">
-              <input type="radio" [(ngModel)]="paymentMethod" value="cash" name="payment" />
-              <span class="option-label">
-                <span class="option-icon">&#128176;</span>
-                <span>
-                  <span class="option-name">Espèces</span>
-                  <span class="option-desc">Paiement à la livraison</span>
-                </span>
-              </span>
-            </label>
+            <!-- Shipping -->
+            <div class="checkout-section">
+              <h3>📍 Adresse de Livraison</h3>
+              <div class="form-group">
+                <label class="form-label">Adresse *</label>
+                <input type="text" class="form-input" [(ngModel)]="shippingAddress" name="address" placeholder="Votre adresse complète" required />
+              </div>
+              <div class="form-row">
+                <div class="form-group">
+                  <label class="form-label">Ville *</label>
+                  <input type="text" class="form-input" [(ngModel)]="city" name="city" placeholder="Ville" required />
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Code Postal</label>
+                  <input type="text" class="form-input" [(ngModel)]="zipCode" name="zip" placeholder="Code postal" />
+                </div>
+              </div>
+            </div>
 
-            <label class="payment-option">
-              <input type="radio" [(ngModel)]="paymentMethod" value="bank_transfer" name="payment" />
-              <span class="option-label">
-                <span class="option-icon">&#127974;</span>
-                <span>
-                  <span class="option-name">Virement Bancaire</span>
-                  <span class="option-desc">Virement direct depuis votre banque</span>
-                </span>
-              </span>
-            </label>
-          </div>
+            <!-- Payment -->
+            <div class="checkout-section">
+              <h3>💳 Méthode de Paiement</h3>
+              <div class="payment-options">
+                <label class="payment-option" *ngFor="let method of mobileMoneyMethods; trackBy: trackByMethod">
+                  <input type="radio" [(ngModel)]="paymentMethod" [value]="method" name="payment" />
+                  <span class="payment-option-content">
+                    <span class="payment-option-icon">{{ paymentLabels[method].icon }}</span>
+                    <span>
+                      <span class="payment-option-name">{{ paymentLabels[method].name }}</span>
+                      <span class="payment-option-desc">Paiement via {{ paymentLabels[method].operator }}</span>
+                    </span>
+                  </span>
+                </label>
+
+                <!-- Mobile phone input -->
+                <div class="mobile-money-block" *ngIf="isMobileMoney">
+                  <label class="form-label">📱 Votre numéro {{ paymentLabels[paymentMethod].name }}</label>
+                  <input type="tel" class="form-input" [(ngModel)]="payerPhone" name="payerPhone" placeholder="+228 XXXX XXXX" />
+                  <p class="mobile-hint">Vous recevrez une demande de paiement sur votre téléphone via {{ paymentLabels[paymentMethod].operator }}</p>
+                  <a [href]="getWhatsAppLink(total, createdOrderRef)" target="_blank" class="btn btn-success btn-sm"
+                    *ngIf="createdOrderId && paymentStatus !== 'completed'">
+                    💬 WhatsApp (fallback)
+                  </a>
+                </div>
+
+                <label class="payment-option">
+                  <input type="radio" [(ngModel)]="paymentMethod" value="cash" name="payment" />
+                  <span class="payment-option-content">
+                    <span class="payment-option-icon">💵</span>
+                    <span>
+                      <span class="payment-option-name">Espèces</span>
+                      <span class="payment-option-desc">Paiement à la livraison</span>
+                    </span>
+                  </span>
+                </label>
+
+                <label class="payment-option">
+                  <input type="radio" [(ngModel)]="paymentMethod" value="bank_transfer" name="payment" />
+                  <span class="payment-option-content">
+                    <span class="payment-option-icon">🏦</span>
+                    <span>
+                      <span class="payment-option-name">Virement Bancaire</span>
+                      <span class="payment-option-desc">Virement direct depuis votre banque</span>
+                    </span>
+                  </span>
+                </label>
+              </div>
+            </div>
+
+            <button type="submit" class="btn btn-primary btn-lg btn-block" [disabled]="processing">
+              {{ processing ? '⏳ Traitement en cours...' : '✅ Confirmer la Commande' }}
+            </button>
+          </form>
         </div>
-
-        <button type="submit" class="btn btn-primary btn-submit" [disabled]="processing">
-          {{ processing ? 'Traitement en cours...' : 'Confirmer la Commande' }}
-        </button>
-      </form>
+      </div>
     </div>
 
-    <!-- Order Summary -->
-    <div class="order-summary">
-      <h2>&#128230; Résumé de la Commande</h2>
+    <!-- Summary Sidebar -->
+    <div class="checkout-summary-section">
+      <div class="card">
+        <div class="card-header">
+          <h3 class="card-title">📦 Résumé de la Commande</h3>
+        </div>
+        <div class="card-body">
+          <div class="checkout-items">
+            <div class="checkout-item" *ngFor="let item of cartItems; trackBy: trackByCartItemId">
+              <span class="checkout-item-name">{{ item.product.name }}</span>
+              <span class="checkout-item-qty">x{{ item.quantity }}</span>
+              <span class="checkout-item-price">{{ (item.product.price * item.quantity) | number }} FCFA</span>
+            </div>
+          </div>
 
-      <div class="items-list">
-        <div class="item" *ngFor="let item of cartItems">
-          <span class="item-name">{{ item.product.name }}</span>
-          <span class="item-qty">x{{ item.quantity }}</span>
-          <span class="item-price">{{ (item.product.price * item.quantity) | number }} FCFA</span>
-        </div>
-      </div>
+          <div class="checkout-pricing">
+            <div class="checkout-pricing-row">
+              <span>Sous-total</span>
+              <span>{{ subtotal | number }} FCFA</span>
+            </div>
+            <div class="checkout-pricing-row">
+              <span>TVA (18%)</span>
+              <span>{{ tax | number }} FCFA</span>
+            </div>
+            <div class="checkout-pricing-row">
+              <span>Livraison</span>
+              <span>{{ shipping | number }} FCFA</span>
+            </div>
+            <div class="checkout-pricing-row checkout-pricing-total">
+              <span>Total à Payer</span>
+              <span>{{ total | number }} FCFA</span>
+            </div>
+          </div>
 
-      <div class="pricing-section">
-        <div class="pricing-row">
-          <span>Sous-total:</span>
-          <span>{{ subtotal | number }} FCFA</span>
-        </div>
-        <div class="pricing-row">
-          <span>TVA (18%):</span>
-          <span>{{ tax | number }} FCFA</span>
-        </div>
-        <div class="pricing-row">
-          <span>Livraison:</span>
-          <span>{{ shipping | number }} FCFA</span>
-        </div>
-        <div class="pricing-row total">
-          <span>Total à Payer:</span>
-          <span>{{ total | number }} FCFA</span>
-        </div>
-      </div>
+          <div class="checkout-security">
+            <span>🔒</span>
+            <span>Paiement sécurisé — confirmation en temps réel</span>
+          </div>
 
-      <div class="security-info">
-        <span class="security-icon">&#128274;</span>
-        <p>Paiement sécurisé via PawaPay &bull; Paiement mobile confirmé en temps réel</p>
-      </div>
-
-      <div class="info-cards">
-        <div class="info-card">
-          <span class="icon">&#128666;</span>
-          <p><strong>Livraison Rapide</strong></p>
-          <small>2-3 jours ouvrables</small>
-        </div>
-        <div class="info-card">
-          <span class="icon">&#128260;</span>
-          <p><strong>Retour Gratuit</strong></p>
-          <small>Sous 30 jours</small>
-        </div>
-        <div class="info-card">
-          <span class="icon">&#128172;</span>
-          <p><strong>Support Client</strong></p>
-          <small>WhatsApp 24/7</small>
+          <div class="checkout-features">
+            <div class="checkout-feature">
+              <span>🚚</span>
+              <div>
+                <strong>Livraison Rapide</strong>
+                <small>2-3 jours ouvrables</small>
+              </div>
+            </div>
+            <div class="checkout-feature">
+              <span>🔄</span>
+              <div>
+                <strong>Retour Gratuit</strong>
+                <small>Sous 30 jours</small>
+              </div>
+            </div>
+            <div class="checkout-feature">
+              <span>💬</span>
+              <div>
+                <strong>Support Client</strong>
+                <small>WhatsApp 24/7</small>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>

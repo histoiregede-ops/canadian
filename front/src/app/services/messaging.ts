@@ -1,6 +1,7 @@
-import { Injectable } from '@angular/core';
+import { Injectable, OnDestroy } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable, BehaviorSubject, EMPTY, interval, switchMap, startWith } from 'rxjs';
+import { Observable, BehaviorSubject, EMPTY, interval, Subject, switchMap, startWith } from 'rxjs';
+import { takeUntil } from 'rxjs/operators';
 import { WebSocketService } from './websocket';
 import { environment } from '../../environments/environment';
 
@@ -38,7 +39,7 @@ export interface Conversation {
 @Injectable({
   providedIn: 'root'
 })
-export class MessagingService {
+export class MessagingService implements OnDestroy {
   private apiUrl = `${environment.apiUrl}/api/messages`;
   private newMessageSubject = new BehaviorSubject<Message | null>(null);
   public newMessage$ = this.newMessageSubject.asObservable();
@@ -48,6 +49,7 @@ export class MessagingService {
 
   private pollingInterval = 30000; // 30 seconds fallback polling
   private currentConversationId: string | null = null;
+  private destroyPolling$ = new Subject<void>();
   private notificationSubject = new BehaviorSubject<{title: string; body: string; type: string} | null>(null);
   public notification$ = this.notificationSubject.asObservable();
 
@@ -92,9 +94,24 @@ export class MessagingService {
             return this.getConversations(customerId);
           }
           return [];
-        })
+        }),
+        takeUntil(this.destroyPolling$)
       )
-      .subscribe();
+      .subscribe({
+        next: (conversations) => {
+          // conversations are already handled via WebSocket; this is a fallback
+        },
+        error: (err) => console.error('Polling conversations failed:', err)
+      });
+  }
+
+  stopPolling(): void {
+    this.destroyPolling$.next();
+    this.destroyPolling$.complete();
+  }
+
+  ngOnDestroy(): void {
+    this.stopPolling();
   }
 
   // Get all conversations for a customer

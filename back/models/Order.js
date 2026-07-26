@@ -11,6 +11,10 @@ const Order = sequelize.define('Order', {
     type: DataTypes.STRING,
     unique: true
   },
+  customerId: {
+    type: DataTypes.UUID,
+    allowNull: true
+  },
   subtotal: {
     type: DataTypes.DECIMAL(10, 2),
     defaultValue: 0.00
@@ -48,6 +52,12 @@ const OrderItem = sequelize.define('OrderItem', {
     type: DataTypes.UUID,
     defaultValue: DataTypes.UUIDV4,
     primaryKey: true
+  },
+  orderId: {
+    type: DataTypes.UUID
+  },
+  productId: {
+    type: DataTypes.STRING
   },
   quantity: {
     type: DataTypes.INTEGER,

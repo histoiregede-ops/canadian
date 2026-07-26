@@ -3,7 +3,6 @@ import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../environments/environment';
 
-
 export type PaymentMethod = 'cash' | 'orange_money' | 'moov_money' | 'wave' | 'bank_transfer' | 'card';
 
 export interface Payment {
@@ -25,14 +24,32 @@ export interface InitiatePaymentRequest {
   paymentMethod: PaymentMethod;
   phoneNumber: string;
   customerId?: string;
+  customerName?: string;
+  customerEmail?: string;
 }
 
 export interface InitiatePaymentResponse {
   success: boolean;
   paymentId: string;
-  depositId: string;
+  transactionId: string;
+  paymentUrl: string;
+  token: string;
   status: string;
   message: string;
+}
+
+export interface PaymentStatusResponse {
+  success: boolean;
+  status: string;
+  isCompleted: boolean;
+  isFailed: boolean;
+  isPending: boolean;
+  amount?: number;
+  currency?: string;
+  transactionId?: string;
+  paymentMethod?: string;
+  phoneNumber?: string;
+  message?: string;
 }
 
 @Injectable({
@@ -43,37 +60,37 @@ export class PaymentService {
 
   constructor(private http: HttpClient) { }
 
-  // Process payment
+  /** Traiter un paiement (cash ou legacy) */
   processPayment(payment: Payment): Observable<Payment> {
     return this.http.post<Payment>(`${this.apiUrl}`, payment);
   }
 
-  // Get payment by ID
+  /** Récupérer un paiement par ID */
   getPayment(id: string): Observable<Payment> {
     return this.http.get<Payment>(`${this.apiUrl}/${id}`);
   }
 
-  // Get payments for order
+  /** Récupérer les paiements d'une commande */
   getOrderPayments(orderId: string): Observable<Payment[]> {
     return this.http.get<Payment[]>(`${this.apiUrl}/order/${orderId}`);
   }
 
-  // Refund payment
+  /** Rembourser un paiement (admin) */
   refundPayment(paymentId: string, amount?: number): Observable<Payment> {
     return this.http.post<Payment>(`${this.apiUrl}/${paymentId}/refund`, { amount });
   }
 
-  // Initiate mobile money payment via PawaPay
+  /** Initier un paiement mobile money via CinetPay */
   initiatePayment(data: InitiatePaymentRequest): Observable<InitiatePaymentResponse> {
     return this.http.post<InitiatePaymentResponse>(`${this.apiUrl}/initiate`, data);
   }
 
-  // Check payment status
-  checkPaymentStatus(depositId: string): Observable<any> {
-    return this.http.get<any>(`${this.apiUrl}/status/${depositId}`);
+  /** Vérifier le statut d'une transaction CinetPay */
+  checkPaymentStatus(transactionId: string): Observable<PaymentStatusResponse> {
+    return this.http.get<PaymentStatusResponse>(`${this.apiUrl}/status/${transactionId}`);
   }
 
-  // Verify payment with mobile money provider
+  /** Vérifier un paiement mobile money */
   verifyMobileMoneyPayment(transactionId: string, phoneNumber: string): Observable<any> {
     return this.http.post<any>(`${this.apiUrl}/verify-mobile-money`, { transactionId, phoneNumber });
   }

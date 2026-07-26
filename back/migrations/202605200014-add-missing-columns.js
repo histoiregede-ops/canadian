@@ -1,0 +1,183 @@
+'use strict';
+
+module.exports = {
+  up: async (queryInterface, Sequelize) => {
+    // Add missing columns to Installations table
+    // priority column - check if it exists first
+    try {
+      const [columns] = await queryInterface.sequelize.query(
+        "PRAGMA table_info('Installations')"
+      );
+      const columnNames = columns.map(c => c.name);
+      
+      if (!columnNames.includes('priority')) {
+        await queryInterface.addColumn('Installations', 'priority', {
+          type: Sequelize.ENUM('low', 'normal', 'high', 'urgent'),
+          defaultValue: 'normal'
+        });
+        console.log('✅ Added priority column to Installations');
+      } else {
+        console.log('ℹ️ priority column already exists');
+      }
+
+      if (!columnNames.includes('orderId')) {
+        await queryInterface.addColumn('Installations', 'orderId', {
+          type: Sequelize.UUID,
+          allowNull: true
+        });
+        console.log('✅ Added orderId column to Installations');
+      } else {
+        console.log('ℹ️ orderId column already exists');
+      }
+    } catch (err) {
+      console.error('Error checking/adding Installations columns:', err.message);
+      throw err;
+    }
+
+    // Create Suppliers table if it doesn't exist
+    try {
+      const [results] = await queryInterface.sequelize.query(
+        "SELECT name FROM sqlite_master WHERE type='table' AND name='Suppliers'"
+      );
+      if (results.length === 0) {
+        await queryInterface.createTable('Suppliers', {
+          id: {
+            type: Sequelize.INTEGER,
+            autoIncrement: true,
+            primaryKey: true
+          },
+          name: {
+            type: Sequelize.STRING,
+            allowNull: false
+          },
+          contactName: {
+            type: Sequelize.STRING
+          },
+          email: {
+            type: Sequelize.STRING
+          },
+          phone: {
+            type: Sequelize.STRING
+          },
+          address: {
+            type: Sequelize.TEXT
+          },
+          city: {
+            type: Sequelize.STRING
+          },
+          country: {
+            type: Sequelize.STRING,
+            defaultValue: 'France'
+          },
+          productTypes: {
+            type: Sequelize.STRING
+          },
+          isActive: {
+            type: Sequelize.BOOLEAN,
+            defaultValue: true
+          },
+          createdAt: {
+            type: Sequelize.DATE,
+            allowNull: false
+          },
+          updatedAt: {
+            type: Sequelize.DATE,
+            allowNull: false
+          }
+        });
+        console.log('✅ Created Suppliers table');
+      } else {
+        console.log('ℹ️ Suppliers table already exists');
+      }
+    } catch (err) {
+      console.error('Error checking/creating Suppliers table:', err.message);
+    }
+
+    // Create PurchaseOrders table if it doesn't exist
+    try {
+      const [results] = await queryInterface.sequelize.query(
+        "SELECT name FROM sqlite_master WHERE type='table' AND name='PurchaseOrders'"
+      );
+      if (results.length === 0) {
+        await queryInterface.createTable('PurchaseOrders', {
+          id: {
+            type: Sequelize.UUID,
+            defaultValue: Sequelize.UUIDV4,
+            primaryKey: true
+          },
+          supplierId: {
+            type: Sequelize.INTEGER,
+            allowNull: false,
+            references: { model: 'Suppliers', key: 'id' },
+            onUpdate: 'CASCADE',
+            onDelete: 'SET NULL'
+          },
+          orderNumber: {
+            type: Sequelize.STRING,
+            allowNull: false,
+            unique: true
+          },
+          status: {
+            type: Sequelize.ENUM('pending', 'confirmed', 'partial', 'received', 'cancelled'),
+            defaultValue: 'pending'
+          },
+          orderDate: {
+            type: Sequelize.DATEONLY,
+            defaultValue: Sequelize.NOW
+          },
+          expectedDate: {
+            type: Sequelize.DATEONLY,
+            allowNull: true
+          },
+          receivedDate: {
+            type: Sequelize.DATEONLY,
+            allowNull: true
+          },
+          totalAmount: {
+            type: Sequelize.DECIMAL(12, 2),
+            defaultValue: 0
+          },
+          notes: {
+            type: Sequelize.TEXT,
+            allowNull: true
+          },
+          items: {
+            type: Sequelize.TEXT,
+            allowNull: true
+          },
+          lastReminderSent: {
+            type: Sequelize.DATEONLY,
+            allowNull: true
+          },
+          createdAt: {
+            type: Sequelize.DATE,
+            allowNull: false
+          },
+          updatedAt: {
+            type: Sequelize.DATE,
+            allowNull: false
+          }
+        });
+        console.log('✅ Created PurchaseOrders table');
+      } else {
+        console.log('ℹ️ PurchaseOrders table already exists');
+      }
+    } catch (err) {
+      console.error('Error checking/creating PurchaseOrders table:', err.message);
+    }
+  },
+
+  down: async (queryInterface, Sequelize) => {
+    // Remove added columns
+    try {
+      await queryInterface.removeColumn('Installations', 'priority');
+    } catch (err) {
+      console.log('ℹ️ priority column not found');
+    }
+    try {
+      await queryInterface.removeColumn('Installations', 'orderId');
+    } catch (err) {
+      console.log('ℹ️ orderId column not found');
+    }
+  }
+};

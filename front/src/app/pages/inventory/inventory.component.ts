@@ -151,6 +151,22 @@ export class InventoryComponent implements OnInit, OnDestroy, AfterViewInit {
     }, 5000);
   }
 
+  trackByCategoryId(index: number, item: any): string {
+    return item?.id ?? index;
+  }
+
+  trackBySupplierId(index: number, item: any): string {
+    return item?.id ?? index;
+  }
+
+  trackByProductId(index: number, item: any): string {
+    return item?.id ?? index;
+  }
+
+  trackByMovementId(index: number, item: any): string {
+    return item?.id ?? index;
+  }
+
   dismissToast(): void {
     this.toastMessage = '';
     this.toastType = '';
@@ -272,6 +288,7 @@ export class InventoryComponent implements OnInit, OnDestroy, AfterViewInit {
           this.products[idx] = { ...this.products[idx], stockQuantity: updated.stockQuantity, status: updated.status };
           this.products = [...this.products];
         }
+        this.refreshService.triggerRefresh();
       },
       error: (err) => {
         console.error('Error restocking:', err);
@@ -296,6 +313,7 @@ export class InventoryComponent implements OnInit, OnDestroy, AfterViewInit {
           this.products[idx] = { ...this.products[idx], stockQuantity: updated.stockQuantity, status: updated.status };
           this.products = [...this.products];
         }
+        this.refreshService.triggerRefresh();
       },
       error: (err) => {
         console.error('Error adjusting stock:', err);
@@ -370,18 +388,20 @@ export class InventoryComponent implements OnInit, OnDestroy, AfterViewInit {
       const fd = this.buildFormData();
       this.productService
         .updateProduct(this.currentProduct.id, fd)
-        .subscribe({
-          next: () => {
-            this.loadProducts();
-            this.showModal = false;
-            finish();
-          },
-          error: (err) => {
-            console.error('Erreur lors de la modification:', err);
-            alert('Erreur lors de la mise à jour du produit.');
-            finish();
-          }
-        });
+      .subscribe({
+        next: () => {
+          this.loadProducts();
+          this.showModal = false;
+          this.refreshService.triggerRefresh();
+          finish();
+        },
+        error: (err) => {
+          console.error('Erreur lors de la création:', err);
+          const msg = err.error?.error || err.message || 'Erreur lors de la création du produit.';
+          alert(msg);
+          finish();
+        }
+      });
     } else {
       const fd = this.buildFormData();
       this.productService.createProduct(fd).subscribe({
@@ -405,6 +425,7 @@ export class InventoryComponent implements OnInit, OnDestroy, AfterViewInit {
       this.productService.deleteProduct(id).subscribe({
         next: () => {
           this.loadProducts();
+          this.refreshService.triggerRefresh();
         },
         error: (err) => {
           console.error('Erreur lors de la suppression:', err);

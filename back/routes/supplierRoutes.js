@@ -5,8 +5,16 @@ const { authenticate, authorize } = require('../utils/auth');
 
 router.get('/', authenticate, authorize('admin', 'cashier'), async (req, res) => {
   try {
-    const suppliers = await Supplier.findAll({ order: [['name', 'ASC']] });
-    res.json(suppliers);
+    const page = Math.max(1, parseInt(req.query.page) || 1);
+    const limit = Math.min(100, Math.max(1, parseInt(req.query.limit) || 20));
+    const offset = (page - 1) * limit;
+
+    const { count, rows } = await Supplier.findAndCountAll({ 
+      order: [['name', 'ASC']],
+      limit,
+      offset
+    });
+    res.json({ data: rows, total: count, page, pages: Math.ceil(count / limit) });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -24,9 +32,10 @@ router.get('/:id', authenticate, authorize('admin', 'cashier'), async (req, res)
 
 router.post('/', authenticate, authorize('admin'), async (req, res) => {
   try {
-    const allowedFields = ['name', 'email', 'phone', 'address', 'city', 'country', 'contactPerson', 'notes'];
+    const allowedFields = ['name', 'email', 'phone', 'address', 'city', 'country', 'contactName', 'contactPerson', 'productTypes', 'isActive', 'notes'];
     const data = {};
     allowedFields.forEach(f => { if (req.body[f] !== undefined) data[f] = req.body[f]; });
+    if (!data.contactName && req.body.contactPerson) data.contactName = req.body.contactPerson;
     const supplier = await Supplier.create(data);
     res.status(201).json(supplier);
   } catch (error) {
@@ -38,9 +47,10 @@ router.put('/:id', authenticate, authorize('admin'), async (req, res) => {
   try {
     const supplier = await Supplier.findByPk(req.params.id);
     if (!supplier) return res.status(404).json({ error: 'Fournisseur non trouvé' });
-    const allowedFields = ['name', 'email', 'phone', 'address', 'city', 'country', 'contactPerson', 'notes'];
+    const allowedFields = ['name', 'email', 'phone', 'address', 'city', 'country', 'contactName', 'contactPerson', 'productTypes', 'isActive', 'notes'];
     const data = {};
     allowedFields.forEach(f => { if (req.body[f] !== undefined) data[f] = req.body[f]; });
+    if (!data.contactName && req.body.contactPerson) data.contactName = req.body.contactPerson;
     await supplier.update(data);
     res.json(supplier);
   } catch (error) {

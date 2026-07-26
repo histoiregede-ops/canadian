@@ -1,175 +1,131 @@
-<div class="contact-container">
-  <div class="contact-header">
-    <h1>Contactez-nous</h1>
-    <p>Une question ? Un projet ? N'hésitez pas à nous contacter.</p>
-  </div>
+<div class="contact-page">
+  <!-- Header -->
+  <section class="contact-hero">
+    <div class="contact-hero-content">
+      <span class="section-label">Contact</span>
+      <h1>Contactez-nous</h1>
+      <p>Une question ? Un projet ? Notre équipe est là pour vous répondre.</p>
+    </div>
+  </section>
 
   <div class="contact-content">
-    <!-- Formulaire de contact -->
+    <!-- Form -->
     <div class="contact-form-section">
-      <form [formGroup]="contactForm" (ngSubmit)="onSubmit()" class="contact-form">
+      <div class="card">
+        <div class="card-body">
+          <h3 class="card-title">Envoyez-nous un message</h3>
 
-        <!-- Nom -->
-        <div class="form-group">
-          <label for="name">Nom complet *</label>
-          <input
-            type="text"
-            id="name"
-            formControlName="name"
-            placeholder="Votre nom complet"
-            class="form-control"
-            [class.error]="isFieldInvalid('name')"
-          >
-          <div class="error-message" *ngIf="isFieldInvalid('name')">
-            {{ getFieldError('name') }}
-          </div>
+          <form [formGroup]="contactForm" (ngSubmit)="onSubmit()">
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label" for="name">Nom complet *</label>
+                <input type="text" id="name" class="form-input" [class.form-error]="isFieldInvalid('name')"
+                  formControlName="name" placeholder="Votre nom complet" />
+                <span class="form-error" *ngIf="isFieldInvalid('name')">{{ getFieldError('name') }}</span>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label" for="email">Email *</label>
+                <input type="email" id="email" class="form-input" [class.form-error]="isFieldInvalid('email')"
+                  formControlName="email" placeholder="votre@email.com" />
+                <span class="form-error" *ngIf="isFieldInvalid('email')">{{ getFieldError('email') }}</span>
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label" for="phone">Téléphone</label>
+                <input type="tel" id="phone" class="form-input" [class.form-error]="isFieldInvalid('phone')"
+                  formControlName="phone" placeholder="+228 XX XX XX XX" />
+                <span class="form-error" *ngIf="isFieldInvalid('phone')">{{ getFieldError('phone') }}</span>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label" for="subject">Sujet *</label>
+                <select id="subject" class="form-select" [class.form-error]="isFieldInvalid('subject')"
+                  formControlName="subject">
+                  <option value="">Choisissez un sujet</option>
+                  <option value="Demande de devis">Demande de devis</option>
+                  <option value="Support technique">Support technique</option>
+                  <option value="Informations produits">Informations produits</option>
+                  <option value="Partenariat">Partenariat</option>
+                  <option value="Autre">Autre</option>
+                </select>
+                <span class="form-error" *ngIf="isFieldInvalid('subject')">{{ getFieldError('subject') }}</span>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="message">Message *</label>
+              <textarea id="message" class="form-textarea" [class.form-error]="isFieldInvalid('message')"
+                formControlName="message" placeholder="Décrivez votre demande en détail..." rows="6"></textarea>
+              <span class="form-error" *ngIf="isFieldInvalid('message')">{{ getFieldError('message') }}</span>
+            </div>
+
+            <button type="submit" class="btn btn-primary btn-lg btn-block" [disabled]="contactForm.invalid || isSubmitting">
+              <span *ngIf="!isSubmitting">✉️ Envoyer le message</span>
+              <span *ngIf="isSubmitting">
+                <span class="spinner"></span>
+                Envoi en cours...
+              </span>
+            </button>
+          </form>
         </div>
-
-        <!-- Email -->
-        <div class="form-group">
-          <label for="email">Email *</label>
-          <input
-            type="email"
-            id="email"
-            formControlName="email"
-            placeholder="votre.email@exemple.com"
-            class="form-control"
-            [class.error]="isFieldInvalid('email')"
-          >
-          <div class="error-message" *ngIf="isFieldInvalid('email')">
-            {{ getFieldError('email') }}
-          </div>
-        </div>
-
-        <!-- Téléphone -->
-        <div class="form-group">
-          <label for="phone">Téléphone</label>
-          <input
-            type="tel"
-            id="phone"
-            formControlName="phone"
-            placeholder="+212 6XX XXX XXX"
-            class="form-control"
-            [class.error]="isFieldInvalid('phone')"
-          >
-          <div class="error-message" *ngIf="isFieldInvalid('phone')">
-            {{ getFieldError('phone') }}
-          </div>
-        </div>
-
-        <!-- Sujet -->
-        <div class="form-group">
-          <label for="subject">Sujet *</label>
-          <select
-            id="subject"
-            formControlName="subject"
-            class="form-control"
-            [class.error]="isFieldInvalid('subject')"
-          >
-            <option value="">Choisissez un sujet</option>
-            <option value="Demande de devis">Demande de devis</option>
-            <option value="Support technique">Support technique</option>
-            <option value="Informations produits">Informations produits</option>
-            <option value="Partenariat">Partenariat</option>
-            <option value="Autre">Autre</option>
-          </select>
-          <div class="error-message" *ngIf="isFieldInvalid('subject')">
-            {{ getFieldError('subject') }}
-          </div>
-        </div>
-
-        <!-- Message -->
-        <div class="form-group">
-          <label for="message">Message *</label>
-          <textarea
-            id="message"
-            formControlName="message"
-            placeholder="Décrivez votre demande en détail..."
-            rows="6"
-            class="form-control"
-            [class.error]="isFieldInvalid('message')"
-          ></textarea>
-          <div class="error-message" *ngIf="isFieldInvalid('message')">
-            {{ getFieldError('message') }}
-          </div>
-        </div>
-
-        <!-- Bouton d'envoi -->
-        <button
-          type="submit"
-          class="btn-submit"
-          [disabled]="contactForm.invalid || isSubmitting"
-        >
-          <span *ngIf="!isSubmitting">Envoyer le message</span>
-          <span *ngIf="isSubmitting">
-            <span class="spinner"></span>
-            Envoi en cours...
-          </span>
-        </button>
-      </form>
+      </div>
     </div>
 
-    <!-- Informations de contact -->
-    <div class="contact-info-section">
-      <div class="contact-info">
-        <h3>Informations de contact</h3>
+    <!-- Info Sidebar -->
+    <aside class="contact-info-section">
+      <div class="card">
+        <div class="card-body">
+          <h3 class="card-title">Informations</h3>
 
-        <div class="info-item">
-          <div class="info-icon">📧</div>
-          <div class="info-content">
-            <strong>Email</strong>
-            <p>contact@solartech.ma</p>
+          <div class="info-list">
+            <div class="info-item" *ngFor="let info of contactInfo">
+              <span class="info-icon">{{ info.icon }}</span>
+              <div class="info-content">
+                <strong>{{ info.label }}</strong>
+                <p>{{ info.value }}</p>
+              </div>
+            </div>
           </div>
-        </div>
 
-        <div class="info-item">
-          <div class="info-icon">📱</div>
-          <div class="info-content">
-            <strong>Téléphone</strong>
-            <p>+212 6XX XXX XXX</p>
+          <div class="contact-commitments">
+            <h4>Notre engagement</h4>
+            <ul class="commitment-list">
+              <li *ngFor="let item of commitments">✅ {{ item }}</li>
+            </ul>
           </div>
-        </div>
 
-        <div class="info-item">
-          <div class="info-icon">📍</div>
-          <div class="info-content">
-            <strong>Adresse</strong>
-            <p>Casablanca, Maroc</p>
-          </div>
-        </div>
-
-        <div class="info-item">
-          <div class="info-icon">🕒</div>
-          <div class="info-content">
-            <strong>Horaires</strong>
-            <p>Lun - Ven: 9h - 18h</p>
-            <p>Sam: 9h - 13h</p>
+          <div class="contact-cta">
+            <p>Besoin d'une réponse immédiate ?</p>
+            <a href="https://wa.me/22879803856" target="_blank" rel="noopener noreferrer" class="btn btn-primary btn-block">
+              💬 WhatsApp
+            </a>
           </div>
         </div>
       </div>
-
-      <div class="contact-promise">
-        <h4>Notre engagement</h4>
-        <ul>
-          <li>✅ Réponse sous 24h</li>
-          <li>✅ Devis gratuit</li>
-          <li>✅ Accompagnement personnalisé</li>
-          <li>✅ Expertise technique</li>
-        </ul>
-      </div>
-    </div>
+    </aside>
   </div>
 
-  <!-- Messages de succès/erreur -->
-  <div class="message-overlay" *ngIf="showMessage" (click)="closeMessage()">
-    <div class="message-box" [class.success]="messageType === 'success'" [class.error]="messageType === 'error'" (click)="$event.stopPropagation()">
-      <div class="message-icon">
-        <span *ngIf="messageType === 'success'">✅</span>
-        <span *ngIf="messageType === 'error'">❌</span>
+  <!-- Success/Error Modal -->
+  <div class="modal-overlay" *ngIf="showMessage" (click)="closeMessage()">
+    <div class="modal-card" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3 class="modal-title">{{ messageTitle }}</h3>
+        <button class="modal-close" (click)="closeMessage()">×</button>
       </div>
-      <h3>{{ messageTitle }}</h3>
-      <p>{{ messageText }}</p>
-      <button class="btn-close" (click)="closeMessage()">Fermer</button>
+      <div class="modal-body">
+        <div style="text-align:center; padding: var(--space-4);">
+          <div style="font-size:3rem; margin-bottom:var(--space-4);">
+            {{ messageType === 'success' ? '✅' : '❌' }}
+          </div>
+          <p>{{ messageText }}</p>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-primary" (click)="closeMessage()">Fermer</button>
+      </div>
     </div>
   </div>
 </div>

@@ -70,6 +70,10 @@ export class CustomersComponent implements OnInit, OnDestroy {
     return cities.size;
   }
 
+  trackByCustomerId(index: number, item: any): string {
+    return item?.id ?? index;
+  }
+
   getInitials(customer: Customer): string {
     const name = customer.fullName || customer.name || '';
     const parts = name.split(' ').filter(Boolean);
@@ -142,11 +146,13 @@ export class CustomersComponent implements OnInit, OnDestroy {
       this.customerService.updateCustomer(this.currentCustomer.id, this.currentCustomer).subscribe(() => {
         this.loadCustomers();
         this.showModal = false;
+        this.refreshService.triggerRefresh();
       });
     } else {
       this.customerService.createCustomer(this.currentCustomer).subscribe(() => {
         this.loadCustomers();
         this.showModal = false;
+        this.refreshService.triggerRefresh();
       });
     }
   }
@@ -155,6 +161,7 @@ export class CustomersComponent implements OnInit, OnDestroy {
     if (confirm('Voulez-vous supprimer ce client ?')) {
       this.customerService.deleteCustomer(id).subscribe(() => {
         this.loadCustomers();
+        this.refreshService.triggerRefresh();
       });
     }
   }

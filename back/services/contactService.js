@@ -1,3 +1,4 @@
+const escapeHtml = require('escape-html');
 const axios = require('axios');
 
 class ContactService {
@@ -28,15 +29,15 @@ class ContactService {
             <h2 style="color: #2c3e50; margin-bottom: 20px;">📬 Nouveau Message de Contact</h2>
 
             <div style="margin-bottom: 20px;">
-              <strong style="color: #34495e;">De:</strong> ${name} &lt;${email}&gt;
+              <strong style="color: #34495e;">De:</strong> ${escapeHtml(name)} &lt;${escapeHtml(email)}&gt;
             </div>
 
             ${phone ? `<div style="margin-bottom: 20px;">
-              <strong style="color: #34495e;">Téléphone:</strong> ${phone}
+              <strong style="color: #34495e;">Téléphone:</strong> ${escapeHtml(phone)}
             </div>` : ''}
 
             <div style="margin-bottom: 20px;">
-              <strong style="color: #34495e;">Sujet:</strong> ${subject}
+              <strong style="color: #34495e;">Sujet:</strong> ${escapeHtml(subject)}
             </div>
 
             <div style="margin-bottom: 20px;">
@@ -44,7 +45,7 @@ class ContactService {
             </div>
 
             <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; border-left: 4px solid #3498db;">
-              ${message.replace(/\n/g, '<br>')}
+              ${escapeHtml(message).replace(/\n/g, '<br>')}
             </div>
 
             <hr style="margin: 30px 0; border: none; border-top: 1px solid #ecf0f1;">
@@ -99,11 +100,11 @@ class ContactService {
             <h2 style="color: #27ae60; margin-bottom: 20px;">✅ Message Bien Reçu !</h2>
 
             <p style="color: #34495e; font-size: 16px; line-height: 1.6;">
-              Bonjour <strong>${name}</strong>,
+              Bonjour <strong>${escapeHtml(name)}</strong>,
             </p>
 
             <p style="color: #34495e; line-height: 1.6;">
-              Nous avons bien reçu votre message concernant "<strong>${subject}</strong>".
+              Nous avons bien reçu votre message concernant "<strong>${escapeHtml(subject)}</strong>".
             </p>
 
             <p style="color: #34495e; line-height: 1.6;">
@@ -113,8 +114,8 @@ class ContactService {
 
             <div style="background: #ecf0f1; padding: 20px; border-radius: 5px; margin: 20px 0;">
               <h3 style="color: #2c3e50; margin-top: 0;">📋 Récapitulatif de votre message</h3>
-              <p style="margin: 5px 0;"><strong>Sujet:</strong> ${subject}</p>
-              <p style="margin: 5px 0;"><strong>Email:</strong> ${email}</p>
+              <p style="margin: 5px 0;"><strong>Sujet:</strong> ${escapeHtml(subject)}</p>
+              <p style="margin: 5px 0;"><strong>Email:</strong> ${escapeHtml(email)}</p>
               <p style="margin: 5px 0;"><strong>Date:</strong> ${new Date().toLocaleString('fr-FR')}</p>
             </div>
 

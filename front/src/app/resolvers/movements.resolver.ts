@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { Resolve, ActivatedRouteSnapshot } from '@angular/router';
 import { Observable, forkJoin, of } from 'rxjs';
-import { map } from 'rxjs/operators';
+import { map, catchError } from 'rxjs/operators';
 import { MovementService } from '../services/movement';
 import { ProductService } from '../services/product';
 
@@ -16,8 +16,8 @@ export class MovementsResolver implements Resolve<MovementsResolved> {
 
   resolve(route: ActivatedRouteSnapshot): Observable<MovementsResolved> {
     return forkJoin({
-      products: this.productService.getProducts(),
-      reasons: this.movementService.getReasons()
+      products: this.productService.getProducts().pipe(catchError(() => of([]))),
+      reasons: this.movementService.getReasons().pipe(catchError(() => of([])))
     }).pipe(
       map(result => ({
         products: result.products || [],

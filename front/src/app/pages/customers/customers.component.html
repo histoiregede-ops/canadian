@@ -73,7 +73,7 @@
   </div>
 
   <div class="customers-grid" *ngIf="!loading && filteredCustomers.length > 0">
-    <div class="card customer-card" *ngFor="let customer of filteredCustomers">
+    <div class="card customer-card" *ngFor="let customer of filteredCustomers; trackBy: trackByCustomerId">
       <div class="card-body">
         <div class="customer-header">
           <div class="customer-avatar">{{ getInitials(customer) }}</div>

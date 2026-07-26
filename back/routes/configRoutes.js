@@ -3,9 +3,9 @@ const router = express.Router();
 
 const PAYMENT_METHODS = [
   { key: 'cash', name: 'Espèces', icon: '', operator: '', isMobileMoney: false },
-  { key: 'orange_money', name: 'Orange Money', icon: '', operator: 'Orange Mali', isMobileMoney: true },
-  { key: 'moov_money', name: 'Mobile Cash', icon: '', operator: 'Moov Africa', isMobileMoney: true },
-  { key: 'wave', name: 'Wave', icon: '', operator: 'Wave', isMobileMoney: true },
+  { key: 'orange_money', name: 'Orange Money', icon: '', operator: 'Orange Money (CinetPay)', isMobileMoney: true },
+  { key: 'moov_money', name: 'Moov Money', icon: '', operator: 'Moov (CinetPay)', isMobileMoney: true },
+  { key: 'wave', name: 'Wave', icon: '', operator: 'Wave (CinetPay)', isMobileMoney: true },
   { key: 'card', name: 'Carte Bancaire', icon: '', operator: '', isMobileMoney: false },
   { key: 'bank_transfer', name: 'Virement Bancaire', icon: '', operator: '', isMobileMoney: false }
 ];

@@ -9,6 +9,8 @@ const CashTransaction = require('./CashTransaction');
 const ProductReview = require('./ProductReview');
 const Payment = require('./Payment');
 const Supplier = require('./Supplier');
+const PurchaseOrder = require('./PurchaseOrder');
+const Transfer = require('./Transfer');
 
 // Associations
 Category.hasMany(Product, { foreignKey: 'categoryId' });
@@ -45,6 +47,9 @@ Payment.belongsTo(Order, { foreignKey: 'orderId' });
 Order.hasMany(Installation, { foreignKey: 'orderId' });
 Installation.belongsTo(Order, { foreignKey: 'orderId' });
 
+Supplier.hasMany(PurchaseOrder, { foreignKey: 'supplierId' });
+PurchaseOrder.belongsTo(Supplier, { foreignKey: 'supplierId' });
+
 module.exports = {
   User,
   Product,
@@ -57,5 +62,7 @@ module.exports = {
   CashTransaction,
   ProductReview,
   Payment,
-  Supplier
+  Supplier,
+  PurchaseOrder,
+  Transfer
 };

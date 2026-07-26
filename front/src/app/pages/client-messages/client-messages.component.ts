@@ -185,6 +185,14 @@ export class ClientMessagesComponent implements OnInit, OnDestroy {
     });
   }
 
+  trackByConversationId(index: number, item: any): string {
+    return item?.id ?? index;
+  }
+
+  trackByMessageId(index: number, item: any): string {
+    return item?.id ?? index;
+  }
+
   selectConversation(conversation: Conversation): void {
     if (this.selectedConversation) {
       this.messagingService.leaveConversation(this.selectedConversation.id!);

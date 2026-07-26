@@ -39,7 +39,7 @@
       </div>
       <select class="form-select" [(ngModel)]="selectedCategoryId">
         <option value="">Toutes les catégories</option>
-        <option *ngFor="let cat of categories" [value]="cat.id">{{ cat.name }}</option>
+        <option *ngFor="let cat of categories; trackBy: trackByCategoryId" [value]="cat.id">{{ cat.name }}</option>
       </select>
       <select class="form-select" [(ngModel)]="selectedStatus">
         <option value="">Tous les statuts</option>
@@ -49,7 +49,7 @@
       </select>
       <select class="form-select" [(ngModel)]="selectedSupplierId">
         <option value="">Tous les fournisseurs</option>
-        <option *ngFor="let sup of suppliers" [value]="sup.id">{{ sup.name }}</option>
+        <option *ngFor="let sup of suppliers; trackBy: trackBySupplierId" [value]="sup.id">{{ sup.name }}</option>
       </select>
     </div>
   </div>
@@ -66,7 +66,7 @@
   </div>
 
   <div class="product-grid" *ngIf="!loading && products.length > 0">
-    <div class="card product-card" *ngFor="let product of filteredProducts">
+    <div class="card product-card" *ngFor="let product of filteredProducts; trackBy: trackByProductId">
       <div class="product-image">
         <span class="placeholder-icon" *ngIf="!product.photo || imgErrors.has(product.id!)">📦</span>
         <img [src]="getProductImage(product.photo)" *ngIf="product.photo && !imgErrors.has(product.id!)" (error)="onImgError(product.id!)" alt="Product Image" />
@@ -101,7 +101,7 @@
       <span class="badge-count">{{ finishedProducts.length }}</span>
     </div>
     <div class="finished-grid">
-      <div class="card finished-card" *ngFor="let product of finishedProducts">
+      <div class="card finished-card" *ngFor="let product of finishedProducts; trackBy: trackByProductId">
         <div class="finished-icon" [ngClass]="product.stockQuantity === 0 ? 'empty' : 'low'">
           {{ product.stockQuantity === 0 ? '🚫' : '⚠️' }}
         </div>
@@ -154,14 +154,14 @@
             <label class="form-label">Catégorie *</label>
             <select [(ngModel)]="currentProduct.categoryId" name="categoryId" required class="form-select">
               <option value="">Sélectionner une catégorie</option>
-              <option *ngFor="let cat of categories" [value]="cat.id">{{ cat.name }}</option>
+              <option *ngFor="let cat of categories; trackBy: trackByCategoryId" [value]="cat.id">{{ cat.name }}</option>
             </select>
           </div>
           <div class="form-group">
             <label class="form-label">Fournisseur</label>
             <select [(ngModel)]="currentProduct.supplierId" name="supplierId" class="form-select">
               <option value="">Sélectionner un fournisseur</option>
-              <option *ngFor="let sup of suppliers" [value]="sup.id">{{ sup.name }}</option>
+              <option *ngFor="let sup of suppliers; trackBy: trackBySupplierId" [value]="sup.id">{{ sup.name }}</option>
             </select>
           </div>
           <div class="form-group">
@@ -222,7 +222,7 @@
               </tr>
             </thead>
             <tbody>
-              <tr *ngFor="let m of movements">
+              <tr *ngFor="let m of movements; trackBy: trackByMovementId">
                 <td>{{ m.createdAt | date:'dd/MM/yy HH:mm' }}</td>
                 <td><span class="reason-badge" [ngClass]="m.reason">{{ reasonLabel(m.reason) }}</span></td>
                 <td>{{ m.previousQuantity }}</td>

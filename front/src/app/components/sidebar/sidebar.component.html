@@ -1,7 +1,7 @@
 <aside class="sidebar" [class.open]="isOpen" [class.collapsed]="isCollapsed">
   <div class="sidebar-header">
     <div class="logo">
-      <img src="/logo_projet.png" class="logo-img" alt="Logo">
+      <img src="/logo_projet.png" class="logo-img" alt="Logo" width="40" height="40">
       <span class="logo-text" [class.hide]="isCollapsed">Electro Canadien</span>
     </div>
     <button class="sidebar-close" (click)="closeSidebar.emit()" title="Fermer">&#x2715;</button>
@@ -23,6 +23,11 @@
       <span class="label" [class.hide]="isCollapsed">Mouvements</span>
       <span class="tooltip" *ngIf="isCollapsed">Mouvements</span>
     </a>
+    <a *ngIf="user?.role === 'admin' || user?.role === 'cashier'" routerLink="/transfers" routerLinkActive="active" class="nav-item" [class.collapsed]="isCollapsed">
+      <span class="icon">&#x1F4B5;</span>
+      <span class="label" [class.hide]="isCollapsed">Transferts</span>
+      <span class="tooltip" *ngIf="isCollapsed">Transferts</span>
+    </a>
     <a *ngIf="user?.role === 'admin' || user?.role === 'cashier'" routerLink="/scan" routerLinkActive="active" class="nav-item" [class.collapsed]="isCollapsed">
       <span class="icon">&#x1F4F7;</span>
       <span class="label" [class.hide]="isCollapsed">Scanner</span>
@@ -33,6 +38,11 @@
       <span class="label" [class.hide]="isCollapsed">Fournisseurs</span>
       <span class="tooltip" *ngIf="isCollapsed">Fournisseurs</span>
     </a>
+    <a *ngIf="user?.role === 'admin'" routerLink="/purchase-orders" routerLinkActive="active" class="nav-item" [class.collapsed]="isCollapsed">
+      <span class="icon">&#x1F4E5;</span>
+      <span class="label" [class.hide]="isCollapsed">Approvisionnement</span>
+      <span class="tooltip" *ngIf="isCollapsed">Approvisionnement</span>
+    </a>
     <a *ngIf="user?.role === 'admin'" routerLink="/categories" routerLinkActive="active" class="nav-item" [class.collapsed]="isCollapsed">
       <span class="icon">&#x1F3F7;&#xFE0F;</span>
       <span class="label" [class.hide]="isCollapsed">Catégories</span>
@@ -42,6 +52,11 @@
       <span class="icon">&#x1F6D2;</span>
       <span class="label" [class.hide]="isCollapsed">Ventes (POS)</span>
       <span class="tooltip" *ngIf="isCollapsed">Ventes (POS)</span>
+    </a>
+    <a *ngIf="user?.role === 'admin' || user?.role === 'cashier'" routerLink="/receipts" routerLinkActive="active" class="nav-item" [class.collapsed]="isCollapsed">
+      <span class="icon">&#x1F9FE;</span>
+      <span class="label" [class.hide]="isCollapsed">Reçus</span>
+      <span class="tooltip" *ngIf="isCollapsed">Reçus</span>
     </a>
     <a routerLink="/shop" routerLinkActive="active" class="nav-item" [class.collapsed]="isCollapsed">
       <span class="icon">&#x1F3EA;</span>

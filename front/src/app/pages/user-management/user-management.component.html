@@ -49,7 +49,7 @@
       </div>
       <select [(ngModel)]="roleFilter" class="form-select">
         <option value="">Tous les rôles</option>
-        <option *ngFor="let r of roles" [value]="r">{{ getRoleLabel(r) }}</option>
+        <option *ngFor="let r of roles; trackBy: trackByRole" [value]="r">{{ getRoleLabel(r) }}</option>
       </select>
       <span class="result-count">{{ filteredUsers.length }} résultat(s)</span>
     </div>
@@ -66,7 +66,7 @@
         </tr>
       </thead>
       <tbody>
-        <tr *ngFor="let user of filteredUsers">
+        <tr *ngFor="let user of filteredUsers; trackBy: trackByUserId">
           <td>
             <div class="user-cell">
               <div class="user-avatar">{{ (user.fullName || user.username).substring(0,2).toUpperCase() }}</div>
@@ -131,7 +131,7 @@
           <div class="form-group">
             <label class="form-label">Rôle</label>
             <select [(ngModel)]="form.role" name="role" class="form-select">
-              <option *ngFor="let r of roles" [value]="r">{{ getRoleLabel(r) }}</option>
+              <option *ngFor="let r of roles; trackBy: trackByRole" [value]="r">{{ getRoleLabel(r) }}</option>
             </select>
           </div>
           <div class="modal-footer">

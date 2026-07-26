@@ -81,6 +81,10 @@ export class SettingsComponent implements OnInit {
   saving = false;
   message: { type: 'success' | 'error'; text: string } | null = null;
 
+  trackByNotifKey(index: number, item: any): string {
+    return item?.key ?? index;
+  }
+
   notificationItems = [
     { key: 'orders' as keyof NotificationSettings, icon: '📦', title: 'Commandes', description: 'Notifications pour nouvelles commandes' },
     { key: 'payments' as keyof NotificationSettings, icon: '💳', title: 'Paiements', description: 'Alertes de paiement reçues' },

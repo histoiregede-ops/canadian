@@ -80,6 +80,26 @@ export class InstallationsComponent implements OnInit, OnDestroy {
     };
   }
 
+  trackByInstallId(index: number, item: any): string {
+    return item?.id ?? index;
+  }
+
+  trackByComponent(index: number, item: any): string {
+    return item ?? index;
+  }
+
+  trackByCustomerId(index: number, item: any): string {
+    return item?.id ?? index;
+  }
+
+  trackByTechnicianId(index: number, item: any): string {
+    return item?.id ?? index;
+  }
+
+  trackByOrderId(index: number, item: any): string {
+    return item?.id ?? index;
+  }
+
   loadCustomers(): void {
     this.customerService.getCustomers().subscribe((data: Customer[]) => this.customers = data);
   }
@@ -128,11 +148,13 @@ export class InstallationsComponent implements OnInit, OnDestroy {
       this.installationService.updateInstallation(this.currentInstallation.id, this.currentInstallation).subscribe(() => {
         this.loadInstallations();
         this.showModal = false;
+        this.refreshService.triggerRefresh();
       });
     } else {
       this.installationService.createInstallation(this.currentInstallation).subscribe(() => {
         this.loadInstallations();
         this.showModal = false;
+        this.refreshService.triggerRefresh();
       });
     }
   }
@@ -141,6 +163,7 @@ export class InstallationsComponent implements OnInit, OnDestroy {
     if (confirm('Supprimer ce dossier d\'installation ?')) {
       this.installationService.deleteInstallation(id).subscribe(() => {
         this.loadInstallations();
+        this.refreshService.triggerRefresh();
       });
     }
   }

@@ -88,6 +88,18 @@ export class MessagesComponent implements OnInit, OnDestroy {
     });
   }
 
+  trackByConversationId(index: number, item: any): string {
+    return item?.id ?? index;
+  }
+
+  trackByMessageId(index: number, item: any): string {
+    return item?.id ?? index;
+  }
+
+  trackByTypingUserId(index: number, item: any): string {
+    return item ?? index;
+  }
+
   selectConversation(conversation: Conversation): void {
     if (this.selectedConversation) {
       this.messagingService.leaveConversation(this.selectedConversation.id!);

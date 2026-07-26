@@ -52,6 +52,14 @@ export class FinanceComponent implements OnInit, OnDestroy, AfterViewInit {
   editingComment = '';
   private refreshSub: Subscription | null = null;
 
+  trackByTransactionId(index: number, item: any): string {
+    return item?.id ?? index;
+  }
+
+  trackByCustomerId(index: number, item: any): string {
+    return item?.id ?? index;
+  }
+
   constructor(private route: ActivatedRoute, private financeService: FinanceService, private customerService: CustomerService, private configService: ConfigService, private refreshService: RefreshService) { }
 
   ngOnInit(): void {

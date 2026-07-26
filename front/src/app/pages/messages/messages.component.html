@@ -37,12 +37,12 @@
           Aucune conversation pour le moment
         </div>
         <div
-          *ngFor="let conv of conversations"
+          *ngFor="let conv of conversations; trackBy: trackByConversationId"
           class="conv-item"
           [class.active]="selectedConversation?.id === conv.id"
           (click)="selectConversation(conv); sidebarOpen = false"
         >
-          <div class="conv-avatar">{{ conv.customerName?.charAt(0) || conv.subject?.charAt(0) }}</div>
+          <div class="conv-avatar">{{ conv.customerName.charAt(0) || conv.subject.charAt(0) }}</div>
           <div class="conv-body">
             <h3>{{ conv.subject }}</h3>
             <p class="conv-preview">{{ conv.lastMessage }}</p>
@@ -95,7 +95,7 @@
 
         <div class="messages-list" #messagesContainer>
           <div
-            *ngFor="let msg of messages"
+            *ngFor="let msg of messages; trackBy: trackByMessageId"
             class="message"
             [class.outgoing]="(isAdmin && msg.senderRole !== 'customer') || (!isAdmin && msg.senderRole === 'customer')"
           >

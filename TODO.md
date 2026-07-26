@@ -1,7 +1,10 @@
-# TODO
+# Fix: Foreign Key Constraint Error for PurchaseOrders.supplierId
 
-- [x] Identify build error source in `shop.component.html` (parseFloat used in template)
-- [x] Implement fix in `front/src/app/pages/shop/shop.component.ts` (add safe rating-to-number helper)
-- [x] Update `front/src/app/pages/shop/shop.component.html` to remove `parseFloat` from template
-- [ ] Re-run `npm start` / `ng serve` to confirm compilation
+## Task
+Fix `ER_CANT_CREATE_TABLE` error when creating `PurchaseOrders` table because foreign key constraint is incorrectly formed.
 
+## Steps
+
+- [x] **Step 1**: Add `engine: 'InnoDB'` to `back/models/Supplier.js`
+- [x] **Step 2**: Update raw SQL for `Suppliers` table in `back/index.js` to include `ENGINE=InnoDB` and add ALTER TABLE to fix existing MyISAM tables
+- [ ] **Step 3**: Restart server to verify the fix

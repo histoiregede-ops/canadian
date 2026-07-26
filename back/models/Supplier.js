@@ -5,6 +5,7 @@ const Supplier = sequelize.define('Supplier', {
   id: {
     type: DataTypes.INTEGER,
     autoIncrement: true,
+    unsigned: true,
     primaryKey: true
   },
   name: {
@@ -39,6 +40,8 @@ const Supplier = sequelize.define('Supplier', {
     type: DataTypes.BOOLEAN,
     defaultValue: true
   }
+}, {
+  engine: 'InnoDB'
 });
 
 module.exports = Supplier;

@@ -3,17 +3,19 @@ import { RouterOutlet, Router, NavigationEnd } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { SidebarComponent } from './components/sidebar/sidebar.component';
 import { NavbarComponent } from './components/navbar/navbar.component';
+import { FooterComponent } from './components/footer/footer.component';
 import { filter } from 'rxjs';
 
 @Component({
-  selector: 'app-root',
+selector: 'app-root',
   standalone: true,
-  imports: [RouterOutlet, CommonModule, SidebarComponent, NavbarComponent],
+  imports: [RouterOutlet, CommonModule, SidebarComponent, NavbarComponent, FooterComponent],
   templateUrl: './app.component.html',
   styleUrls: ['./app.component.css']
 })
 export class AppComponent {
   isPublicPage = false;
+  isLoginPage = false;
   sidebarOpen = false;
   sidebarCollapsed = false;
 
@@ -31,8 +33,9 @@ export class AppComponent {
     });
   }
 
-  private checkPublicRoute(url: string): void {
+private checkPublicRoute(url: string): void {
     this.isPublicPage = this.sidebarHiddenRoutes.some(route => url.startsWith(route));
+    this.isLoginPage = url.startsWith('/login');
   }
 
   toggleSidebar(): void {

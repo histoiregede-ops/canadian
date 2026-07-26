@@ -6,14 +6,20 @@ const { authenticate, authorize } = require('../utils/auth');
 // Get all installations
 router.get('/', authenticate, authorize('admin', 'technician'), async (req, res) => {
   try {
-    const installations = await Installation.findAll({ 
+    const page = Math.max(1, parseInt(req.query.page) || 1);
+    const limit = Math.min(100, Math.max(1, parseInt(req.query.limit) || 20));
+    const offset = (page - 1) * limit;
+
+    const { count, rows } = await Installation.findAndCountAll({ 
       include: [
         { model: Customer, attributes: ['id', 'name', 'phone'] },
         { model: User, as: 'Technician', attributes: ['id', 'fullName', 'email'] },
         { model: Order, attributes: ['id', 'orderNumber', 'totalAmount', 'status', 'createdAt'] }
-      ] 
+      ],
+      limit,
+      offset
     });
-    res.json(installations);
+    res.json({ data: rows, total: count, page, pages: Math.ceil(count / limit) });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -52,7 +58,7 @@ router.post('/', authenticate, authorize('admin', 'technician'), async (req, res
 // Update installation
 router.put('/:id', authenticate, authorize('admin', 'technician'), async (req, res) => {
   try {
-    const allowedFields = ['location', 'kitType', 'status', 'priority', 'technicianId', 'notes', 'scheduledDate', 'gpsCoordinates', 'powerCapacity', 'roofType', 'components', 'totalPrice'];
+    const allowedFields = ['orderId', 'customerId', 'location', 'kitType', 'status', 'priority', 'technicianId', 'notes', 'scheduledDate', 'gpsCoordinates', 'powerCapacity', 'roofType', 'components', 'totalPrice'];
     const data = {};
     allowedFields.forEach(f => { if (req.body[f] !== undefined) data[f] = req.body[f]; });
     const [updated] = await Installation.update(data, {

@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { Resolve, ActivatedRouteSnapshot } from '@angular/router';
 import { Observable, of } from 'rxjs';
-import { map } from 'rxjs/operators';
+import { map, catchError } from 'rxjs/operators';
 import { UserService } from '../services/user.service';
 import { AuthService } from '../services/auth';
 
@@ -18,7 +18,8 @@ export class TechniciansResolver implements Resolve<TechniciansResolved> {
       return of({ technicians: [] });
     }
     return this.userService.getUsers().pipe(
-      map(users => ({ technicians: users }))
+      map(users => ({ technicians: users })),
+      catchError(() => of({ technicians: [] }))
     );
   }
 }

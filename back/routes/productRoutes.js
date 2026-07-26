@@ -24,7 +24,12 @@ const upload = multer({
   limits: { fileSize: 10 * 1024 * 1024 }
 });
 
+const isCloudinaryConfigured = () => Boolean(process.env.CLOUDINARY_CLOUD_NAME && process.env.CLOUDINARY_API_KEY && process.env.CLOUDINARY_API_SECRET);
+
 const uploadToCloudinary = async (filePath) => {
+  if (!isCloudinaryConfigured()) {
+    throw new Error('Cloudinary n\'est pas configuré. Veuillez définir CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY et CLOUDINARY_API_SECRET.');
+  }
   const result = await cloudinary.uploader.upload(filePath, {
     folder: 'easy-erp/produits',
     resource_type: 'image'
@@ -46,8 +51,17 @@ const isCloudinaryUrl = (url) => url && url.includes('cloudinary.com');
 
 router.get('/', async (req, res) => {
   try {
-    const products = await Product.findAll({ include: [Category, { model: Supplier, attributes: ['id', 'name'] }] });
-    res.json(products);
+    const page = Math.max(1, parseInt(req.query.page) || 1);
+    const limit = Math.min(100, Math.max(1, parseInt(req.query.limit) || 20));
+    const offset = (page - 1) * limit;
+
+    const { count, rows } = await Product.findAndCountAll({
+      include: [Category, { model: Supplier, attributes: ['id', 'name'] }],
+      order: [['createdAt', 'DESC']],
+      limit,
+      offset
+    });
+    res.json({ data: rows, total: count, page, pages: Math.ceil(count / limit) });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }

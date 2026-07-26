@@ -7,6 +7,35 @@
   min-height: 100vh;
 }
 
+.stats-grid {
+  margin-bottom: var(--space-5);
+}
+
+.filters-card {
+  padding: var(--space-4);
+  margin-bottom: var(--space-5);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+}
+
+.filter-group {
+  display: flex;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+  align-items: flex-end;
+}
+
+.filter-group .search-box {
+  flex: 1;
+  min-width: 220px;
+}
+
+.filter-group .form-select {
+  min-width: 180px;
+  flex: 1;
+}
+
 .repairs-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
@@ -190,6 +219,16 @@
 @media (max-width: 768px) {
   .repairs-grid {
     grid-template-columns: 1fr;
+  }
+
+  .filter-group {
+    flex-direction: column;
+  }
+
+  .filter-group .search-box,
+  .filter-group .form-select {
+    min-width: 0;
+    width: 100%;
   }
 }
 

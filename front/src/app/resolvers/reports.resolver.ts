@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { Resolve, ActivatedRouteSnapshot } from '@angular/router';
 import { Observable, of } from 'rxjs';
-import { map } from 'rxjs/operators';
+import { map, catchError } from 'rxjs/operators';
 import { ReportsService } from '../services/reports.service';
 import { AuthService } from '../services/auth';
 
@@ -18,7 +18,8 @@ export class ReportsResolver implements Resolve<ReportsResolved> {
       return of({ data: null });
     }
     return this.reportsService.getDashboard().pipe(
-      map(data => ({ data }))
+      map(data => ({ data })),
+      catchError(() => of({ data: null }))
     );
   }
 }

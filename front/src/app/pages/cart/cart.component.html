@@ -1,88 +1,90 @@
 <div class="cart-page">
-  <div class="page-header">
-    <h1>🛒 Votre Panier</h1>
-  </div>
-
-  <!-- Empty Cart State -->
-  <div *ngIf="cartItems.length === 0" class="empty-cart">
+  <!-- Empty Cart -->
+  <div *ngIf="cartItems.length === 0" class="empty-state" style="margin: var(--space-12) 0;">
     <div class="empty-icon">🛒</div>
-    <h2>Votre panier est vide</h2>
-    <p>Commencez vos achats pour remplir votre panier</p>
-    <button class="btn btn-primary" (click)="continueShopping()">
-      Continuer les achats
-    </button>
+    <h3 class="empty-title">Votre panier est vide</h3>
+    <p class="empty-text">Commencez vos achats pour remplir votre panier</p>
+    <button class="btn btn-primary" (click)="continueShopping()">Continuer les achats</button>
   </div>
 
   <!-- Cart Content -->
   <div *ngIf="cartItems.length > 0" class="cart-content">
-    <div class="cart-items-container">
-      <h2 class="items-header">Articles ({{ cartItems.length }})</h2>
-      
-      <div class="cart-items">
-        <div class="cart-item" *ngFor="let item of cartItems">
-          <div class="item-image">
-            <img [src]="getProductImage(item.product.photo)" *ngIf="item.product.photo" alt="Product" />
-            <span *ngIf="!item.product.photo" class="placeholder">📦</span>
-          </div>
+    <!-- Items -->
+    <div class="cart-items-section">
+      <div class="card">
+        <div class="card-header">
+          <h3 class="card-title">🛒 Votre Panier ({{ cartItems.length }})</h3>
+        </div>
+        <div class="cart-items">
+          <div class="cart-item" *ngFor="let item of cartItems; trackBy: trackByCartItemId">
+            <div class="cart-item-image">
+              <img [src]="getProductImage(item.product.photo)" *ngIf="item.product.photo" alt="{{ item.product.name }}" />
+              <span *ngIf="!item.product.photo" class="placeholder">📦</span>
+            </div>
 
-          <div class="item-details">
-            <h3>{{ item.product.name }}</h3>
-            <p class="category">{{ item.product.Category?.name || 'Général' }}</p>
-            <span class="price">{{ item.product.price | number }} FCFA</span>
-          </div>
+            <div class="cart-item-details">
+              <h4>{{ item.product.name }}</h4>
+              <span class="badge badge-neutral">{{ item.product.Category?.name || 'Général' }}</span>
+              <span class="cart-item-price">{{ item.product.price | number }} FCFA</span>
+            </div>
 
-          <div class="item-quantity">
-            <button class="qty-btn" (click)="updateQuantity(item, item.quantity - 1)">−</button>
-            <input type="number" [(ngModel)]="item.quantity" (change)="updateQuantity(item, item.quantity)" />
-            <button class="qty-btn" (click)="updateQuantity(item, item.quantity + 1)">+</button>
-          </div>
+            <div class="cart-item-quantity">
+              <button class="qty-btn" (click)="updateQuantity(item, item.quantity - 1)">−</button>
+              <span class="qty-value">{{ item.quantity }}</span>
+              <button class="qty-btn" (click)="updateQuantity(item, item.quantity + 1)">+</button>
+            </div>
 
-          <div class="item-total">
-            {{ (item.product.price * item.quantity) | number }} FCFA
-          </div>
+            <div class="cart-item-total">
+              <strong>{{ (item.product.price * item.quantity) | number }} FCFA</strong>
+            </div>
 
-          <button class="remove-btn" (click)="removeItem(item.product.id!)">
-            🗑️
-          </button>
+            <button class="btn btn-ghost btn-sm cart-item-remove" (click)="removeItem(item.product.id!)" title="Supprimer">
+              🗑️
+            </button>
+          </div>
         </div>
       </div>
     </div>
 
-    <!-- Order Summary -->
-    <div class="order-summary">
-      <h2>Résumé de la commande</h2>
+    <!-- Summary -->
+    <div class="cart-summary-section">
+      <div class="card">
+        <div class="card-header">
+          <h3 class="card-title">Résumé</h3>
+        </div>
+        <div class="card-body">
+          <div class="summary-rows">
+            <div class="summary-row">
+              <span class="summary-label">Sous-total</span>
+              <span class="summary-value">{{ subtotal | number }} FCFA</span>
+            </div>
+            <div class="summary-row">
+              <span class="summary-label">TVA (18%)</span>
+              <span class="summary-value">{{ tax | number }} FCFA</span>
+            </div>
+            <div class="summary-row">
+              <span class="summary-label">Frais d'expédition</span>
+              <span class="summary-value">{{ shippingCost | number }} FCFA</span>
+            </div>
+            <div class="summary-row summary-total">
+              <span class="summary-label">Total</span>
+              <span class="summary-value">{{ total | number }} FCFA</span>
+            </div>
+          </div>
 
-      <div class="summary-row">
-        <span>Sous-total:</span>
-        <span>{{ subtotal | number }} FCFA</span>
-      </div>
+          <div class="cart-actions">
+            <button class="btn btn-secondary btn-block" (click)="continueShopping()">
+              ← Continuer les achats
+            </button>
+            <button class="btn btn-primary btn-lg btn-block" (click)="checkout()">
+              Procéder au paiement →
+            </button>
+          </div>
 
-      <div class="summary-row">
-        <span>TVA (18%):</span>
-        <span>{{ tax | number }} FCFA</span>
-      </div>
-
-      <div class="summary-row">
-        <span>Frais d'expédition:</span>
-        <span>{{ shippingCost | number }} FCFA</span>
-      </div>
-
-      <div class="summary-row total">
-        <span>Total:</span>
-        <span>{{ total | number }} FCFA</span>
-      </div>
-
-      <div class="actions">
-        <button class="btn btn-secondary" (click)="continueShopping()">
-          Continuer les achats
-        </button>
-        <button class="btn btn-primary btn-checkout" (click)="checkout()">
-          Procéder au paiement
-        </button>
-      </div>
-
-      <div class="security-badge">
-        <span>🔒</span> Paiement sécurisé 100%
+          <div class="cart-security">
+            <span>🔒</span> Paiement sécurisé 100%
+          </div>
+        </div>
       </div>
     </div>
   </div>

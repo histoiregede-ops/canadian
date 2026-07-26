@@ -191,10 +191,10 @@ p { line-height: 1.6; }
   color: var(--text-primary);
 }
 
-.chart-wrapper {
-  height: 250px;
-  position: relative;
-}
+  .chart-wrapper {
+    height: var(--space-10);
+    position: relative;
+  }
 
 /* ===== SEARCH & FILTER ===== */
 .search-box {
@@ -214,13 +214,13 @@ p { line-height: 1.6; }
 }
 
 .search-box input {
-  border: none;
-  outline: none;
-  padding: 10px 0;
-  font-size: var(--font-sm);
-  width: 100%;
-  background: transparent;
-  color: var(--text-primary);
+   border: none;
+   outline: none;
+   padding: var(--space-3) 0;
+   font-size: var(--font-sm);
+   width: 100%;
+   background: transparent;
+   color: var(--text-primary);
 }
 
 .filter-bar {

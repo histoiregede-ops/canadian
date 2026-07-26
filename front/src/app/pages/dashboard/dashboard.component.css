@@ -149,6 +149,65 @@
   font-weight: 600;
 }
 
+/* Transfers summary */
+.transfer-summary {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.summary-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: var(--font-sm);
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+
+.summary-row.total {
+  font-weight: 700;
+  font-size: var(--font-lg);
+  color: var(--primary);
+}
+
+.summary-row .sent {
+  color: var(--success);
+  font-weight: 600;
+}
+
+.summary-row .received {
+  color: var(--primary);
+  font-weight: 600;
+}
+
+.summary-row .fees {
+  color: var(--danger);
+  font-weight: 600;
+}
+
+.operator-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.operator-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: var(--font-sm);
+}
+
+.operator-label {
+  font-weight: 600;
+}
+
+.operator-meta {
+  display: flex;
+  gap: var(--space-3);
+  color: var(--text-muted);
+}
+
 .divider {
   height: 1px;
   background: var(--border);
