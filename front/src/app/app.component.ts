@@ -1,5 +1,5 @@
-import { Component, HostListener } from '@angular/core';
-import { RouterOutlet, Router, NavigationEnd } from '@angular/router';
+import { Component, HostListener, OnInit } from '@angular/core';
+import { RouterOutlet, Router, NavigationEnd, NavigationStart } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { SidebarComponent } from './components/sidebar/sidebar.component';
 import { NavbarComponent } from './components/navbar/navbar.component';
@@ -7,13 +7,13 @@ import { FooterComponent } from './components/footer/footer.component';
 import { filter } from 'rxjs';
 
 @Component({
-selector: 'app-root',
+  selector: 'app-root',
   standalone: true,
   imports: [RouterOutlet, CommonModule, SidebarComponent, NavbarComponent, FooterComponent],
   templateUrl: './app.component.html',
   styleUrls: ['./app.component.css']
 })
-export class AppComponent {
+export class AppComponent implements OnInit {
   isPublicPage = false;
   isLoginPage = false;
   sidebarOpen = false;
@@ -23,19 +23,25 @@ export class AppComponent {
 
   constructor(private router: Router) {
     this.checkPublicRoute(this.router.url);
-    this.router.events.pipe(
-      filter(event => event instanceof NavigationEnd)
-    ).subscribe((event: any) => {
-      this.checkPublicRoute(event.url);
-      if (window.innerWidth <= 768) {
-        this.closeSidebar();
+    this.router.events.subscribe(event => {
+      if (event instanceof NavigationEnd || event instanceof NavigationStart) {
+        const url = (event as any).urlAfterRedirects || (event as any).url || this.router.url;
+        this.checkPublicRoute(url);
+        if (window.innerWidth <= 768) {
+          this.closeSidebar();
+        }
       }
     });
   }
 
-private checkPublicRoute(url: string): void {
-    this.isPublicPage = this.sidebarHiddenRoutes.some(route => url.startsWith(route));
-    this.isLoginPage = url.startsWith('/login');
+  ngOnInit(): void {
+    this.checkPublicRoute(this.router.url);
+  }
+
+  private checkPublicRoute(url: string): void {
+    const cleanUrl = url.split('?')[0].split('#')[0];
+    this.isPublicPage = this.sidebarHiddenRoutes.some(route => cleanUrl.startsWith(route));
+    this.isLoginPage = cleanUrl.startsWith('/login');
   }
 
   toggleSidebar(): void {
