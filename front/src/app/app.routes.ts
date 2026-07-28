@@ -23,7 +23,6 @@ import { ClientDashboardComponent } from './pages/client-dashboard/client-dashbo
 import { OrderDetailComponent } from './pages/order-detail/order-detail.component';
 import { ProfileEditComponent } from './pages/profile-edit/profile-edit.component';
 import { ReportsComponent } from './pages/reports/reports.component';
-import { HomeRedirectComponent } from './pages/home-redirect/home-redirect.component';
 import { ClientAuthGuard } from './services/client-auth.guard';
 import { ScanComponent } from './pages/scan/scan.component';
 import { MovementsComponent } from './pages/movements/movements.component';
@@ -52,7 +51,7 @@ import { ReceiptsResolver } from './resolvers/receipts.resolver';
 import { PurchaseOrdersResolver } from './resolvers/purchase-orders.resolver';
 
 export const routes: Routes = [
-  { path: '', component: HomeRedirectComponent },
+  { path: '', redirectTo: '/shop', pathMatch: 'full' },
   { path: 'admin', redirectTo: 'dashboard', pathMatch: 'full' },
   // Admin / Internal Routes
   { path: 'dashboard', component: DashboardComponent, canActivate: [RoleGuard], resolve: { data: DashboardResolver }, data: { roles: ['admin', 'cashier'] } },
