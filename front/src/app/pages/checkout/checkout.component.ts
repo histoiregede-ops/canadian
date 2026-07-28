@@ -184,8 +184,14 @@ export class CheckoutComponent implements OnInit, OnDestroy {
               }).subscribe({
                 next: (initResult) => {
                   if (initResult.success) {
-                    this.successMessage = `✅ Paiement ${PAYMENT_LABELS[this.paymentMethod].name} initié ! Confirmez sur votre téléphone.`;
-                    this.startStatusPolling(initResult.transactionId);
+                    if (initResult.mustRedirect && initResult.paymentUrl) {
+                      // Rediriger vers la page CinetPay pour confirmation
+                      this.successMessage = 'Redirection vers CinetPay...';
+                      window.location.href = initResult.paymentUrl;
+                    } else {
+                      this.successMessage = `✅ Paiement ${PAYMENT_LABELS[this.paymentMethod].name} initié ! Confirmez sur votre téléphone.`;
+                      this.startStatusPolling(initResult.transactionId);
+                    }
                   } else {
                     this.errorMessage = initResult.message || 'Le paiement mobile n’a pas pu être initié. Réessayez.';
                     this.processing = false;

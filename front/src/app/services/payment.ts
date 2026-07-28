@@ -32,8 +32,11 @@ export interface InitiatePaymentResponse {
   success: boolean;
   paymentId: string;
   transactionId: string;
+  transactionIdCinet: string;
   paymentUrl: string;
-  token: string;
+  paymentToken: string;
+  notifyToken: string;
+  mustRedirect: boolean;
   status: string;
   message: string;
 }
