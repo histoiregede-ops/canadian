@@ -5,6 +5,7 @@
       <a routerLink="/shop" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }" class="nav-link active">🏠 Boutique</a>
       <a routerLink="/cart" routerLinkActive="active" class="nav-link">🛒 Panier</a>
       <a routerLink="/checkout" routerLinkActive="active" class="nav-link">💳 Paiement</a>
+      <a routerLink="/login" class="nav-link staff-link">👤 Staff</a>
       <a *ngIf="!isCustomerLoggedIn" routerLink="/login" class="nav-link login-link">🔒 Connexion</a>
       <a *ngIf="isCustomerLoggedIn" class="nav-link login-link" (click)="logoutCustomer()" style="cursor:pointer">🚪 Déconnexion</a>
     </div>

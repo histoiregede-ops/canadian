@@ -33,6 +33,19 @@
 .nav-link.active { color: var(--primary); background: var(--primary-bg); }
 .login-link { margin-left: auto; }
 
+.staff-link {
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: var(--space-1) var(--space-3);
+  font-weight: 600;
+  margin-left: auto;
+}
+
+.staff-link:hover {
+  border-color: var(--primary);
+  background: var(--primary-bg) !important;
+}
+
 /* ----- Hero ----- */
 .hero-banner {
   position: relative;
