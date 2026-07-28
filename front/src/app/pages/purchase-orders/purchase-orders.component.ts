@@ -1,8 +1,10 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { ActivatedRoute } from '@angular/router';
 import { PurchaseOrderService, PurchaseOrder, PurchaseOrderItem } from '../../services/purchase-order';
 import { SupplierService, Supplier } from '../../services/supplier';
+import { PurchaseOrdersResolved } from '../../resolvers/purchase-orders.resolver';
 
 @Component({
   selector: 'app-purchase-orders',
@@ -289,16 +291,16 @@ export class PurchaseOrdersComponent implements OnInit {
 
   constructor(
     private poService: PurchaseOrderService,
-    private supplierService: SupplierService
+    private supplierService: SupplierService,
+    private route: ActivatedRoute
   ) {}
 
   ngOnInit(): void {
-    this.loadAll();
-    this.loadOverdue();
-    this.supplierService.getSuppliers().subscribe({
-      next: (s) => this.suppliers = s,
-      error: (err) => console.error('Failed to load suppliers:', err)
-    });
+    const resolved = this.route.snapshot.data['data'] as PurchaseOrdersResolved;
+    this.allOrders = resolved?.allOrders || [];
+    this.overdueOrders = resolved?.overdueOrders || [];
+    this.suppliers = resolved?.suppliers || [];
+    this.loading = false;
   }
 
   selectTab(t: 'all' | 'overdue' | 'received'): void {

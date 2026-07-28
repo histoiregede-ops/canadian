@@ -1,0 +1,297 @@
+<div class="page-container admin-page">
+  <!-- ===== HEADER ===== -->
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">⚙️ Administration</h1>
+      <p class="page-subtitle">Paramètres généraux, utilisateurs, permissions et fonctionnalités</p>
+    </div>
+  </div>
+
+  <!-- ===== TOAST ===== -->
+  <div class="toast" *ngIf="message" [class.toast-success]="message.type === 'success'" [class.toast-error]="message.type === 'error'">
+    <span>{{ message.type === 'success' ? '✅' : '❌' }}</span>
+    <span>{{ message.text }}</span>
+  </div>
+
+  <!-- ===== TABS ===== -->
+  <div class="admin-tabs">
+    <button class="admin-tab" [class.active]="activeTab === 'general'" (click)="activeTab = 'general'">
+      ⚙️ Général
+    </button>
+    <button class="admin-tab" [class.active]="activeTab === 'users'" (click)="activeTab = 'users'">
+      👥 Utilisateurs <span class="tab-badge">{{ users.length }}</span>
+    </button>
+    <button class="admin-tab" [class.active]="activeTab === 'permissions'" (click)="activeTab = 'permissions'">
+      🔐 Permissions
+    </button>
+    <button class="admin-tab" [class.active]="activeTab === 'features'" (click)="activeTab = 'features'">
+      🚀 Fonctionnalités <span class="tab-badge">{{ enabledFeatures }}/{{ features.length }}</span>
+    </button>
+  </div>
+
+  <!-- ============================================================ -->
+  <!-- TAB 1 : GÉNÉRAL -->
+  <!-- ============================================================ -->
+  <div class="tab-content" *ngIf="activeTab === 'general'">
+    <div class="card">
+      <div class="card-header">
+        <h3 class="card-title">🏢 Informations société</h3>
+      </div>
+      <div class="card-body">
+        <form (submit)="saveCompany()" class="settings-form">
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Nom de l'entreprise</label>
+              <input type="text" class="form-input" [(ngModel)]="company.name" name="c_name" required />
+            </div>
+            <div class="form-group">
+              <label class="form-label">Devise</label>
+              <input type="text" class="form-input" [(ngModel)]="company.currency" name="c_currency" />
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Téléphone</label>
+              <input type="text" class="form-input" [(ngModel)]="company.phone" name="c_phone" />
+            </div>
+            <div class="form-group">
+              <label class="form-label">WhatsApp</label>
+              <input type="text" class="form-input" [(ngModel)]="company.whatsapp" name="c_whatsapp" />
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Email</label>
+            <input type="email" class="form-input" [(ngModel)]="company.email" name="c_email" />
+          </div>
+          <div class="form-group">
+            <label class="form-label">Adresse</label>
+            <input type="text" class="form-input" [(ngModel)]="company.address" name="c_address" />
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Ville</label>
+              <input type="text" class="form-input" [(ngModel)]="company.city" name="c_city" />
+            </div>
+            <div class="form-group">
+              <label class="form-label">Pays</label>
+              <input type="text" class="form-input" [(ngModel)]="company.country" name="c_country" />
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">TVA (%)</label>
+              <input type="number" class="form-input" [(ngModel)]="company.taxRate" name="c_tax" min="0" max="100" />
+            </div>
+          </div>
+          <button type="submit" class="btn btn-primary" [disabled]="saving">
+            {{ saving ? '💾 Enregistrement...' : '💾 Enregistrer' }}
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================ -->
+  <!-- TAB 2 : UTILISATEURS -->
+  <!-- ============================================================ -->
+  <div class="tab-content" *ngIf="activeTab === 'users'">
+    <!-- Stats -->
+    <div class="user-stats" *ngIf="!usersLoading">
+      <div class="user-stat-card" *ngFor="let r of roles">
+        <span class="user-stat-icon">{{ r.icon }}</span>
+        <div class="user-stat-info">
+          <span class="user-stat-label">{{ r.label }}</span>
+          <span class="user-stat-count">{{ userCounts(r.value) }}</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="card">
+      <div class="card-body">
+        <div class="user-filters">
+          <input type="text" class="form-input" [(ngModel)]="searchQuery" placeholder="🔍 Rechercher un utilisateur..." />
+          <select class="form-select" [(ngModel)]="roleFilter">
+            <option value="">Tous les rôles</option>
+            <option *ngFor="let r of roles" [value]="r.value">{{ r.icon }} {{ r.label }}</option>
+          </select>
+          <button class="btn btn-primary" (click)="openUserModal()">➕ Nouvel utilisateur</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Loading -->
+    <div class="loading-state" *ngIf="usersLoading">
+      <div class="spinner"></div>
+      <p>Chargement des utilisateurs...</p>
+    </div>
+
+    <!-- Users List -->
+    <div class="card" *ngIf="!usersLoading">
+      <div class="card-header">
+        <h3 class="card-title">👥 Liste des utilisateurs ({{ filteredUsers.length }})</h3>
+      </div>
+      <div class="table-container" *ngIf="filteredUsers.length > 0">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Identifiant</th>
+              <th>Nom complet</th>
+              <th>Email</th>
+              <th>Rôle</th>
+              <th>Statut</th>
+              <th class="th-actions">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let u of filteredUsers; trackBy: trackById">
+              <td><strong>{{ u.username }}</strong></td>
+              <td>{{ u.fullName || '—' }}</td>
+              <td class="text-muted">{{ u.email || '—' }}</td>
+              <td><span class="role-badge" [class]="'role-' + u.role">{{ roleLabel(u.role) }}</span></td>
+              <td>
+                <span class="badge" [class.badge-success]="u.isActive !== false" [class.badge-danger]="u.isActive === false">
+                  {{ u.isActive === false ? '🚫 Bloqué' : '✅ Actif' }}
+                </span>
+              </td>
+              <td class="td-actions">
+                <div class="action-buttons">
+                  <button class="btn-action btn-action-edit" (click)="openUserModal(u)" title="Modifier">✏️</button>
+                  <button class="btn-action" [class.btn-action-warning]="u.isActive !== false" [class.btn-action-success]="u.isActive === false"
+                    (click)="u.isActive === false ? unblockUser(u) : blockUser(u)"
+                    [title]="u.isActive === false ? 'Débloquer' : 'Bloquer'">
+                    {{ u.isActive === false ? '🔓' : '🔒' }}
+                  </button>
+                  <button class="btn-action btn-action-danger" (click)="deleteUser(u)" title="Supprimer">🗑️</button>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="empty-state" *ngIf="filteredUsers.length === 0">
+        <div class="empty-icon-wrapper">👥</div>
+        <h3 class="empty-title">Aucun utilisateur trouvé</h3>
+        <p class="empty-text" *ngIf="searchQuery">Essayez de modifier votre recherche.</p>
+      </div>
+    </div>
+
+    <!-- User Modal -->
+    <div class="modal-overlay" *ngIf="showUserModal" (click)="showUserModal = false">
+      <div class="modal-card" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+          <h3 class="modal-title">{{ editingUser ? '✏️ Modifier' : '➕ Nouvel' }} utilisateur</h3>
+          <button class="modal-close" (click)="showUserModal = false">✕</button>
+        </div>
+        <div class="modal-body">
+          <form (submit)="saveUser()" class="modal-form">
+            <div class="form-group" *ngIf="!editingUser">
+              <label class="form-label">Identifiant *</label>
+              <input type="text" class="form-input" [(ngModel)]="userForm.username" name="u_username" required />
+            </div>
+            <div class="form-group">
+              <label class="form-label">Nom complet</label>
+              <input type="text" class="form-input" [(ngModel)]="userForm.fullName" name="u_name" />
+            </div>
+            <div class="form-group">
+              <label class="form-label">Email</label>
+              <input type="email" class="form-input" [(ngModel)]="userForm.email" name="u_email" />
+            </div>
+            <div class="form-group">
+              <label class="form-label">Mot de passe {{ editingUser ? '(laisser vide pour conserver)' : '*' }}</label>
+              <input type="password" class="form-input" [(ngModel)]="userForm.password" name="u_pass" [required]="!editingUser" />
+            </div>
+            <div class="form-group">
+              <label class="form-label">Rôle *</label>
+              <select class="form-select" [(ngModel)]="userForm.role" name="u_role" required>
+                <option *ngFor="let r of roles" [value]="r.value">{{ r.icon }} {{ r.label }}</option>
+              </select>
+            </div>
+            <div class="modal-footer">
+              <button type="button" class="btn btn-secondary" (click)="showUserModal = false">Annuler</button>
+              <button type="submit" class="btn btn-primary">{{ editingUser ? '💾 Enregistrer' : '➕ Créer' }}</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================ -->
+  <!-- TAB 3 : PERMISSIONS -->
+  <!-- ============================================================ -->
+  <div class="tab-content" *ngIf="activeTab === 'permissions'">
+    <div class="card">
+      <div class="card-header">
+        <h3 class="card-title">🔐 Matrice des permissions</h3>
+        <div class="card-actions">
+          <button class="btn btn-secondary btn-sm" (click)="resetPermissions()">↺ Réinitialiser</button>
+          <button class="btn btn-primary btn-sm" (click)="savePermissions()">💾 Sauvegarder</button>
+        </div>
+      </div>
+      <div class="loading-state" *ngIf="permissionsLoading">
+        <div class="spinner"></div>
+      </div>
+      <div class="table-container" *ngIf="!permissionsLoading && permissions.length > 0">
+        <table class="data-table permissions-table">
+          <thead>
+            <tr>
+              <th class="perm-th-perm">Permission</th>
+              <th *ngFor="let role of permissions" class="perm-th-role">
+                {{ role.roleLabel }}
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let perm of permissions[0]?.permissions; let permIdx = index; trackBy: trackByKey">
+              <td class="perm-label">
+                <span class="perm-icon" [class.perm-enabled]="permissions.some(r => r.permissions[permIdx]?.allowed)">
+                  {{ permissions.some(r => r.permissions[permIdx]?.allowed) ? '✅' : '❌' }}
+                </span>
+                {{ perm.label }}
+              </td>
+              <td *ngFor="let role of permissions; let roleIdx = index" class="perm-cell">
+                <button class="perm-toggle"
+                  [class.perm-allowed]="role.permissions[permIdx]?.allowed"
+                  [class.perm-denied]="!role.permissions[permIdx]?.allowed"
+                  (click)="togglePermission(roleIdx, permIdx)"
+                  [title]="(role.permissions[permIdx]?.allowed ? '✅ Autorisé' : '❌ Bloqué') + ' — Cliquer pour changer'">
+                </button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================ -->
+  <!-- TAB 4 : FONCTIONNALITÉS -->
+  <!-- ============================================================ -->
+  <div class="tab-content" *ngIf="activeTab === 'features'">
+    <div class="card">
+      <div class="card-header">
+        <h3 class="card-title">🚀 Activer / Désactiver les fonctionnalités</h3>
+        <span class="features-count">{{ enabledFeatures }} / {{ features.length }} activées</span>
+      </div>
+      <div class="loading-state" *ngIf="featuresLoading">
+        <div class="spinner"></div>
+      </div>
+      <div class="features-grid" *ngIf="!featuresLoading">
+        <div class="feature-card" *ngFor="let f of features; trackBy: trackByKey"
+          [class.feature-on]="f.enabled"
+          [class.feature-off]="!f.enabled">
+          <div class="feature-icon">{{ f.icon }}</div>
+          <div class="feature-info">
+            <span class="feature-name">{{ f.name }}</span>
+            <span class="feature-desc">{{ f.description }}</span>
+          </div>
+          <label class="switch">
+            <input type="checkbox" [checked]="f.enabled" (change)="toggleFeature(f)" />
+            <span class="switch-slider"></span>
+          </label>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

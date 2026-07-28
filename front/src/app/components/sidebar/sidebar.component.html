@@ -101,10 +101,10 @@
   </nav>
 
   <div class="sidebar-footer">
-    <a routerLink="/settings" routerLinkActive="active" class="nav-item" [class.collapsed]="isCollapsed">
-      <span class="icon">&#x2699;&#xFE0F;</span>
-      <span class="label" [class.hide]="isCollapsed">Paramètres</span>
-      <span class="tooltip" *ngIf="isCollapsed">Paramètres</span>
+    <a *ngIf="user?.role === 'admin'" routerLink="/admin-panel" routerLinkActive="active" class="nav-item" [class.collapsed]="isCollapsed">
+      <span class="icon">⚙️</span>
+      <span class="label" [class.hide]="isCollapsed">Administration</span>
+      <span class="tooltip" *ngIf="isCollapsed">Administration</span>
     </a>
     <button class="nav-item logout-item" [class.collapsed]="isCollapsed" (click)="logout()" title="Déconnexion">
       <span class="icon">🚪</span>

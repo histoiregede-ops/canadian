@@ -1,11 +1,16 @@
-/* Page-specific styles (design-system.css is loaded globally) */
+/* ==========================================
+   📊 Mouvements de Stock — Table & Co.
+   ========================================== */
+
+/* ── Filtres ─────────────────────────────── */
 
 .filters-card {
-  padding: var(--space-4);
-  margin-bottom: var(--space-5);
+  padding: var(--space-4) var(--space-5);
+  margin-bottom: var(--section-gap);
   background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-sm);
 }
 
 .filter-group {
@@ -22,55 +27,263 @@
 
 .filter-group .form-select,
 .filter-group .form-input {
-  min-width: 180px;
+  min-width: 160px;
   flex: 1;
 }
 
+.filter-group .btn {
+  white-space: nowrap;
+}
+
+/* ── Stats ───────────────────────────────── */
+
 .stats-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-  gap: var(--space-5);
-  margin-bottom: var(--space-5);
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: var(--space-4);
+  margin-bottom: var(--section-gap);
 }
 
 .stat-card {
   display: flex;
   align-items: center;
   gap: var(--space-4);
+  padding: var(--space-4) var(--space-5);
+  background: var(--surface);
+  border-radius: var(--radius-xl);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-sm);
+  transition: transform var(--transition-fast), box-shadow var(--transition-fast);
 }
 
-.stat-content {
-  flex: 1;
-  min-width: 0;
+.stat-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
 }
+
+.stat-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: var(--radius-lg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.25rem;
+  flex-shrink: 0;
+}
+
+.stat-icon.info   { background: var(--accent-bg); }
+.stat-icon.success{ background: var(--primary-bg); }
+.stat-icon.warning{ background: var(--mali-gold-light, #FFF8E1); }
+.stat-icon.danger { background: var(--mali-red-light, #FFEBEE); }
+
+.stat-content { flex: 1; min-width: 0; }
+.stat-content .stat-label {
+  font-size: var(--font-xs);
+  color: var(--text-muted);
+  font-weight: 500;
+  margin: 0;
+}
+.stat-content .stat-value {
+  font-size: var(--font-2xl);
+  font-weight: 800;
+  color: var(--text-primary);
+  margin: 2px 0 0;
+  line-height: 1.2;
+}
+
+/* ── Table améliorée ─────────────────────── */
+
+.table-container {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  border-radius: var(--radius-xl);
+  border: 1px solid var(--border);
+  background: var(--surface);
+  box-shadow: var(--shadow-sm);
+  transition: box-shadow var(--transition-base);
+}
+
+.table-container:hover {
+  box-shadow: var(--shadow-md);
+}
+
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--font-sm);
+}
+
+/* Entêtes */
+.data-table thead {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+}
+
+.data-table th {
+  text-align: left;
+  padding: var(--space-3) var(--space-4);
+  font-weight: 700;
+  font-size: var(--font-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-secondary);
+  background: var(--border-light);
+  border-bottom: 2px solid var(--border);
+  white-space: nowrap;
+  user-select: none;
+}
+
+.data-table th:first-child {
+  border-radius: 0; /* évite conflit avec border-radius du container */
+  padding-left: var(--space-5);
+}
+
+.data-table th:last-child {
+  padding-right: var(--space-5);
+}
+
+/* Cellules */
+.data-table td {
+  padding: var(--space-3) var(--space-4);
+  border-bottom: 1px solid var(--border-light);
+  color: var(--text-primary);
+  vertical-align: middle;
+  transition: background var(--transition-fast);
+}
+
+.data-table td:first-child { padding-left: var(--space-5); }
+.data-table td:last-child  { padding-right: var(--space-5); }
+
+/* Lignes alternées */
+.data-table tbody tr:nth-child(even) {
+  background: var(--bg-color);
+}
+
+/* Hover */
+.data-table tbody tr:hover {
+  background: var(--primary-bg);
+}
+
+.data-table tbody tr:hover td {
+  border-bottom-color: var(--primary);
+}
+
+/* Dernière ligne */
+.data-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+/* ── Colonnes spécifiques ────────────────── */
+
+.col-date {
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+  font-size: var(--font-xs);
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+.col-variation {
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+.text-success { color: var(--mali-green, #14A34A); }
+.text-danger  { color: var(--mali-red, #CE1126); }
+
+/* ── Produit dans la cellule ──────────────── */
 
 .product-cell {
   display: flex;
   flex-direction: column;
   gap: 2px;
+  max-width: 240px;
 }
 
 .product-name {
   font-weight: 600;
   color: var(--text-primary);
   font-size: var(--font-sm);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .product-category {
   font-size: var(--font-xs);
   color: var(--text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
+/* ── Badges de raison ────────────────────── */
+
+.reason-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  padding: var(--space-1) var(--space-3);
+  border-radius: 9999px;
+  font-size: var(--font-xs);
+  font-weight: 600;
+  white-space: nowrap;
+  border: 1px solid transparent;
+  transition: all var(--transition-fast);
+}
+
+.reason-restock {
+  background: var(--primary-bg);
+  color: var(--primary-dark);
+  border-color: var(--primary);
+}
+
+.reason-sale {
+  background: var(--accent-bg);
+  color: #1e40af;
+  border-color: var(--accent);
+}
+
+.reason-return {
+  background: var(--mali-gold-light, #FFF8E1);
+  color: #92400e;
+  border-color: var(--mali-gold, #FCD116);
+}
+
+.reason-adjustment {
+  background: #F3E8FF;
+  color: #6b21a8;
+  border-color: #C084FC;
+}
+
+.reason-manual {
+  background: var(--border-light);
+  color: var(--text-secondary);
+  border-color: var(--border);
+}
+
+/* ── Référence & utilisateur ──────────────── */
+
 .reference-cell {
-  font-family: ui-monospace, monospace;
+  font-family: 'SF Mono', ui-monospace, 'Cascadia Code', 'Consolas', monospace;
   font-size: var(--font-xs);
   color: var(--text-muted);
+  max-width: 160px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .user-cell {
   font-size: var(--font-sm);
   color: var(--text-secondary);
+  font-weight: 500;
 }
+
+/* ── Pagination ──────────────────────────── */
 
 .pagination {
   display: flex;
@@ -78,13 +291,50 @@
   align-items: center;
   gap: var(--space-4);
   margin-top: var(--space-6);
-  padding: var(--space-4);
+  padding: var(--space-4) var(--space-5);
+  background: var(--surface);
+  border-radius: var(--radius-xl);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-sm);
 }
 
 .page-info {
   font-size: var(--font-sm);
   color: var(--text-muted);
   font-weight: 600;
+}
+
+/* ── Loading & Empty states ──────────────── */
+
+.loading-state,
+.empty-state {
+  text-align: center;
+  padding: var(--space-12) var(--space-4);
+  background: var(--surface);
+  border-radius: var(--radius-xl);
+  border: 1px dashed var(--border);
+}
+
+.empty-icon {
+  font-size: 3rem;
+  display: block;
+  margin-bottom: var(--space-4);
+}
+
+/* ── Responsive ──────────────────────────── */
+
+@media (max-width: 1024px) {
+  .data-table th {
+    font-size: 0.65rem;
+    padding: var(--space-2) var(--space-3);
+  }
+  .data-table td {
+    padding: var(--space-2) var(--space-3);
+  }
+  .data-table td:first-child { padding-left: var(--space-4); }
+  .data-table td:last-child  { padding-right: var(--space-4); }
+  .data-table th:first-child { padding-left: var(--space-4); }
+  .data-table th:last-child  { padding-right: var(--space-4); }
 }
 
 @media (max-width: 768px) {
@@ -104,13 +354,60 @@
   }
 
   .table-container {
-    overflow-x: auto;
+    border-radius: var(--radius-lg);
+  }
+
+  .data-table {
+    font-size: var(--font-xs);
+  }
+
+  .data-table th,
+  .data-table td {
+    padding: var(--space-2) var(--space-3);
+  }
+
+  .data-table td:first-child { padding-left: var(--space-3); }
+  .data-table td:last-child  { padding-right: var(--space-3); }
+  .data-table th:first-child { padding-left: var(--space-3); }
+  .data-table th:last-child  { padding-right: var(--space-3); }
+
+  .product-cell {
+    max-width: 140px;
   }
 }
 
 @media (max-width: 480px) {
   .stats-grid {
     grid-template-columns: 1fr;
+    gap: var(--space-3);
+  }
+
+  .stat-card {
+    padding: var(--space-3) var(--space-4);
+  }
+
+  .stat-content .stat-value {
+    font-size: var(--font-lg);
+  }
+
+  .pagination {
+    flex-direction: column;
+    gap: var(--space-2);
+    padding: var(--space-3);
+  }
+
+  .pagination .btn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .reason-badge {
+    font-size: 0.6rem;
+    padding: 2px var(--space-2);
+  }
+
+  .reference-cell {
+    max-width: 100px;
   }
 }
 
@@ -126,28 +423,36 @@
     justify-content: center;
   }
 
-  .stat-card {
-    padding: var(--space-3);
-    gap: var(--space-3);
-  }
-
-  .stat-content .stat-value {
-    font-size: var(--font-lg);
-  }
-
   .data-table th,
   .data-table td {
-    padding: var(--space-2);
-    font-size: var(--font-xs);
+    padding: var(--space-1) var(--space-2);
+    font-size: 0.6rem;
   }
 
-  .pagination {
-    flex-direction: column;
-    gap: var(--space-2);
-  }
-
-  .pagination .btn {
-    width: 100%;
-    justify-content: center;
-  }
+  .data-table td:first-child { padding-left: var(--space-2); }
+  .data-table td:last-child  { padding-right: var(--space-2); }
+  .data-table th:first-child { padding-left: var(--space-2); }
+  .data-table th:last-child  { padding-right: var(--space-2); }
 }
+
+/* ── Animations ──────────────────────────── */
+
+@keyframes fadeSlideIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.data-table tbody tr {
+  animation: fadeSlideIn 0.25s ease both;
+}
+
+.data-table tbody tr:nth-child(1) { animation-delay: 0.01s; }
+.data-table tbody tr:nth-child(2) { animation-delay: 0.03s; }
+.data-table tbody tr:nth-child(3) { animation-delay: 0.05s; }
+.data-table tbody tr:nth-child(4) { animation-delay: 0.07s; }
+.data-table tbody tr:nth-child(5) { animation-delay: 0.09s; }
+.data-table tbody tr:nth-child(6) { animation-delay: 0.11s; }
+.data-table tbody tr:nth-child(7) { animation-delay: 0.13s; }
+.data-table tbody tr:nth-child(8) { animation-delay: 0.15s; }
+.data-table tbody tr:nth-child(9) { animation-delay: 0.17s; }
+.data-table tbody tr:nth-child(10){ animation-delay: 0.19s; }

@@ -1,7 +1,8 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable } from 'rxjs';
+import { Observable, of } from 'rxjs';
 import { environment } from '../../environments/environment';
+import { catchError } from 'rxjs/operators';
 
 export interface User {
   id: string;
@@ -9,6 +10,8 @@ export interface User {
   fullName: string;
   email: string;
   role: string;
+  isActive?: boolean;
+  createdAt?: string;
 }
 
 export interface CreateUserRequest {
@@ -28,7 +31,9 @@ export class UserService {
   constructor(private http: HttpClient) { }
 
   getUsers(): Observable<User[]> {
-    return this.http.get<User[]>(this.apiUrl);
+    return this.http.get<User[]>(this.apiUrl).pipe(
+      catchError(() => of([]))
+    );
   }
 
   getUser(id: string): Observable<User> {
@@ -45,6 +50,14 @@ export class UserService {
 
   deleteUser(id: string): Observable<any> {
     return this.http.delete(`${this.apiUrl}/${id}`);
+  }
+
+  blockUser(id: string): Observable<any> {
+    return this.http.put(`${this.apiUrl}/${id}/block`, {});
+  }
+
+  unblockUser(id: string): Observable<any> {
+    return this.http.put(`${this.apiUrl}/${id}/unblock`, {});
   }
 
   registerUser(data: { username: string; password: string; fullName?: string; email?: string; role: string }): Observable<User> {

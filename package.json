@@ -5,6 +5,9 @@
   "scripts": {
     "start": "npm run dev",
     "build": "cd front && npm run build -- --configuration production",
+    "test": "npm run test:back && npm run test:front",
+    "test:back": "cd back && npm run test:all",
+    "test:front": "cd front && npx ng test",
     "start:back": "cd back && node index.js",
     "start:front": "cd front && npm start",
     "db:migrate": "cd back && npx sequelize-cli db:migrate",

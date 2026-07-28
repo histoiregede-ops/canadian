@@ -1,169 +1,378 @@
 <div class="page-container">
+  <!-- ===== HEADER ===== -->
   <div class="page-header">
-    <div>
-      <h1 class="page-title">Transferts Mobile Money</h1>
-      <p class="page-subtitle">Gestion des cabines de transfert et rapport journalier</p>
+    <div class="header-left">
+      <div class="header-badge">
+        <span class="header-flag">🇲🇱</span>
+        <span class="header-country">Mali</span>
+      </div>
+      <div>
+        <h1 class="page-title">Transferts Mobile Money</h1>
+        <p class="page-subtitle">Transferts nationaux &amp; internationaux • Orange Money, Wave, Moov Money</p>
+      </div>
     </div>
+    <button class="btn btn-primary" (click)="loadSummary(); loadTransfers();">
+      <span>🔄</span> Actualiser
+    </button>
   </div>
 
+  <!-- ===== DAILY SUMMARY ===== -->
   <ng-container *ngIf="summary">
-    <div class="stats-row mb-6">
-      <div class="stat-item">
-        <div class="stat-label">Envoyés</div>
-        <div class="stat-num">{{ summary.totalSent | number:'1.0-0' }}</div>
-        <div class="stat-unit">FCFA</div>
+    <div class="summary-grid">
+      <div class="summary-card summary-sent">
+        <div class="summary-icon">💸</div>
+        <div class="summary-content">
+          <span class="summary-label">Envoyés</span>
+          <span class="summary-value">{{ summary.totalSent | number:'1.0-0' }}</span>
+          <span class="summary-currency">FCFA</span>
+        </div>
       </div>
-      <div class="stat-item">
-        <div class="stat-label">Reçus</div>
-        <div class="stat-num">{{ summary.totalReceived | number:'1.0-0' }}</div>
-        <div class="stat-unit">FCFA</div>
+      <div class="summary-card summary-received">
+        <div class="summary-icon">💰</div>
+        <div class="summary-content">
+          <span class="summary-label">Reçus</span>
+          <span class="summary-value">{{ summary.totalReceived | number:'1.0-0' }}</span>
+          <span class="summary-currency">FCFA</span>
+        </div>
       </div>
-      <div class="stat-item">
-        <div class="stat-label">Frais</div>
-        <div class="stat-num">{{ summary.totalFees | number:'1.0-0' }}</div>
-        <div class="stat-unit">FCFA</div>
+      <div class="summary-card summary-fees">
+        <div class="summary-icon">📊</div>
+        <div class="summary-content">
+          <span class="summary-label">Frais</span>
+          <span class="summary-value">{{ summary.totalFees | number:'1.0-0' }}</span>
+          <span class="summary-currency">FCFA</span>
+        </div>
       </div>
-      <div class="stat-item">
-        <div class="stat-label">Transactions</div>
-        <div class="stat-num">{{ summary.count }}</div>
-        <div class="stat-unit">Aujourd'hui</div>
+      <div class="summary-card summary-count">
+        <div class="summary-icon">📋</div>
+        <div class="summary-content">
+          <span class="summary-label">Transactions</span>
+          <span class="summary-value">{{ summary.count }}</span>
+          <span class="summary-currency">Aujourd'hui</span>
+        </div>
       </div>
     </div>
   </ng-container>
 
   <div class="dashboard-grid">
+    <!-- ===== MAIN CONTENT ===== -->
     <div class="dashboard-main">
-      <div class="card mb-4">
+      <!-- Filters -->
+      <div class="card filters-card">
         <div class="card-header">
-          <h3 class="card-title">Filtres</h3>
+          <h3 class="card-title">🔍 Filtres</h3>
           <button class="btn btn-secondary btn-sm" (click)="resetFilters()">Réinitialiser</button>
         </div>
         <div class="card-body">
           <div class="filter-grid">
-            <input type="date" [(ngModel)]="filters.from" class="form-input" />
-            <input type="date" [(ngModel)]="filters.to" class="form-input" />
-            <select [(ngModel)]="filters.operator" class="form-select">
-              <option value="">Opérateur</option>
-              <option value="orange_money">Orange Money</option>
-              <option value="wave">Wave</option>
-              <option value="moov_money">Moov Money</option>
-            </select>
-            <select [(ngModel)]="filters.type" class="form-select">
-              <option value="">Type</option>
-              <option value="sent">Envoyé</option>
-              <option value="received">Reçu</option>
-            </select>
-            <select [(ngModel)]="filters.status" class="form-select">
-              <option value="">Statut</option>
-              <option value="pending">En attente</option>
-              <option value="completed">Complété</option>
-              <option value="failed">Échoué</option>
-              <option value="cancelled">Annulé</option>
-            </select>
-            <button class="btn btn-primary btn-sm" (click)="loadTransfers()">Filtrer</button>
+            <div class="filter-group">
+              <label class="filter-label">Du</label>
+              <input type="date" [(ngModel)]="filters.from" class="form-input" />
+            </div>
+            <div class="filter-group">
+              <label class="filter-label">Au</label>
+              <input type="date" [(ngModel)]="filters.to" class="form-input" />
+            </div>
+            <div class="filter-group">
+              <label class="filter-label">Opérateur</label>
+              <select [(ngModel)]="filters.operator" class="form-select">
+                <option value="">Tous</option>
+                <option value="orange_money">📱 Orange Money</option>
+                <option value="wave">🌊 Wave</option>
+                <option value="moov_money">📞 Moov Money</option>
+              </select>
+            </div>
+            <div class="filter-group">
+              <label class="filter-label">Type</label>
+              <select [(ngModel)]="filters.type" class="form-select">
+                <option value="">Tous</option>
+                <option value="sent">💸 Envoyé</option>
+                <option value="received">💰 Reçu</option>
+              </select>
+            </div>
+            <div class="filter-group">
+              <label class="filter-label">Statut</label>
+              <select [(ngModel)]="filters.status" class="form-select">
+                <option value="">Tous</option>
+                <option value="pending">⏳ En attente</option>
+                <option value="completed">✅ Complété</option>
+                <option value="failed">❌ Échoué</option>
+                <option value="cancelled">🚫 Annulé</option>
+              </select>
+            </div>
+            <div class="filter-group">
+              <label class="filter-label">&nbsp;</label>
+              <button class="btn btn-primary" (click)="loadTransfers()">Filtrer</button>
+            </div>
           </div>
         </div>
       </div>
 
+      <!-- Transfers List -->
       <div class="card">
         <div class="card-header">
-          <h3 class="card-title">Historique des transferts</h3>
+          <h3 class="card-title">📜 Historique des transferts</h3>
+          <span class="transfer-count" *ngIf="!loading && transfers.length > 0">{{ transfers.length }} transfert(s)</span>
         </div>
+
+        <!-- Loading -->
         <div class="loading-state" *ngIf="loading">
-          <div class="spinner spinner-sm"></div>
+          <div class="spinner"></div>
+          <p>Chargement des transferts...</p>
         </div>
+
+        <!-- Empty -->
         <div class="empty-state" *ngIf="!loading && transfers.length === 0">
-          <span class="empty-icon">💸</span>
+          <div class="empty-icon-wrapper">
+            <span class="empty-icon">💸</span>
+          </div>
           <h3 class="empty-title">Aucun transfert</h3>
           <p class="empty-text">Les transferts enregistrés apparaîtront ici.</p>
+          <button class="btn btn-primary btn-sm mt-4" (click)="resetFilters()">Réinitialiser les filtres</button>
         </div>
+
+        <!-- Table -->
         <div class="table-container" *ngIf="!loading && transfers.length > 0">
           <table class="data-table">
             <thead>
               <tr>
                 <th>Date</th>
                 <th>Opérateur</th>
+                <th>Direction</th>
                 <th>Type</th>
                 <th>Montant</th>
                 <th>Frais</th>
-                <th>Téléphone</th>
+                <th>Contact</th>
                 <th>Agent</th>
-                <th>Référence</th>
                 <th>Statut</th>
-                <th>Actions</th>
+                <th class="th-actions">Actions</th>
               </tr>
             </thead>
             <tbody>
-              <tr *ngFor="let t of transfers; trackBy: trackById">
-                <td class="text-muted">{{ t.createdAt | date:'dd/MM/yyyy HH:mm' }}</td>
-                <td>{{ operatorLabel(t.operator) }}</td>
-                <td>{{ t.type === 'sent' ? 'Envoyé' : 'Reçu' }}</td>
-                <td class="amount">{{ t.amount | number:'1.0-0' }}</td>
-                <td class="text-muted">{{ t.fees | number:'1.0-0' }}</td>
-                <td class="text-muted">{{ t.customerPhone || '—' }}</td>
-                <td>{{ t.agentName || '—' }}</td>
-                <td class="text-muted">{{ t.reference || '—' }}</td>
-                <td><span class="badge" [class]="'badge-' + statusClass(t.status)">{{ statusLabel(t.status) }}</span></td>
+              <tr *ngFor="let t of transfers; trackBy: trackById" class="transfer-row">
+                <td class="td-date">
+                  <span class="date-main">{{ t.createdAt | date:'dd/MM' }}</span>
+                  <span class="date-sub">{{ t.createdAt | date:'HH:mm' }}</span>
+                </td>
                 <td>
-                  <button class="btn btn-ghost btn-sm" *ngIf="t.status === 'pending'" (click)="confirm(t.id)">✅</button>
-                  <button class="btn btn-ghost btn-sm" *ngIf="t.status === 'pending'" (click)="fail(t.id)">❌</button>
+                  <span class="operator-badge">
+                    <span class="operator-icon">{{ operatorIcon(t.operator) }}</span>
+                    {{ operatorLabel(t.operator) }}
+                  </span>
+                </td>
+                <td>
+                  <span class="direction-badge" [class.direction-sent]="t.type === 'sent'" [class.direction-received]="t.type === 'received'">
+                    {{ t.type === 'sent' ? '💸 Envoyé' : '💰 Reçu' }}
+                  </span>
+                </td>
+                <td>
+                  <span class="transfer-type-badge" [class.type-national]="!t.transferType || t.transferType === 'national'" [class.type-international]="t.transferType === 'international'">
+                    <span>{{ countryFlag(t.country) }}</span>
+                    {{ transferTypeLabel(t.transferType) }}
+                    <span class="country-name" *ngIf="t.transferType === 'international'">{{ countryName(t.country) }}</span>
+                  </span>
+                </td>
+                <td class="td-amount">
+                  <span class="amount-value">{{ t.amount | number:'1.0-0' }}</span>
+                  <span class="amount-currency">FCFA</span>
+                </td>
+                <td class="td-fees">
+                  <span class="fees-value">{{ t.fees | number:'1.0-0' }}</span>
+                  <span class="fees-currency">FCFA</span>
+                </td>
+                <td class="td-phone">
+                  <span class="phone-value">{{ t.customerPhone || t.recipientPhone || t.senderPhone || '—' }}</span>
+                </td>
+                <td class="td-agent">{{ t.agentName || '—' }}</td>
+                <td>
+                  <span class="badge" [class]="'badge-' + statusClass(t.status)">
+                    <span *ngIf="t.status === 'pending'">⏳</span>
+                    <span *ngIf="t.status === 'completed'">✅</span>
+                    <span *ngIf="t.status === 'failed'">❌</span>
+                    <span *ngIf="t.status === 'cancelled'">🚫</span>
+                    {{ statusLabel(t.status) }}
+                  </span>
+                </td>
+                <td class="td-actions">
+                  <div class="action-buttons" *ngIf="t.status === 'pending'">
+                    <button class="btn-action btn-action-success" (click)="confirm(t.id)" title="Confirmer">
+                      <span>✅</span>
+                    </button>
+                    <button class="btn-action btn-action-danger" (click)="fail(t.id)" title="Marquer comme échoué">
+                      <span>❌</span>
+                    </button>
+                  </div>
+                  <span class="text-muted" *ngIf="t.status !== 'pending'">—</span>
                 </td>
               </tr>
             </tbody>
           </table>
         </div>
+
+        <!-- Pagination -->
+        <div class="pagination" *ngIf="totalPages > 1">
+          <button class="btn btn-secondary btn-sm" [disabled]="page <= 1" (click)="pageChanged(page - 1)">
+            ← Précédent
+          </button>
+          <span class="page-info">Page {{ page }} / {{ totalPages }}</span>
+          <button class="btn btn-secondary btn-sm" [disabled]="page >= totalPages" (click)="pageChanged(page + 1)">
+            Suivant →
+          </button>
+        </div>
       </div>
     </div>
 
+    <!-- ===== SIDEBAR : Nouveau transfert ===== -->
     <div class="dashboard-sidebar">
-      <!-- Quick Create -->
-      <div class="card">
+      <div class="card new-transfer-card">
         <div class="card-header">
-          <h3 class="card-title">Nouveau transfert</h3>
+          <h3 class="card-title">➕ Nouveau transfert</h3>
         </div>
         <div class="card-body">
-          <form (submit)="create()" class="form">
-            <div class="form-group">
+          <form (submit)="create()" class="transfer-form">
+
+            <!-- Type de transfert : National / International -->
+            <div class="form-section">
+              <label class="form-label">Type de transfert</label>
+              <div class="toggle-group">
+                <button type="button"
+                  class="toggle-btn"
+                  [class.active]="form.transferType === 'national'"
+                  (click)="form.transferType = 'national'; onTransferTypeChange()">
+                  <span class="toggle-icon">🇲🇱</span>
+                  <span class="toggle-text">National</span>
+                </button>
+                <button type="button"
+                  class="toggle-btn"
+                  [class.active]="form.transferType === 'international'"
+                  (click)="form.transferType = 'international'; onTransferTypeChange()">
+                  <span class="toggle-icon">🌍</span>
+                  <span class="toggle-text">International</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- Pays de destination (international uniquement) -->
+            <div class="form-section" *ngIf="isInternational">
+              <label class="form-label">Pays de destination</label>
+              <div class="country-selector">
+                <button type="button"
+                  *ngFor="let c of countries"
+                  class="country-btn"
+                  [class.active]="form.country === c.code"
+                  (click)="form.country = c.code; onCountryChange()">
+                  <span>{{ c.flag }}</span>
+                  <span class="country-btn-label">{{ c.name }}</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- Opérateur -->
+            <div class="form-section">
               <label class="form-label">Opérateur *</label>
-              <select [(ngModel)]="form.operator" name="operator" class="form-select" required>
-                <option value="">Sélectionner</option>
-                <option value="orange_money">Orange Money</option>
-                <option value="wave">Wave</option>
-                <option value="moov_money">Moov Money</option>
-              </select>
+              <div class="operator-selector">
+                <button type="button"
+                  *ngFor="let op of availableOperators"
+                  class="operator-btn"
+                  [class.active]="form.operator === op.value"
+                  (click)="selectOperator(op.value)">
+                  <span class="operator-btn-icon">{{ op.icon }}</span>
+                  <span class="operator-btn-label">{{ op.label }}</span>
+                </button>
+              </div>
             </div>
-            <div class="form-group">
-              <label class="form-label">Type *</label>
-              <select [(ngModel)]="form.type" name="type" class="form-select" required>
-                <option value="sent">Envoyé</option>
-                <option value="received">Reçu</option>
-              </select>
+
+            <!-- Direction : Envoyé / Reçu -->
+            <div class="form-section">
+              <label class="form-label">Direction *</label>
+              <div class="toggle-group">
+                <button type="button"
+                  class="toggle-btn"
+                  [class.active]="form.type === 'sent'"
+                  (click)="form.type = 'sent'">
+                  <span class="toggle-icon">💸</span>
+                  <span class="toggle-text">Envoyé</span>
+                </button>
+                <button type="button"
+                  class="toggle-btn"
+                  [class.active]="form.type === 'received'"
+                  (click)="form.type = 'received'">
+                  <span class="toggle-icon">💰</span>
+                  <span class="toggle-text">Reçu</span>
+                </button>
+              </div>
             </div>
-            <div class="form-group">
+
+            <!-- Montant -->
+            <div class="form-section">
               <label class="form-label">Montant *</label>
-              <input type="number" [(ngModel)]="form.amount" name="amount" class="form-input" min="0" step="1" required />
+              <div class="input-with-currency">
+                <input type="number" [(ngModel)]="form.amount" name="amount" class="form-input" min="0" step="1" placeholder="0" required />
+                <span class="input-currency">FCFA</span>
+              </div>
             </div>
-            <div class="form-group">
-              <label class="form-label">Frais</label>
-              <input type="number" [(ngModel)]="form.fees" name="fees" class="form-input" min="0" step="1" />
+
+            <!-- Frais -->
+            <div class="form-section">
+              <div class="fees-header">
+                <label class="form-label">Frais</label>
+                <span class="fees-info" [title]="isInternational ? feeInfo.international : feeInfo.national">ⓘ</span>
+              </div>
+              <div class="input-with-currency">
+                <input type="number" [(ngModel)]="form.fees" name="fees" class="form-input" min="0" step="1" placeholder="0" />
+                <span class="input-currency">FCFA</span>
+              </div>
             </div>
-            <div class="form-group">
-              <label class="form-label">Téléphone</label>
-              <input type="text" [(ngModel)]="form.customerPhone" name="customerPhone" class="form-input" />
+
+            <!-- Téléphone expéditeur -->
+            <div class="form-section" *ngIf="form.type === 'sent'">
+              <label class="form-label">Téléphone expéditeur</label>
+              <div class="phone-input-group">
+                <span class="phone-prefix" *ngIf="form.transferType === 'national'">+223</span>
+                <span class="phone-prefix" *ngIf="form.transferType === 'international'">+</span>
+                <input type="text" [(ngModel)]="form.senderPhone" name="senderPhone" class="form-input" placeholder="XX XX XX XX" />
+              </div>
             </div>
-            <div class="form-group">
+
+            <!-- Téléphone destinataire -->
+            <div class="form-section" *ngIf="form.type === 'sent'">
+              <label class="form-label">Téléphone destinataire</label>
+              <div class="phone-input-group">
+                <span class="phone-prefix">+</span>
+                <input type="text" [(ngModel)]="form.recipientPhone" name="recipientPhone" class="form-input" placeholder="Code pays + numéro" />
+              </div>
+            </div>
+
+            <!-- Téléphone client (reçu) -->
+            <div class="form-section" *ngIf="form.type === 'received'">
+              <label class="form-label">Téléphone client</label>
+              <div class="phone-input-group">
+                <span class="phone-prefix">+223</span>
+                <input type="text" [(ngModel)]="form.customerPhone" name="customerPhone" class="form-input" placeholder="XX XX XX XX" />
+              </div>
+            </div>
+
+            <!-- Référence -->
+            <div class="form-section">
               <label class="form-label">Référence</label>
-              <input type="text" [(ngModel)]="form.reference" name="reference" class="form-input" />
+              <input type="text" [(ngModel)]="form.reference" name="reference" class="form-input" placeholder="N° de transaction" />
             </div>
-            <div class="form-group">
+
+            <!-- Agent -->
+            <div class="form-section">
               <label class="form-label">Agent</label>
-              <input type="text" [(ngModel)]="form.agentName" name="agentName" class="form-input" />
+              <input type="text" [(ngModel)]="form.agentName" name="agentName" class="form-input" placeholder="Nom de l'agent" />
             </div>
-            <div class="form-group">
+
+            <!-- Note -->
+            <div class="form-section">
               <label class="form-label">Note</label>
-              <textarea [(ngModel)]="form.note" name="note" class="form-textarea" rows="2"></textarea>
+              <textarea [(ngModel)]="form.note" name="note" class="form-textarea" rows="2" placeholder="Optionnel"></textarea>
             </div>
-            <button type="submit" class="btn btn-primary btn-block">Enregistrer le transfert</button>
+
+            <button type="submit" class="btn btn-primary btn-block btn-submit" [disabled]="!form.operator || !form.amount">
+              💾 Enregistrer le transfert
+            </button>
           </form>
         </div>
       </div>

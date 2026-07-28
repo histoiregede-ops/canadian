@@ -3,17 +3,26 @@ import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../environments/environment';
 
+export type TransferType = 'national' | 'international';
+export type TransferDirection = 'sent' | 'received';
+export type TransferStatus = 'pending' | 'completed' | 'failed' | 'cancelled';
+export type TransferOperator = 'orange_money' | 'moov_money' | 'wave';
+
 export interface Transfer {
   id: string;
-  operator: string;
-  type: 'sent' | 'received';
+  operator: TransferOperator;
+  type: TransferDirection;
+  transferType?: TransferType;
+  country?: string;
   amount: number;
   fees: number;
   customerPhone?: string;
+  senderPhone?: string;
+  recipientPhone?: string;
   agentId?: string;
   agentName?: string;
   reference?: string;
-  status: 'pending' | 'completed' | 'failed' | 'cancelled';
+  status: TransferStatus;
   note?: string;
   createdAt?: string;
   updatedAt?: string;

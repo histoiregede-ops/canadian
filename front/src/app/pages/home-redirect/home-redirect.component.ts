@@ -38,6 +38,7 @@ export class HomeRedirectComponent implements OnInit {
       return;
     }
 
-    this.router.navigate(['/login'], { replaceUrl: true });
+    // Visiteur non connecté → direction le shop !
+    this.router.navigate(['/shop'], { replaceUrl: true });
   }
 }

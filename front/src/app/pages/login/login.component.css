@@ -11,11 +11,9 @@
 /* ----- Brand Side ----- */
 .login-brand {
   flex: 1.2;
-  background: linear-gradient(135deg, var(--primary-dark) 0%, #1A1A2E 50%, var(--accent-dark) 100%);
   background-image: url('/login-background-image.jpeg');
   background-size: cover;
   background-position: center;
-  background-repeat: no-repeat;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -28,7 +26,7 @@
   content: '';
   position: absolute;
   inset: 0;
-  background: linear-gradient(135deg, rgba(142, 0, 0, 0.4) 0%, rgba(26, 26, 46, 0.7) 100%);
+  background: linear-gradient(135deg, rgba(0, 0, 0, 0.65) 0%, rgba(26, 26, 46, 0.5) 100%);
   pointer-events: none;
 }
 
@@ -209,6 +207,29 @@
 .login-form-footer a:hover {
   color: var(--primary-dark);
   text-decoration: underline;
+}
+
+.shop-link {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-5);
+  border-radius: var(--radius-lg);
+  background: var(--primary-bg);
+  border: 1px solid var(--primary);
+  font-size: var(--font-base);
+  font-weight: 700;
+  color: var(--primary) !important;
+  transition: all var(--transition-fast);
+  text-decoration: none !important;
+}
+
+.shop-link:hover {
+  background: var(--primary);
+  color: #fff !important;
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+  text-decoration: none !important;
 }
 
 .back-link {

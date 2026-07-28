@@ -40,6 +40,11 @@ services:
       dockerfile: Dockerfile.frontend
     ports:
       - "80:80"
+    environment:
+      DOMAIN_CLIENT: ${DOMAIN_CLIENT:-shop.monsite.com}
+      DOMAIN_STAFF: ${DOMAIN_STAFF:-staff.monsite.com}
+      BACKEND_HOST: backend
+      BACKEND_PORT: 3000
     depends_on:
       - backend
 

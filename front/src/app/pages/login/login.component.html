@@ -17,11 +17,11 @@
   <div class="login-form-side">
     <div class="login-form-container">
       <div class="login-form-header">
-        <h2>{{ loginMode === 'staff' ? 'Bienvenue' : (isRegisterMode ? 'Créer un compte' : 'Bienvenue') }}</h2>
-        <p>{{ loginMode === 'staff' ? 'Connectez-vous à votre espace' : (isRegisterMode ? 'Inscrivez-vous pour accéder à la boutique' : 'Connectez-vous à votre espace client') }}</p>
+        <h2>{{ loginMode === 'staff' ? 'Accès Staff' : 'Espace Client' }}</h2>
+        <p>{{ loginMode === 'staff' ? 'Connectez-vous à votre espace de travail' : 'Connectez-vous pour finaliser vos achats' }}</p>
       </div>
 
-      <!-- Mode toggle -->
+      <!-- Staff / Client tabs compacts -->
       <div class="mode-tabs">
         <button type="button" class="mode-tab" [class.active]="loginMode === 'staff'" (click)="switchMode('staff')">
           👤 Staff
@@ -31,10 +31,14 @@
         </button>
       </div>
 
-      <!-- Register / Login sub-toggle -->
+      <!-- Client sub-tabs : Connexion / Inscription -->
       <div class="sub-tabs" *ngIf="loginMode === 'client'">
-        <button type="button" class="sub-tab" [class.active]="!isRegisterMode" (click)="toggleRegister()">Connexion</button>
-        <button type="button" class="sub-tab" [class.active]="isRegisterMode" (click)="toggleRegister()">Inscription</button>
+        <button type="button" class="sub-tab" [class.active]="!isRegisterMode" (click)="isRegisterMode = false; errorMessage = ''">
+          Connexion
+        </button>
+        <button type="button" class="sub-tab" [class.active]="isRegisterMode" (click)="isRegisterMode = true; errorMessage = ''">
+          Inscription
+        </button>
       </div>
 
       <!-- Form -->
@@ -79,6 +83,13 @@
           <span>{{ errorMessage }}</span>
         </div>
       </form>
+
+      <!-- Lien vers la boutique -->
+      <div class="login-form-footer">
+        <a routerLink="/shop" class="shop-link">
+          🛍️ Continuer vers la boutique
+        </a>
+      </div>
     </div>
   </div>
 </div>

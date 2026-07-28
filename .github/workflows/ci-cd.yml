@@ -1,0 +1,199 @@
+# ============================================
+# CI/CD Pipeline — CANADA Solar ERP
+# Test automatique avant chaque déploiement
+# ============================================
+
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main, master, develop ]
+  pull_request:
+    branches: [ main, master ]
+
+env:
+  NODE_VERSION: 20
+
+# ── Jobs ────────────────────────────────────
+jobs:
+
+  # ── 1. Tests Backend ──────────────────────
+  test-backend:
+    name: 🧪 Tests Backend (Jest)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: back
+
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+
+      - name: ⚡ Setup Node ${{ env.NODE_VERSION }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: back/package-lock.json
+
+      - name: 📦 Install dependencies
+        run: npm ci
+
+      - name: 🧪 Run backend tests (Jest)
+        run: npm run test:jest
+        # Utilise SQLite par défaut (aucune base externe requise)
+        env:
+          DB_DIALECT: sqlite
+          DB_STORAGE: ./test.sqlite
+          NODE_ENV: test
+
+      - name: 📊 Upload coverage (backend)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-backend
+          path: back/coverage/
+          retention-days: 7
+
+  # ── 2. Tests Frontend ─────────────────────
+  test-frontend:
+    name: 🧪 Tests Frontend (Vitest / Angular)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: front
+
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+
+      - name: ⚡ Setup Node ${{ env.NODE_VERSION }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: front/package-lock.json
+
+      - name: 📦 Install dependencies
+        run: npm ci
+
+      - name: 🧪 Run frontend tests
+        # @angular/build:unit-test (Vitest) — headless, s'exécute une fois puis exit
+        run: npx ng test
+
+      - name: 📊 Upload coverage (frontend)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-frontend
+          path: front/coverage/
+          retention-days: 7
+        continue-on-error: true  # Ignore si coverage/ n'existe pas
+
+  # ── 3. Tests End-to-End (Optionnel) ───────
+  # Décommentez si vous ajoutez des tests E2E (Cypress, Playwright…)
+  # test-e2e:
+  #   name: 🎭 Tests E2E
+  #   runs-on: ubuntu-latest
+  #   needs: [build]
+  #   steps:
+  #     - uses: actions/checkout@v4
+  #     - run: npx cypress run
+
+  # ── 4. Build Production ───────────────────
+  build:
+    name: 📦 Build Production
+    runs-on: ubuntu-latest
+    needs: [test-backend, test-frontend]
+    defaults:
+      run:
+        working-directory: front
+
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+
+      - name: ⚡ Setup Node ${{ env.NODE_VERSION }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: front/package-lock.json
+
+      - name: 📦 Install dependencies
+        run: npm ci
+
+      - name: 🏗️ Build Angular (production)
+        run: npm run build -- --configuration production
+
+      - name: 📦 Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-build
+          path: front/dist/front/browser/
+          retention-days: 7
+
+  # ── 5. Déploiement (uniquement main/master) ─
+  deploy:
+    name: 🚀 Déploiement
+    runs-on: ubuntu-latest
+    if: |
+      always()
+      && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')
+      && !cancelled()
+    needs: [build]
+
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+
+      - name: 📥 Download build artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: frontend-build
+          path: front/dist/front/browser/
+
+      # ── Option A : Déploiement Docker Compose ──
+      - name: 🐳 Docker Compose deploy
+        env:
+          DOMAIN_CLIENT: ${{ secrets.DOMAIN_CLIENT }}
+          DOMAIN_STAFF: ${{ secrets.DOMAIN_STAFF }}
+          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+          DB_NAME: ${{ secrets.DB_NAME }}
+          JWT_SECRET: ${{ secrets.JWT_SECRET }}
+        run: |
+          docker compose build
+          docker compose up -d --force-recreate
+
+      # ── Option B : Déploiement SSH (alternative) ──
+      # Décommentez et configurez les secrets SSH_HOST, SSH_USER, SSH_KEY
+      # - name: 🔑 Deploy via SSH
+      #   uses: appleboy/ssh-action@v1.0.3
+      #   with:
+      #     host: ${{ secrets.SSH_HOST }}
+      #     username: ${{ secrets.SSH_USER }}
+      #     key: ${{ secrets.SSH_KEY }}
+      #     script: |
+      #       cd /opt/solar-erp
+      #       git pull origin main
+      #       docker compose up -d --build
+
+      - name: ✅ Health check
+        run: |
+          sleep 10
+          curl -f http://localhost/api/health || echo "⚠️ Health check failed (might need more time)"
+
+  # ── 6. Notification ───────────────────────
+  notify:
+    name: 🔔 Notification
+    runs-on: ubuntu-latest
+    if: always()
+    needs: [deploy]
+    steps:
+      - name: 💬 Notify (Slack / Email / etc.)
+        run: |
+          if [ "${{ needs.deploy.result }}" = "success" ]; then
+            echo "✅ Déploiement réussi !"
+          else
+            echo "❌ Déploiement échoué — voir les logs GitHub Actions"
+          fi

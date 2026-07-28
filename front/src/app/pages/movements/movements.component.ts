@@ -57,9 +57,12 @@ export class MovementsComponent implements OnInit {
     const resolved = this.route.snapshot.data['data'] as MovementsResolved | undefined;
     this.products = resolved?.products || [];
     this.reasons = resolved?.reasons || [];
-
-    this.loadMovements();
-    this.loadSummary();
+    this.movements = resolved?.movements || [];
+    this.summary = resolved?.summary || null;
+    this.total = resolved?.total || 0;
+    this.pages = resolved?.pages || 1;
+    this.loading = false;
+    this.summaryLoading = false;
 
     this.route.queryParams.subscribe(params => {
       if (params['productId']) {

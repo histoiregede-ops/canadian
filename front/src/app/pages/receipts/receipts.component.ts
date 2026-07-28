@@ -5,6 +5,7 @@ import { HttpClient } from '@angular/common/http';
 import { ActivatedRoute } from '@angular/router';
 import { environment } from '../../../environments/environment';
 import { PdfService } from '../../services/pdf';
+import { ReceiptsResolved } from '../../resolvers/receipts.resolver';
 
 interface OrderItem {
   id: string;
@@ -185,7 +186,9 @@ export class ReceiptsComponent implements OnInit {
   constructor(private http: HttpClient, private pdfService: PdfService, private route: ActivatedRoute) {}
 
   ngOnInit(): void {
-    this.loadOrders();
+    const resolved = this.route.snapshot.data['data'] as ReceiptsResolved;
+    this.orders = resolved?.orders || [];
+    this.loading = false;
 
     this.route.queryParams.subscribe(params => {
       if (params['filter']) {

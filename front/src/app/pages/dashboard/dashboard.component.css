@@ -1,10 +1,8 @@
-/* Page-specific styles (design-system.css is loaded globally) */
+/* ==========================================
+   📊 Tableau de Bord — Dashboard
+   ========================================== */
 
-.dashboard {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-6);
-}
+/* ── Grille principale ───────────────────── */
 
 .dashboard-grid {
   display: grid;
@@ -29,11 +27,40 @@
   margin-top: var(--space-5);
 }
 
-/* Stat cards */
+/* ── Cards: padding contenu sans card-body ── */
+
+.cash-summary,
+.transfer-summary,
+.alert-list {
+  padding: 0 var(--card-padding) var(--card-padding);
+}
+
+/* ── Stats cards ─────────────────────────── */
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--space-5);
+}
+
 .stat-card {
   display: flex;
   align-items: center;
   gap: var(--space-4);
+  padding: var(--space-5);
+  background: var(--surface);
+  border-radius: var(--radius-xl);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-sm);
+  transition: transform var(--transition-fast),
+              box-shadow var(--transition-fast),
+              border-color var(--transition-fast);
+}
+
+.stat-card:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--shadow-lg);
+  border-color: var(--primary-light);
 }
 
 .stat-content {
@@ -45,10 +72,27 @@
   font-size: var(--font-xs);
   font-weight: 600;
   color: var(--text-muted);
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  margin-top: var(--space-1);
 }
 
 .stat-trend.positive {
-  color: var(--success);
+  color: var(--success, #14A34A);
+}
+
+.stat-trend::before {
+  content: '';
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--text-muted);
+}
+
+.stat-trend.positive::before {
+  background: var(--success, #14A34A);
 }
 
 .stat-unit {
@@ -57,11 +101,13 @@
   color: var(--text-muted);
 }
 
-/* Repairs */
+/* ── Liste des réparations ───────────────── */
+
 .repair-list {
   display: flex;
   flex-direction: column;
   gap: var(--space-3);
+  padding: var(--space-1);
 }
 
 .repair-item {
@@ -69,18 +115,35 @@
   align-items: center;
   gap: var(--space-4);
   padding: var(--space-3) var(--space-4);
-  background: var(--border-light);
-  border-radius: var(--radius-md);
-  transition: background var(--transition-fast);
+  background: var(--bg-color);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border-light);
+  transition: all var(--transition-fast);
+  cursor: default;
 }
 
 .repair-item:hover {
-  background: var(--border);
+  background: var(--surface);
+  border-color: var(--border);
+  box-shadow: var(--shadow-sm);
+  transform: translateX(3px);
 }
 
 .repair-icon {
-  font-size: 1.25rem;
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-md);
+  background: var(--border-light);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.15rem;
   flex-shrink: 0;
+  transition: transform var(--transition-fast);
+}
+
+.repair-item:hover .repair-icon {
+  transform: scale(1.1);
 }
 
 .repair-details {
@@ -92,7 +155,7 @@
 }
 
 .repair-details .device {
-  font-weight: 600;
+  font-weight: 700;
   font-size: var(--font-sm);
   color: var(--text-primary);
 }
@@ -104,21 +167,22 @@
 
 .repair-details .issue {
   font-size: var(--font-xs);
-  color: var(--text-muted);
+  color: var(--text-secondary);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  max-width: 260px;
+  max-width: 280px;
 }
 
 .repair-badges {
   display: flex;
   flex-direction: column;
-  gap: var(--space-2);
+  gap: var(--space-1);
   flex-shrink: 0;
 }
 
-/* Cash summary */
+/* ── Caisse du jour ──────────────────────── */
+
 .cash-summary {
   display: flex;
   flex-direction: column;
@@ -128,28 +192,31 @@
 .cash-row {
   display: flex;
   justify-content: space-between;
+  align-items: center;
   font-size: var(--font-sm);
   font-weight: 500;
   color: var(--text-secondary);
 }
 
 .cash-row.total {
-  font-weight: 700;
+  font-weight: 800;
   font-size: var(--font-lg);
   color: var(--primary);
+  padding-top: var(--space-2);
 }
 
 .income {
-  color: var(--success);
-  font-weight: 600;
+  color: var(--success, #14A34A);
+  font-weight: 700;
 }
 
 .expense {
-  color: var(--danger);
-  font-weight: 600;
+  color: var(--danger, #CE1126);
+  font-weight: 700;
 }
 
-/* Transfers summary */
+/* ── Résumé des transferts ───────────────── */
+
 .transfer-summary {
   display: flex;
   flex-direction: column;
@@ -159,36 +226,39 @@
 .summary-row {
   display: flex;
   justify-content: space-between;
+  align-items: center;
   font-size: var(--font-sm);
   font-weight: 500;
   color: var(--text-secondary);
 }
 
 .summary-row.total {
-  font-weight: 700;
+  font-weight: 800;
   font-size: var(--font-lg);
   color: var(--primary);
+  padding-top: var(--space-2);
 }
 
 .summary-row .sent {
-  color: var(--success);
-  font-weight: 600;
+  color: var(--success, #14A34A);
+  font-weight: 700;
 }
 
 .summary-row .received {
   color: var(--primary);
-  font-weight: 600;
+  font-weight: 700;
 }
 
 .summary-row .fees {
-  color: var(--danger);
-  font-weight: 600;
+  color: var(--danger, #CE1126);
+  font-weight: 700;
 }
 
 .operator-list {
   display: flex;
   flex-direction: column;
   gap: var(--space-2);
+  margin-top: var(--space-3);
 }
 
 .operator-item {
@@ -196,6 +266,14 @@
   justify-content: space-between;
   align-items: center;
   font-size: var(--font-sm);
+  padding: var(--space-2) var(--space-3);
+  background: var(--bg-color);
+  border-radius: var(--radius-md);
+  transition: background var(--transition-fast);
+}
+
+.operator-item:hover {
+  background: var(--border-light);
 }
 
 .operator-label {
@@ -206,15 +284,17 @@
   display: flex;
   gap: var(--space-3);
   color: var(--text-muted);
+  font-size: var(--font-xs);
 }
 
 .divider {
   height: 1px;
   background: var(--border);
-  margin: var(--space-1) 0;
+  margin: var(--space-2) 0;
 }
 
-/* Alerts */
+/* ── Alertes stock ───────────────────────── */
+
 .alert-list {
   display: flex;
   flex-direction: column;
@@ -226,44 +306,175 @@
   flex-shrink: 0;
 }
 
-/* Table overrides */
+/* ── Tableau des commandes ───────────────── */
+
+/* Le tableau est dans une .card → on supprime la bordure du container
+   pour éviter le double-border avec la carte */
+.card .table-container {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  border: none;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  margin: 0 calc(-1 * var(--card-padding));
+}
+
+.card .table-container:hover {
+  box-shadow: none;
+}
+
+.card .table-container:last-child {
+  margin-bottom: calc(-1 * var(--card-padding));
+  border-bottom-left-radius: var(--radius-lg);
+  border-bottom-right-radius: var(--radius-lg);
+  overflow: hidden;
+}
+
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--font-sm);
+}
+
+.data-table thead {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+}
+
+.data-table th {
+  text-align: left;
+  padding: var(--space-3) var(--space-4);
+  font-weight: 700;
+  font-size: var(--font-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-secondary);
+  background: var(--border-light);
+  border-bottom: 2px solid var(--border);
+  white-space: nowrap;
+  user-select: none;
+}
+
+.data-table th:first-child {
+  padding-left: var(--space-5);
+}
+
+.data-table th:last-child {
+  padding-right: var(--space-5);
+}
+
+.data-table td {
+  padding: var(--space-3) var(--space-4);
+  border-bottom: 1px solid var(--border-light);
+  color: var(--text-primary);
+  vertical-align: middle;
+}
+
+.data-table td:first-child { padding-left: var(--space-5); }
+.data-table td:last-child  { padding-right: var(--space-5); }
+
+.data-table tbody tr:nth-child(even) {
+  background: var(--bg-color);
+}
+
+.data-table tbody tr:hover {
+  background: var(--primary-bg);
+}
+
+.data-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
 .order-number {
-  font-family: ui-monospace, monospace;
+  font-family: 'SF Mono', ui-monospace, 'Cascadia Code', 'Consolas', monospace;
   font-size: var(--font-sm);
   color: var(--text-muted);
 }
 
 .amount {
-  font-weight: 600;
+  font-weight: 700;
   white-space: nowrap;
   color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
 }
 
-/* Responsive */
+/* ── Loading & empty states ──────────────── */
+
+.loading-state,
+.empty-state {
+  text-align: center;
+  padding: var(--space-8) var(--space-4);
+  background: var(--surface);
+  border-radius: var(--radius-xl);
+  border: 1px dashed var(--border);
+  margin: 0;
+}
+
+.empty-icon {
+  font-size: 2.5rem;
+  display: block;
+  margin-bottom: var(--space-3);
+}
+
+.empty-title {
+  font-size: var(--font-lg);
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0 0 var(--space-1);
+}
+
+.empty-text {
+  font-size: var(--font-sm);
+  color: var(--text-muted);
+  margin: 0;
+}
+
+/* ── Animations ──────────────────────────── */
+
+@keyframes slideUpFade {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.stats-grid .stat-card {
+  animation: slideUpFade 0.4s ease both;
+}
+
+.stats-grid .stat-card:nth-child(1) { animation-delay: 0.02s; }
+.stats-grid .stat-card:nth-child(2) { animation-delay: 0.06s; }
+.stats-grid .stat-card:nth-child(3) { animation-delay: 0.10s; }
+.stats-grid .stat-card:nth-child(4) { animation-delay: 0.14s; }
+
+/* ── Responsive ──────────────────────────── */
+
+@media (max-width: 1200px) {
+  .stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
 @media (max-width: 1024px) {
   .dashboard-grid {
     grid-template-columns: 1fr;
   }
+
+  .dashboard-sidebar {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: var(--space-5);
+  }
 }
 
 @media (max-width: 768px) {
-  .dashboard {
-    gap: var(--space-4);
-  }
-
   .stats-grid {
     grid-template-columns: repeat(2, 1fr);
-    gap: var(--space-3);
+    gap: var(--space-4);
   }
 
   .stat-card {
     padding: var(--space-4);
-  }
-
-  .stat-icon {
-    width: 44px;
-    height: 44px;
-    font-size: 1.25rem;
   }
 
   .stat-value {
@@ -290,6 +501,24 @@
   .dashboard-grid {
     gap: var(--space-4);
   }
+
+  .dashboard-sidebar {
+    grid-template-columns: 1fr;
+  }
+
+  .table-container {
+    margin: 0 calc(var(--card-padding) - var(--space-2)) var(--card-padding);
+  }
+
+  .data-table th,
+  .data-table td {
+    padding: var(--space-2) var(--space-3);
+  }
+
+  .data-table td:first-child { padding-left: var(--space-4); }
+  .data-table td:last-child  { padding-right: var(--space-4); }
+  .data-table th:first-child { padding-left: var(--space-4); }
+  .data-table th:last-child  { padding-right: var(--space-4); }
 }
 
 @media (max-width: 480px) {
@@ -298,7 +527,8 @@
   }
 
   .stat-card {
-    padding: var(--space-3);
+    padding: var(--space-3) var(--space-4);
+    gap: var(--space-3);
   }
 
   .stat-icon {
@@ -312,11 +542,13 @@
   }
 
   .repair-item {
-    padding: var(--space-2);
+    padding: var(--space-2) var(--space-3);
     gap: var(--space-2);
   }
 
   .repair-icon {
+    width: 36px;
+    height: 36px;
     font-size: 1rem;
   }
 
@@ -333,20 +565,43 @@
     padding: 2px 6px;
     font-size: 0.65rem;
   }
+
+  .cash-row.total,
+  .summary-row.total {
+    font-size: var(--font-base);
+  }
+
+  .data-table {
+    font-size: var(--font-xs);
+  }
+
+  .data-table th,
+  .data-table td {
+    padding: var(--space-2);
+  }
+
+  .data-table td:first-child { padding-left: var(--space-3); }
+  .data-table td:last-child  { padding-right: var(--space-3); }
+  .data-table th:first-child { padding-left: var(--space-3); }
+  .data-table th:last-child  { padding-right: var(--space-3); }
+
+  .order-number {
+    font-size: var(--font-xs);
+  }
+
+  .amount {
+    font-size: var(--font-sm);
+  }
+
+  .empty-icon {
+    font-size: 2rem;
+  }
 }
 
 @media (max-width: 360px) {
-  .dashboard {
-    gap: var(--space-3);
-  }
-
-  .stats-grid {
-    gap: var(--space-2);
-  }
-
   .stat-card {
-    padding: var(--space-2);
-    gap: var(--space-3);
+    padding: var(--space-2) var(--space-3);
+    gap: var(--space-2);
   }
 
   .stat-icon {
@@ -380,11 +635,9 @@
     gap: var(--space-2);
   }
 
-  .order-number {
-    font-size: var(--font-xs);
-  }
-
-  .amount {
-    font-size: var(--font-sm);
+  .data-table th,
+  .data-table td {
+    padding: var(--space-1) var(--space-2);
+    font-size: 0.6rem;
   }
 }

@@ -109,7 +109,7 @@ export class PdfService {
 
     // Cachet / Stamp miniaturisé
     if (cachetData) {
-      const cachetSize = 38; // pixels sur le PDF
+      const cachetSize = 22; // pixels sur le PDF
       const cachetX = 148;   // à droite, centré sous le total
       const cachetY = finalY + 12;
       doc.addImage(cachetData, 'PNG', cachetX, cachetY, cachetSize, cachetSize);
