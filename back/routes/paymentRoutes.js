@@ -36,42 +36,49 @@ router.post('/initiate', authenticate, async (req, res) => {
     }
 
     // Carte des canaux CinetPay selon le mode de paiement
-    const CHANNEL_MAP = {
-      orange_money: 'MOBILE_MONEY',
-      moov_money: 'MOBILE_MONEY',
-      wave: 'MOBILE_MONEY'
+    const PAYMENT_METHOD_MAP = {
+      orange_money: 'OM',
+      moov_money: 'MOOV',
+      wave: 'WAVE'
     };
 
     const result = await cinetpay.initiatePayment({
       amount: requestedAmount,
       phoneNumber,
-      channel: CHANNEL_MAP[paymentMethod] || 'MOBILE_MONEY',
+      paymentMethod: PAYMENT_METHOD_MAP[paymentMethod] || '',
       orderId,
-      customerName: customerName || '',
+      customerFirstName: customerName || '',
+      customerLastName: '',
       customerEmail: customerEmail || '',
-      notifyUrl: `${req.protocol}://${req.get('host')}/api/payments/webhook`
+      customerPhone: String(phoneNumber).replace(/[^0-9+]/g, ''),
+      notifyUrl: `${req.protocol}://${req.get('host')}/api/payments/webhook`,
+      successUrl: `${req.protocol}://${req.get('host')}/shop`,
+      failedUrl: `${req.protocol}://${req.get('host')}/checkout`
     });
 
     // Sauvegarder la transaction en base
     const payment = await Payment.create({
       orderId: orderId || null,
-      amount,
+      amount: requestedAmount,
       paymentMethod,
       currency: 'XOF',
       status: 'pending',
       transactionId: result.transactionId,
-      notes: `CinetPay transId: ${result.transactionId} | canal: ${paymentMethod} | notifyToken: ${result.notifyToken || ''}`
+      notes: `CinetPay v1 | transId: ${result.transactionId} | canal: ${paymentMethod} | notifyToken: ${result.notifyToken || ''}`
     });
 
     res.json({
       success: result.success,
       paymentId: payment.id,
       transactionId: result.transactionId,
+      transactionIdCinet: result.transactionIdCinet || '',
       paymentUrl: result.paymentUrl,
-      token: result.token,
+      paymentToken: result.paymentToken || '',
+      notifyToken: result.notifyToken || '',
+      mustRedirect: result.mustRedirect,
       status: result.status,
       message: result.success
-        ? 'Paiement initié. Confirmez sur votre téléphone.'
+        ? (result.mustRedirect ? 'Redirection vers CinetPay...' : 'Paiement initié. Confirmez sur votre téléphone.')
         : `Échec: ${result.message}`
     });
   } catch (error) {
