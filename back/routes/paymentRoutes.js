@@ -60,7 +60,7 @@ router.post('/initiate', authenticate, async (req, res) => {
       currency: 'XOF',
       status: 'pending',
       transactionId: result.transactionId,
-      notes: `CinetPay transId: ${result.transactionId} | canal: ${paymentMethod}`
+      notes: `CinetPay transId: ${result.transactionId} | canal: ${paymentMethod} | notifyToken: ${result.notifyToken || ''}`
     });
 
     res.json({
@@ -85,81 +85,132 @@ router.post('/initiate', authenticate, async (req, res) => {
 });
 
 /**
- * Webhook IPN CinetPay — notifications de statut
+ * Webhook IPN CinetPay — notification de statut
  * POST /api/payments/webhook
+ *
+ * 🔒 RÈGLE DE SÉCURITÉ (doc CinetPay) :
+ *    Ne JAMAIS faire confiance au payload entrant.
+ *    Répondre 200 OK immédiatement, puis re-vérifier
+ *    le statut canonique via GET /v1/payment/{id}.
  */
 router.post('/webhook', express.raw({ type: 'application/json' }), async (req, res) => {
   try {
-    // CinetPay peut envoyer du JSON ou du form-urlencoded
+    // 1. Parser le body (JSON ou form-urlencoded)
     let body = req.body;
-    if (typeof body === 'string') {
-      body = JSON.parse(body);
-    }
+    if (typeof body === 'string') body = JSON.parse(body);
 
     const ipnResult = cinetpay.processIPN(body);
 
-    // Toujours répondre 200 à CinetPay pour accuser réception
-    if (!ipnResult.transactionId) {
+    if (!ipnResult.merchantTransactionId) {
       return res.status(400).json({ error: 'Missing transaction ID' });
     }
 
-    const payment = await Payment.findOne({
-      where: { transactionId: ipnResult.transactionId }
-    });
-
-    if (!payment) {
-      console.warn('[CinetPay IPN] Paiement introuvable pour transId:', ipnResult.transactionId);
-      return res.status(404).json({ error: 'Payment not found' });
-    }
-
-    // Ne traiter que si le statut a changé
-    if (payment.status !== 'pending') {
-      return res.json({ received: true, alreadyProcessed: true });
-    }
-
-    const newStatus = ipnResult.isCompleted ? 'completed' : (ipnResult.isFailed ? 'failed' : payment.status);
-    await payment.update({ status: newStatus });
-
-    if (ipnResult.isCompleted && payment.orderId) {
-      const order = await Order.findByPk(payment.orderId);
-      if (order) {
-        await order.update({
-          status: 'paid',
-          paidAmount: ipnResult.amount || payment.amount
-        });
-        await CashTransaction.create({
-          type: 'income',
-          amount: ipnResult.amount || payment.amount,
-          description: `Paiement CinetPay ${order.orderNumber || order.id}`,
-          category: 'Sales',
-          date: new Date(),
-          customerId: order.customerId || null,
-          customerName: null
-        });
-        if (global.broadcastNotification) {
-          global.broadcastNotification({
-            title: 'Paiement confirmé',
-            body: `Paiement de ${(ipnResult.amount || payment.amount).toLocaleString()} FCFA confirmé pour ${order.orderNumber || order.id}`,
-            type: 'payment_success'
-          });
-        }
-        if (global.sendWebSocketNotification && order.customerId) {
-          global.sendWebSocketNotification(order.customerId, {
-            title: 'Paiement confirmé',
-            body: `Votre paiement de ${(ipnResult.amount || payment.amount).toLocaleString()} FCFA a été confirmé.`,
-            type: 'payment_success'
-          });
-        }
-      }
-    }
-
+    // 2. Répondre 200 immédiatement — CinetPay attend une réponse < 10s
     res.json({ received: true });
+
+    // 3. Traiter la transaction en arrière-plan (asynchrone)
+    setImmediate(async () => {
+      try {
+        await processCinetPayNotification(ipnResult);
+      } catch (err) {
+        console.error('[CinetPay IPN] Erreur traitement différé:', err.message);
+      }
+    });
   } catch (error) {
+    // 4. Même en cas d'erreur, répondre 200 pour éviter les retries inutiles
     console.error('[CinetPay IPN] Erreur:', error.message);
-    // Toujours répondre 200 pour éviter les renvois
     res.json({ received: true, error: error.message });
   }
 });
+
+/**
+ * Traitement sécurisé d'une notification CinetPay.
+ * Re-vérifie TOUJOURS le statut via l'API CinetPay
+ * avant de modifier la commande.
+ */
+async function processCinetPayNotification(ipnResult) {
+  const { merchantTransactionId, orderId: metaOrderId } = ipnResult;
+
+  // ── Idempotence : déjà traité ? ──────────
+  const existing = await Payment.findOne({
+    where: { transactionId: merchantTransactionId }
+  });
+  if (!existing) {
+    console.warn('[CinetPay] Paiement introuvable pour transId:', merchantTransactionId);
+    return;
+  }
+  if (existing.status !== 'pending') {
+    // Déjà traité (completed, failed...) → ignorer
+    return;
+  }
+
+  // ── Vérifier le notify_token (authenticité du webhook) ──
+  const storedToken = extractNotifyToken(existing.notes);
+  if (storedToken && ipnResult.notifyToken && storedToken !== ipnResult.notifyToken) {
+    console.warn('[CinetPay] notify_token mismatch pour transId:', merchantTransactionId);
+    return; // Attaque potentielle → on ignore et on attend le prochain webhook valide
+  }
+
+  // ── Re-vérifier le statut via l'API CinetPay (source de vérité) ──
+  let liveStatus;
+  try {
+    liveStatus = await cinetpay.checkTransactionStatus(merchantTransactionId);
+  } catch (err) {
+    console.error('[CinetPay] Échec vérification statut API:', err.message);
+    return; // On réessaiera au prochain webhook ou polling
+  }
+
+  // ── Mettre à jour selon le statut réel ───
+  const newStatus = liveStatus.isCompleted ? 'completed'
+                  : liveStatus.isFailed    ? 'failed'
+                  : 'pending';
+
+  if (newStatus === 'pending') {
+    // Statut toujours en attente → ne rien faire
+    return;
+  }
+
+  await existing.update({
+    status: newStatus,
+    notes: (existing.notes || '') + ` | API check: ${liveStatus.status}`
+  });
+
+  if (liveStatus.isCompleted && existing.orderId) {
+    const order = await Order.findByPk(existing.orderId);
+    if (order) {
+      await order.update({
+        status: 'paid',
+        paidAmount: liveStatus.amount || existing.amount
+      });
+
+      await CashTransaction.create({
+        type: 'income',
+        amount: liveStatus.amount || existing.amount,
+        description: `Paiement CinetPay ${order.orderNumber || order.id}`,
+        category: 'Sales',
+        date: new Date(),
+        customerId: order.customerId || null,
+        customerName: null
+      });
+
+      if (global.broadcastNotification) {
+        global.broadcastNotification({
+          title: 'Paiement confirmé',
+          body: `Paiement de ${(liveStatus.amount || existing.amount).toLocaleString()} FCFA confirmé pour ${order.orderNumber || order.id}`,
+          type: 'payment_success'
+        });
+      }
+
+      if (global.sendWebSocketNotification && order.customerId) {
+        global.sendWebSocketNotification(order.customerId, {
+          title: 'Paiement confirmé',
+          body: `Votre paiement de ${(liveStatus.amount || existing.amount).toLocaleString()} FCFA a été confirmé.`,
+          type: 'payment_success'
+        });
+      }
+    }
+  }
+}
 
 /**
  * Vérifier le statut d'une transaction CinetPay
@@ -311,5 +362,12 @@ router.post('/verify-mobile-money', authenticate, async (req, res) => {
     res.status(500).json({ success: false, error: error.message });
   }
 });
+
+// ── Helper : extraire notify_token des notes ─────────────
+function extractNotifyToken(notes) {
+  if (!notes) return '';
+  const match = notes.match(/notifyToken:\s*(\S+)/);
+  return match ? match[1] : '';
+}
 
 module.exports = router;
