@@ -36,9 +36,11 @@ export class LoginComponent {
 
     if (this.authService.isLoggedIn()) {
       this.router.navigate([this.getDefaultStaffRoute()]);
+      return;
     }
     if (this.customerAuth.isAuthenticated()) {
       this.router.navigate([this.returnUrl || '/shop']);
+      return;
     }
   }
 
@@ -81,7 +83,8 @@ export class LoginComponent {
       this.authService.login({ username: this.username, password: this.password }).subscribe({
         next: () => {
           this.loading = false;
-          this.router.navigate([this.returnUrl || this.getDefaultStaffRoute()]);
+          // Staff toujours redirigé vers son espace selon son rôle, jamais vers le shop
+          this.router.navigate([this.getDefaultStaffRoute()]);
         },
         error: () => {
           this.loading = false;
