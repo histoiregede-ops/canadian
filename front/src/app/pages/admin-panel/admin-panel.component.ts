@@ -2,6 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
+import { finalize } from 'rxjs/operators';
 import { AdminService, CompanySettings, PermissionMatrix, FeatureFlag } from '../../services/admin.service';
 import { UserService, User } from '../../services/user.service';
 import { ToastService } from '../../services/toast.service';
@@ -70,24 +71,24 @@ export class AdminPanelComponent implements OnInit {
   saveCompany(event?: Event): void {
     event?.preventDefault();
     this.saving = true;
-    this.adminService.updateCompany(this.company).subscribe({
-      next: () => {
-        this.toastService.show('Paramètres enregistrés', 'success');
-        this.saving = false;
-      },
-      error: () => {
-        this.toastService.show('Erreur lors de la sauvegarde', 'error');
-        this.saving = false;
-      }
-    });
+    this.adminService.updateCompany(this.company)
+      .pipe(finalize(() => { this.saving = false; }))
+      .subscribe({
+        next: () => {
+          this.toastService.show('Paramètres enregistrés', 'success');
+        },
+        error: () => {
+          this.toastService.show('Erreur lors de la sauvegarde', 'error');
+        }
+      });
   }
 
   // ------ UTILISATEURS ------
-  private loadUsers(): void {
+  private loadUsers(callback?: () => void): void {
     this.usersLoading = true;
     this.userService.getUsers().subscribe({
-      next: (data) => { this.users = data; this.usersLoading = false; },
-      error: () => { this.users = []; this.usersLoading = false; }
+      next: (data) => { this.users = data; this.usersLoading = false; callback?.(); },
+      error: () => { this.users = []; this.usersLoading = false; callback?.(); }
     });
   }
 
@@ -139,9 +140,10 @@ export class AdminPanelComponent implements OnInit {
 
       this.userService.updateUser(this.editingUser.id, update).subscribe({
         next: () => {
-          this.showUserModal = false;
-          this.loadUsers();
-          this.toastService.show('Utilisateur mis à jour', 'success');
+          this.loadUsers(() => {
+            this.showUserModal = false;
+            this.toastService.show('Utilisateur mis à jour', 'success');
+          });
         },
         error: (err) => this.toastService.show(err.error?.error || 'Erreur modification', 'error')
       });
@@ -154,9 +156,10 @@ export class AdminPanelComponent implements OnInit {
         role: this.userForm.role
       }).subscribe({
         next: () => {
-          this.showUserModal = false;
-          this.loadUsers();
-          this.toastService.show('Utilisateur créé', 'success');
+          this.loadUsers(() => {
+            this.showUserModal = false;
+            this.toastService.show('Utilisateur créé', 'success');
+          });
         },
         error: (err) => this.toastService.show(err.error?.error || 'Erreur création', 'error')
       });
@@ -167,8 +170,9 @@ export class AdminPanelComponent implements OnInit {
     if (!confirm(`Supprimer définitivement l'utilisateur "${user.username}" ?`)) return;
     this.userService.deleteUser(user.id).subscribe({
       next: () => {
-        this.loadUsers();
-        this.toastService.show('Utilisateur supprimé', 'success');
+        this.loadUsers(() => {
+          this.toastService.show('Utilisateur supprimé', 'success');
+        });
       },
       error: () => this.toastService.show('Erreur suppression', 'error')
     });
@@ -178,8 +182,9 @@ export class AdminPanelComponent implements OnInit {
     if (!confirm(`Bloquer l'utilisateur "${user.username}" ?`)) return;
     this.userService.blockUser(user.id).subscribe({
       next: () => {
-        this.loadUsers();
-        this.toastService.show('Utilisateur bloqué', 'success');
+        this.loadUsers(() => {
+          this.toastService.show('Utilisateur bloqué', 'success');
+        });
       },
       error: () => this.toastService.show("Le backend ne supporte pas encore le blocage d'utilisateurs", 'error')
     });
@@ -188,8 +193,9 @@ export class AdminPanelComponent implements OnInit {
   unblockUser(user: User): void {
     this.userService.unblockUser(user.id).subscribe({
       next: () => {
-        this.loadUsers();
-        this.toastService.show('Utilisateur débloqué', 'success');
+        this.loadUsers(() => {
+          this.toastService.show('Utilisateur débloqué', 'success');
+        });
       },
       error: () => this.toastService.show("Le backend ne supporte pas encore le déblocage d'utilisateurs", 'error')
     });

@@ -120,7 +120,7 @@ export class CustomersComponent implements OnInit, OnDestroy {
     });
   }
 
-  loadCustomers(): void {
+  loadCustomers(callback?: () => void): void {
     this.loading = true;
     this.customerService.getCustomers().subscribe({
       next: (data) => {
@@ -131,7 +131,8 @@ export class CustomersComponent implements OnInit, OnDestroy {
       error: (err) => {
         console.error('Error loading customers:', err);
         this.loading = false;
-      }
+      },
+      complete: () => callback?.()
     });
   }
 
@@ -152,10 +153,11 @@ export class CustomersComponent implements OnInit, OnDestroy {
     if (this.isEditing && this.currentCustomer.id) {
       this.customerService.updateCustomer(this.currentCustomer.id, this.currentCustomer).subscribe({
         next: () => {
-          this.loadCustomers();
-          this.showModal = false;
-          this.refreshService.triggerRefresh();
-          this.toastService.show('Client mis à jour', 'success');
+          this.loadCustomers(() => {
+            this.showModal = false;
+            this.refreshService.triggerRefresh();
+            this.toastService.show('Client mis à jour', 'success');
+          });
         },
         error: (err) => {
           console.error('Error updating customer:', err);
@@ -165,10 +167,11 @@ export class CustomersComponent implements OnInit, OnDestroy {
     } else {
       this.customerService.createCustomer(this.currentCustomer).subscribe({
         next: () => {
-          this.loadCustomers();
-          this.showModal = false;
-          this.refreshService.triggerRefresh();
-          this.toastService.show('Client créé', 'success');
+          this.loadCustomers(() => {
+            this.showModal = false;
+            this.refreshService.triggerRefresh();
+            this.toastService.show('Client créé', 'success');
+          });
         },
         error: (err) => {
           console.error('Error creating customer:', err);
@@ -182,9 +185,10 @@ export class CustomersComponent implements OnInit, OnDestroy {
     if (confirm('Voulez-vous supprimer ce client ?')) {
       this.customerService.deleteCustomer(id).subscribe({
         next: () => {
-          this.loadCustomers();
-          this.refreshService.triggerRefresh();
-          this.toastService.show('Client supprimé', 'success');
+          this.loadCustomers(() => {
+            this.refreshService.triggerRefresh();
+            this.toastService.show('Client supprimé', 'success');
+          });
         },
         error: (err) => {
           console.error('Error deleting customer:', err);

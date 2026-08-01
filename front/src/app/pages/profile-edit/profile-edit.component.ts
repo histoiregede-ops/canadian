@@ -2,6 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterModule, Router } from '@angular/router';
+import { finalize } from 'rxjs/operators';
 import { CustomerAuthService, Customer } from '../../services/customer-auth';
 
 @Component({
@@ -129,16 +130,16 @@ export class ProfileEditComponent implements OnInit {
     const body: any = { name: this.form.name, phone: this.form.phone, address: this.form.address, city: this.form.city, country: this.form.country };
     if (this.form.password) body.password = this.form.password;
 
-    this.customerAuth.updateProfile(body).subscribe({
-      next: (updated) => {
-        this.successMsg = 'Profil mis à jour avec succès !';
-        this.form.password = '';
-        this.saving = false;
-      },
-      error: (err) => {
-        this.errorMsg = err.error?.error || 'Erreur lors de la mise à jour';
-        this.saving = false;
-      }
-    });
+    this.customerAuth.updateProfile(body)
+      .pipe(finalize(() => { this.saving = false; }))
+      .subscribe({
+        next: (updated) => {
+          this.successMsg = 'Profil mis à jour avec succès !';
+          this.form.password = '';
+        },
+        error: (err) => {
+          this.errorMsg = err.error?.error || 'Erreur lors de la mise à jour';
+        }
+      });
   }
 }

@@ -104,7 +104,7 @@ export class FinanceComponent implements OnInit, OnDestroy, AfterViewInit {
   ngAfterViewInit(): void {
   }
 
-  loadFinanceData(): void {
+  loadFinanceData(callback?: () => void): void {
     this.financeService.getFinanceData().subscribe({
       next: (response) => {
         this.transactions = response.data;
@@ -117,9 +117,13 @@ export class FinanceComponent implements OnInit, OnDestroy, AfterViewInit {
               this.renderCategoryChart(response.chartData.categories);
             }
           }
+          callback?.();
         }, 100);
       },
-      error: (err) => console.error('Finance loading error:', err)
+      error: (err) => {
+        console.error('Finance loading error:', err);
+        callback?.();
+      }
     });
   }
 
@@ -143,8 +147,7 @@ export class FinanceComponent implements OnInit, OnDestroy, AfterViewInit {
     this.financeService.createTransaction(this.newTransaction).subscribe({
       next: () => {
         this.showModal = false;
-        this.loadFinanceData();
-        this.toastService.show('Transaction enregistrée', 'success');
+        this.loadFinanceData(() => this.toastService.show('Transaction enregistrée', 'success'));
       },
       error: (err) => {
         console.error('Error creating transaction:', err);
@@ -170,11 +173,17 @@ export class FinanceComponent implements OnInit, OnDestroy, AfterViewInit {
     this.loadFlux();
   }
 
-  loadFlux(): void {
-    if (!this.selectedStart || !this.selectedEnd) return;
+  loadFlux(callback?: () => void): void {
+    if (!this.selectedStart || !this.selectedEnd) {
+      callback?.();
+      return;
+    }
     this.financeService.getFluxJournalier(this.selectedStart, this.selectedEnd).subscribe({
-      next: (data) => this.fluxData = data,
-      error: (err) => console.error('Error loading flux journalier:', err)
+      next: (data) => { this.fluxData = data; callback?.(); },
+      error: (err) => {
+        console.error('Error loading flux journalier:', err);
+        callback?.();
+      }
     });
   }
 

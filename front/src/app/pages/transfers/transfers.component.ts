@@ -139,14 +139,14 @@ export class TransfersComponent implements OnInit {
     return this.operatorsByCountry[this.form.country] || this.operatorsByCountry['default'];
   }
 
-  loadSummary(): void {
+  loadSummary(callback?: () => void): void {
     this.transferService.getDailySummary().subscribe({
-      next: (data) => this.summary = data,
-      error: (err) => console.error('Failed to load transfer summary:', err)
+      next: (data) => { this.summary = data; callback?.(); },
+      error: (err) => { console.error('Failed to load transfer summary:', err); callback?.(); }
     });
   }
 
-  loadTransfers(): void {
+  loadTransfers(callback?: () => void): void {
     this.loading = true;
     const params: any = { ...this.filters, page: this.page };
     this.transferService.getTransfers(params).subscribe({
@@ -154,10 +154,12 @@ export class TransfersComponent implements OnInit {
         this.transfers = res.data;
         this.totalPages = res.pages;
         this.loading = false;
+        callback?.();
       },
       error: (err) => {
         console.error('Failed to load transfers:', err);
         this.loading = false;
+        callback?.();
       }
     });
   }
@@ -212,11 +214,12 @@ export class TransfersComponent implements OnInit {
     action.subscribe({
       next: () => {
         const message = this.editing ? 'Transfert mis à jour avec succès' : 'Transfert enregistré avec succès';
-        this.toastService.show(message, 'success');
         this.resetForm();
         this.loadSummary();
-        this.loadTransfers();
-        this.submitting = false;
+        this.loadTransfers(() => {
+          this.toastService.show(message, 'success');
+          this.submitting = false;
+        });
       },
       error: (err) => {
         const message = err.error?.error || 'Erreur lors de l’enregistrement du transfert, veuillez réessayer';
@@ -253,12 +256,13 @@ export class TransfersComponent implements OnInit {
     if (!confirm('Voulez-vous vraiment supprimer ce transfert ?')) return;
     this.transferService.deleteTransfer(id).subscribe({
       next: () => {
-        this.toastService.show('Transfert supprimé', 'success');
         if (this.editing && this.editingTransferId === id) {
           this.resetForm();
         }
         this.loadSummary();
-        this.loadTransfers();
+        this.loadTransfers(() => {
+          this.toastService.show('Transfert supprimé', 'success');
+        });
       },
       error: (err) => {
         const message = err.error?.error || 'Erreur lors de la suppression du transfert, veuillez réessayer';
@@ -292,8 +296,9 @@ export class TransfersComponent implements OnInit {
       .pipe(finalize(() => { this.confirmingId = null; }))
       .subscribe({
         next: () => {
-          this.toastService.show('Transfert validé avec succès', 'success');
-          this.loadTransfers();
+          this.loadTransfers(() => {
+            this.toastService.show('Transfert validé avec succès', 'success');
+          });
         },
         error: (err) => {
           const message = err.error?.error || 'Échec de la validation, veuillez réessayer';
@@ -310,8 +315,9 @@ export class TransfersComponent implements OnInit {
       .pipe(finalize(() => { this.failingId = null; }))
       .subscribe({
         next: () => {
-          this.toastService.show('Transfert rejeté', 'success');
-          this.loadTransfers();
+          this.loadTransfers(() => {
+            this.toastService.show('Transfert rejeté', 'success');
+          });
         },
         error: (err) => {
           const message = err.error?.error || 'Échec du rejet, veuillez réessayer';

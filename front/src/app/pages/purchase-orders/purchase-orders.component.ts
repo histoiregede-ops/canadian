@@ -318,14 +318,15 @@ export class PurchaseOrdersComponent implements OnInit {
     }
   }
 
-  private loadAll(): void {
+  private loadAll(callback?: () => void): void {
     this.loading = true;
     this.poService.getOrders().subscribe({
-      next: (data) => { this.allOrders = data; this.loading = false; },
+      next: (data) => { this.allOrders = data; this.loading = false; callback?.(); },
       error: (err) => { 
         console.error('Failed to load purchase orders:', err); 
         this.allOrders = []; 
         this.loading = false; 
+        callback?.();
       }
     });
   }
@@ -406,7 +407,10 @@ export class PurchaseOrdersComponent implements OnInit {
       : this.poService.createOrder(payload);
 
     action.subscribe({
-      next: () => { this.showModal = false; this.loadAll(); this.toastService.show('Commande enregistrée', 'success'); },
+      next: () => {
+        this.showModal = false;
+        this.loadAll(() => this.toastService.show('Commande enregistrée', 'success'));
+      },
       error: (err) => this.toastService.show(err.error?.error || 'Erreur lors de la sauvegarde', 'error')
     });
   }
@@ -414,7 +418,9 @@ export class PurchaseOrdersComponent implements OnInit {
   deleteOrder(o: PurchaseOrder): void {
     if (!confirm(`Supprimer la commande ${o.orderNumber} ?`)) return;
     this.poService.deleteOrder(o.id!).subscribe({
-      next: () => { this.loadAll(); this.toastService.show('Commande supprimée', 'success'); },
+      next: () => {
+        this.loadAll(() => this.toastService.show('Commande supprimée', 'success'));
+      },
       error: (err) => this.toastService.show(err.error?.error || 'Erreur', 'error')
     });
   }
@@ -428,7 +434,10 @@ export class PurchaseOrdersComponent implements OnInit {
   confirmReceive(): void {
     if (!this.receiveOrder) return;
     this.poService.receiveOrder(this.receiveOrder.id!, this.receiveItems).subscribe({
-      next: () => { this.showReceiveModal = false; this.loadAll(); this.toastService.show('Commande reçue', 'success'); },
+      next: () => {
+        this.showReceiveModal = false;
+        this.loadAll(() => this.toastService.show('Commande reçue', 'success'));
+      },
       error: (err) => this.toastService.show(err.error?.error || 'Erreur lors de la réception', 'error')
     });
   }
@@ -439,8 +448,7 @@ export class PurchaseOrdersComponent implements OnInit {
         if (res.whatsappLink) {
           window.open(res.whatsappLink, '_blank');
         }
-        this.loadAll();
-        this.toastService.show('Relance envoyée', 'success');
+        this.loadAll(() => this.toastService.show('Relance envoyée', 'success'));
       },
       error: (err) => this.toastService.show(err.error?.error || 'Erreur lors de la relance', 'error')
     });

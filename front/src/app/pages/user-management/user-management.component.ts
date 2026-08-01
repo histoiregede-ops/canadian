@@ -75,11 +75,11 @@ export class UserManagementComponent implements OnInit {
     this.authService.logout();
   }
 
-  loadUsers(): void {
+  loadUsers(callback?: () => void): void {
     this.loading = true;
     this.userService.getUsers().subscribe({
-      next: (users) => { this.users = users; this.loading = false; },
-      error: () => { this.loading = false; }
+      next: (users) => { this.users = users; this.loading = false; callback?.(); },
+      error: () => { this.loading = false; callback?.(); }
     });
   }
 
@@ -114,13 +114,23 @@ export class UserManagementComponent implements OnInit {
       const updateData: any = { ...payload };
       if (this.form.password) updateData.password = this.form.password;
       this.userService.updateUser(this.editingUser.id, updateData).subscribe({
-        next: () => { this.showModal = false; this.loadUsers(); this.toastService.show('Utilisateur mis à jour', 'success'); },
+        next: () => {
+          this.loadUsers(() => {
+            this.showModal = false;
+            this.toastService.show('Utilisateur mis à jour', 'success');
+          });
+        },
         error: (err) => this.toastService.show(err.error?.error || 'Erreur lors de la mise à jour', 'error')
       });
     } else {
       if (!this.form.password) { this.toastService.show('Mot de passe requis', 'warning'); return; }
       this.userService.createUser({ ...payload, password: this.form.password }).subscribe({
-        next: () => { this.showModal = false; this.loadUsers(); this.toastService.show('Utilisateur créé', 'success'); },
+        next: () => {
+          this.loadUsers(() => {
+            this.showModal = false;
+            this.toastService.show('Utilisateur créé', 'success');
+          });
+        },
         error: (err) => this.toastService.show(err.error?.error || 'Erreur lors de la création', 'error')
       });
     }
@@ -129,7 +139,11 @@ export class UserManagementComponent implements OnInit {
   deleteUser(user: User): void {
     if (!confirm(`Supprimer l'utilisateur "${user.username}" ?`)) return;
     this.userService.deleteUser(user.id).subscribe({
-      next: () => { this.loadUsers(); this.toastService.show('Utilisateur supprimé', 'success'); },
+      next: () => {
+        this.loadUsers(() => {
+          this.toastService.show('Utilisateur supprimé', 'success');
+        });
+      },
       error: () => this.toastService.show('Erreur lors de la suppression', 'error')
     });
   }

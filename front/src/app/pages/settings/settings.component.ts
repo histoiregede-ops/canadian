@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
+import { finalize } from 'rxjs/operators';
 import { environment } from '../../../environments/environment';
 import { AuthService } from '../../services/auth';
 import { UserService } from '../../services/user.service';
@@ -181,17 +182,17 @@ export class SettingsComponent implements OnInit {
       return;
     }
 
-    this.userService.updateUser(userId, { password: this.passwordForm.newPassword } as any).subscribe({
-      next: () => {
-        this.toastService.show('Mot de passe modifié avec succès', 'success');
-        this.passwordForm = { current: '', newPassword: '', confirm: '' };
-        this.saving = false;
-      },
-      error: (err) => {
-        this.toastService.show(err.error?.error || 'Erreur lors du changement de mot de passe', 'error');
-        this.saving = false;
-      }
-    });
+    this.userService.updateUser(userId, { password: this.passwordForm.newPassword } as any)
+      .pipe(finalize(() => { this.saving = false; }))
+      .subscribe({
+        next: () => {
+          this.toastService.show('Mot de passe modifié avec succès', 'success');
+          this.passwordForm = { current: '', newPassword: '', confirm: '' };
+        },
+        error: (err) => {
+          this.toastService.show(err.error?.error || 'Erreur lors du changement de mot de passe', 'error');
+        }
+      });
   }
 
   saveNotifications(): void {

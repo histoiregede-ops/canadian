@@ -50,7 +50,7 @@ export class SuppliersComponent implements OnInit, OnDestroy {
     this.refreshSub?.unsubscribe();
   }
 
-  loadSuppliers(): void {
+  loadSuppliers(callback?: () => void): void {
     this.loading = true;
     this.supplierService.getSuppliers().subscribe({
       next: (data) => {
@@ -58,8 +58,12 @@ export class SuppliersComponent implements OnInit, OnDestroy {
         this.loadProductCounts();
         this.applyFilter();
         this.loading = false;
+        callback?.();
       },
-      error: () => { this.loading = false; }
+      error: () => {
+        this.loading = false;
+        callback?.();
+      }
     });
   }
 
@@ -106,12 +110,24 @@ export class SuppliersComponent implements OnInit, OnDestroy {
   saveSupplier(): void {
     if (this.isEditing && this.currentSupplier.id) {
       this.supplierService.updateSupplier(this.currentSupplier.id, this.currentSupplier).subscribe({
-        next: () => { this.showModal = false; this.loadSuppliers(); this.refreshService.triggerRefresh(); this.toastService.show('Fournisseur mis à jour', 'success'); },
+        next: () => {
+          this.loadSuppliers(() => {
+            this.showModal = false;
+            this.refreshService.triggerRefresh();
+            this.toastService.show('Fournisseur mis à jour', 'success');
+          });
+        },
         error: (err) => this.toastService.show('Erreur: ' + err.error?.error || err.message, 'error')
       });
     } else {
       this.supplierService.createSupplier(this.currentSupplier).subscribe({
-        next: () => { this.showModal = false; this.loadSuppliers(); this.refreshService.triggerRefresh(); this.toastService.show('Fournisseur créé', 'success'); },
+        next: () => {
+          this.loadSuppliers(() => {
+            this.showModal = false;
+            this.refreshService.triggerRefresh();
+            this.toastService.show('Fournisseur créé', 'success');
+          });
+        },
         error: (err) => this.toastService.show('Erreur: ' + err.error?.error || err.message, 'error')
       });
     }
@@ -120,7 +136,12 @@ export class SuppliersComponent implements OnInit, OnDestroy {
   deleteSupplier(id: string): void {
     if (confirm('Supprimer ce fournisseur ?')) {
       this.supplierService.deleteSupplier(id).subscribe({
-        next: () => { this.loadSuppliers(); this.refreshService.triggerRefresh(); this.toastService.show('Fournisseur supprimé', 'success'); },
+        next: () => {
+          this.loadSuppliers(() => {
+            this.refreshService.triggerRefresh();
+            this.toastService.show('Fournisseur supprimé', 'success');
+          });
+        },
         error: (err) => this.toastService.show('Erreur: ' + err.error?.error || err.message, 'error')
       });
     }

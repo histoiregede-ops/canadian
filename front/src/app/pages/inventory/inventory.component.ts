@@ -1,5 +1,6 @@
 import { Component, OnInit, OnDestroy, AfterViewInit, ViewChild, ElementRef } from '@angular/core';
 import { Subscription } from 'rxjs';
+import { finalize } from 'rxjs/operators';
 
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -234,17 +235,19 @@ export class InventoryComponent implements OnInit, OnDestroy, AfterViewInit {
     });
   }
 
-  loadProducts(): void {
+  loadProducts(callback?: () => void): void {
     this.loading = true;
     this.productService.getProducts().subscribe({
       next: (data) => {
         this.products = data;
         this.loading = false;
         this.updateCharts();
+        callback?.();
       },
       error: (err) => {
         console.error('Error loading products:', err);
         this.loading = false;
+        callback?.();
       },
     });
   }
@@ -389,51 +392,45 @@ export class InventoryComponent implements OnInit, OnDestroy, AfterViewInit {
       this.photoPreview = '';
     };
 
-    if (this.isEditing && this.currentProduct.id) {
-      const fd = this.buildFormData();
-      this.productService
-        .updateProduct(this.currentProduct.id, fd)
-      .subscribe({
-        next: () => {
-          this.loadProducts();
+    const fd = this.buildFormData();
+    const request$ = this.isEditing && this.currentProduct.id
+      ? this.productService.updateProduct(this.currentProduct.id, fd)
+      : this.productService.createProduct(fd);
+
+    request$.pipe(
+      finalize(() => {
+        this.saving = false;
+        this.selectedFile = null;
+        this.photoPreview = '';
+      })
+    ).subscribe({
+      next: () => {
+        this.loadProducts(() => {
           this.showModal = false;
-          this.refreshService.triggerRefresh();
-          this.toastService.show('Produit mis à jour', 'success');
-          finish();
-        },
-        error: (err) => {
-          console.error('Erreur lors de la création:', err);
-          const msg = err.error?.error || err.message || 'Erreur lors de la création du produit.';
-          this.toastService.show(msg, 'error');
-          finish();
-        }
-      });
-    } else {
-      const fd = this.buildFormData();
-      this.productService.createProduct(fd).subscribe({
-        next: () => {
-          this.loadProducts();
-          this.showModal = false;
-          this.toastService.show('Produit créé', 'success');
-          finish();
-        },
-        error: (err) => {
-          console.error('Erreur lors de la création:', err);
-          const msg = err.error?.error || err.message || 'Erreur lors de la création du produit.';
-          this.toastService.show(msg, 'error');
-          finish();
-        }
-      });
-    }
+          if (this.isEditing) {
+            this.refreshService.triggerRefresh();
+            this.toastService.show('Produit mis à jour', 'success');
+          } else {
+            this.toastService.show('Produit créé', 'success');
+          }
+        });
+      },
+      error: (err) => {
+        console.error('Erreur lors de la création:', err);
+        const msg = err.error?.error || err.message || 'Erreur lors de la création du produit.';
+        this.toastService.show(msg, 'error');
+      }
+    });
   }
 
   deleteProduct(id: string): void {
     if (confirm('Êtes-vous sûr de vouloir supprimer ce produit ?')) {
       this.productService.deleteProduct(id).subscribe({
         next: () => {
-          this.loadProducts();
-          this.refreshService.triggerRefresh();
-          this.toastService.show('Produit supprimé', 'success');
+          this.loadProducts(() => {
+            this.refreshService.triggerRefresh();
+            this.toastService.show('Produit supprimé', 'success');
+          });
         },
         error: (err) => {
           console.error('Erreur lors de la suppression:', err);

@@ -65,16 +65,18 @@ export class TechniciansComponent implements OnInit, OnDestroy {
     );
   }
 
-  loadTechnicians(): void {
+  loadTechnicians(callback?: () => void): void {
     this.loading = true;
     this.userService.getUsers().subscribe({
       next: (users) => {
         this.technicians = users.filter(user => user.role === 'technician');
         this.loading = false;
+        callback?.();
       },
       error: (err) => {
         console.error('Error loading technicians:', err);
         this.loading = false;
+        callback?.();
       }
     });
   }
@@ -109,10 +111,11 @@ export class TechniciansComponent implements OnInit, OnDestroy {
         email: this.currentTechnician.email
       }).subscribe({
         next: () => {
-          this.loadTechnicians();
-          this.showModal = false;
-          this.refreshService.triggerRefresh();
-          this.toastService.show('Technicien mis à jour', 'success');
+          this.loadTechnicians(() => {
+            this.showModal = false;
+            this.refreshService.triggerRefresh();
+            this.toastService.show('Technicien mis à jour', 'success');
+          });
         },
         error: (err) => {
           console.error('Error updating technician:', err);
@@ -123,10 +126,11 @@ export class TechniciansComponent implements OnInit, OnDestroy {
       if (!this.currentTechnician.username || !this.currentTechnician.password) return;
       this.userService.createUser(this.currentTechnician).subscribe({
         next: () => {
-          this.loadTechnicians();
-          this.showModal = false;
-          this.refreshService.triggerRefresh();
-          this.toastService.show('Technicien créé', 'success');
+          this.loadTechnicians(() => {
+            this.showModal = false;
+            this.refreshService.triggerRefresh();
+            this.toastService.show('Technicien créé', 'success');
+          });
         },
         error: (err) => {
           console.error('Error saving technician:', err);
@@ -140,9 +144,10 @@ export class TechniciansComponent implements OnInit, OnDestroy {
     if (confirm('Supprimer ce technicien ?')) {
       this.userService.deleteUser(id).subscribe({
         next: () => {
-          this.loadTechnicians();
-          this.refreshService.triggerRefresh();
-          this.toastService.show('Technicien supprimé', 'success');
+          this.loadTechnicians(() => {
+            this.refreshService.triggerRefresh();
+            this.toastService.show('Technicien supprimé', 'success');
+          });
         },
         error: (err) => {
           console.error('Error deleting technician:', err);

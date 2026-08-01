@@ -34,6 +34,27 @@ router.get('/', authenticate, authorize('admin'), async (req, res) => {
     }
 
     const whereClause = filters.length ? `WHERE ${filters.join(' AND ')}` : '';
+
+    // If format=csv requested, return CSV of all matching logs (no pagination)
+    if (req.query.format === 'csv') {
+      const csvQuery = `SELECT createdAt, userId, username, role, entityType, entityId, action, details FROM AuditLogs ${whereClause} ORDER BY createdAt DESC`;
+      const [rows] = await AuditLog.sequelize.query(csvQuery, { replacements, raw: true });
+      // Build CSV
+      const keys = ['createdAt','userId','username','role','entityType','entityId','action','details'];
+      const escape = v => {
+        if (v === null || v === undefined) return '';
+        const s = String(v).replace(/"/g, '""');
+        return (s.indexOf(',') >= 0 || s.indexOf('"') >= 0 || s.indexOf('\n') >= 0) ? '"' + s + '"' : s;
+      };
+      const lines = [keys.join(',')];
+      for (const r of rows) lines.push(keys.map(k => escape(r[k])).join(','));
+      const csv = lines.join('\n');
+      const filename = `audit_logs_${new Date().toISOString().slice(0,10)}.csv`;
+      res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+      res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+      return res.send(csv);
+    }
+
     const query = `SELECT * FROM AuditLogs ${whereClause} ORDER BY createdAt DESC LIMIT ? OFFSET ?`;
     replacements.push(limit, offset);
     const [logs] = await AuditLog.sequelize.query(query, { replacements, raw: true });

@@ -131,16 +131,18 @@ export class RepairsComponent implements OnInit, OnDestroy {
     });
   }
 
-  loadRepairs(): void {
+  loadRepairs(callback?: () => void): void {
     this.loading = true;
     this.repairService.getRepairs().subscribe({
       next: (data) => {
         this.repairs = data;
         this.loading = false;
+        callback?.();
       },
       error: (err) => {
         console.error('Error loading repairs:', err);
         this.loading = false;
+        callback?.();
       }
     });
   }
@@ -162,10 +164,11 @@ export class RepairsComponent implements OnInit, OnDestroy {
     if (this.isEditing && this.currentRepair.id) {
       this.repairService.updateRepair(this.currentRepair.id, this.currentRepair).subscribe({
         next: () => {
-          this.loadRepairs();
-          this.showModal = false;
-          this.refreshService.triggerRefresh();
-          this.toastService.show('Réparation mise à jour', 'success');
+          this.loadRepairs(() => {
+            this.showModal = false;
+            this.refreshService.triggerRefresh();
+            this.toastService.show('Réparation mise à jour', 'success');
+          });
         },
         error: (err) => {
           console.error('Error updating repair:', err);
@@ -175,10 +178,11 @@ export class RepairsComponent implements OnInit, OnDestroy {
     } else {
       this.repairService.createRepair(this.currentRepair).subscribe({
         next: () => {
-          this.loadRepairs();
-          this.showModal = false;
-          this.refreshService.triggerRefresh();
-          this.toastService.show('Réparation ajoutée', 'success');
+          this.loadRepairs(() => {
+            this.showModal = false;
+            this.refreshService.triggerRefresh();
+            this.toastService.show('Réparation ajoutée', 'success');
+          });
         },
         error: (err) => {
           console.error('Error creating repair:', err);
@@ -192,9 +196,10 @@ export class RepairsComponent implements OnInit, OnDestroy {
     if (confirm('Êtes-vous sûr de vouloir supprimer ce dossier de réparation ?')) {
       this.repairService.deleteRepair(id).subscribe({
         next: () => {
-          this.loadRepairs();
-          this.refreshService.triggerRefresh();
-          this.toastService.show('Réparation supprimée', 'success');
+          this.loadRepairs(() => {
+            this.refreshService.triggerRefresh();
+            this.toastService.show('Réparation supprimée', 'success');
+          });
         },
         error: (err) => {
           console.error('Error deleting repair:', err);

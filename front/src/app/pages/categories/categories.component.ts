@@ -85,19 +85,20 @@ export class CategoriesComponent implements OnInit, OnDestroy {
     this.errorMessage = '';
   }
 
-  loadCategories(): void {
+  loadCategories(callback?: () => void): void {
     this.loading = true;
     this.categoryService.getCategories().subscribe({
       next: (data) => {
         this.categories = data;
         this.loading = false;
+        this.loadProductCounts();
       },
       error: (err) => {
         console.error('Error loading categories:', err);
         this.loading = false;
-      }
+      },
+      complete: () => callback?.()
     });
-    this.loadProductCounts();
   }
 
   loadProductCounts(): void {
@@ -131,10 +132,11 @@ export class CategoriesComponent implements OnInit, OnDestroy {
     if (this.isEditing && this.currentCategory.id) {
       this.categoryService.updateCategory(this.currentCategory.id, payload).subscribe({
         next: () => {
-          this.loadCategories();
-          this.showModal = false;
-          this.refreshService.triggerRefresh();
-          this.toastService.show('Catégorie mise à jour', 'success');
+          this.loadCategories(() => {
+            this.showModal = false;
+            this.refreshService.triggerRefresh();
+            this.toastService.show('Catégorie mise à jour', 'success');
+          });
         },
         error: (err) => {
           console.error('Error updating category:', err);
@@ -145,10 +147,11 @@ export class CategoriesComponent implements OnInit, OnDestroy {
     } else {
       this.categoryService.createCategory(payload).subscribe({
         next: () => {
-          this.loadCategories();
-          this.showModal = false;
-          this.refreshService.triggerRefresh();
-          this.toastService.show('Catégorie créée', 'success');
+          this.loadCategories(() => {
+            this.showModal = false;
+            this.refreshService.triggerRefresh();
+            this.toastService.show('Catégorie créée', 'success');
+          });
         },
         error: (err) => {
           console.error('Error creating category:', err);
@@ -165,9 +168,10 @@ export class CategoriesComponent implements OnInit, OnDestroy {
     if (confirm('Êtes-vous sûr de vouloir supprimer cette catégorie ?')) {
       this.categoryService.deleteCategory(category.id).subscribe({
         next: () => {
-          this.loadCategories();
-          this.refreshService.triggerRefresh();
-          this.toastService.show('Catégorie supprimée', 'success');
+          this.loadCategories(() => {
+            this.refreshService.triggerRefresh();
+            this.toastService.show('Catégorie supprimée', 'success');
+          });
         },
         error: (err) => {
           console.error('Error deleting category:', err);

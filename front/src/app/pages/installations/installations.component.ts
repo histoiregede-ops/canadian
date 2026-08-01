@@ -119,7 +119,7 @@ export class InstallationsComponent implements OnInit, OnDestroy {
     });
   }
 
-  loadInstallations(): void {
+  loadInstallations(callback?: () => void): void {
     this.loading = true;
     this.installationService.getInstallations().subscribe({
       next: (data) => {
@@ -129,7 +129,8 @@ export class InstallationsComponent implements OnInit, OnDestroy {
       error: (err) => {
         console.error('Error loading installations:', err);
         this.loading = false;
-      }
+      },
+      complete: () => callback?.()
     });
   }
 
@@ -150,10 +151,11 @@ export class InstallationsComponent implements OnInit, OnDestroy {
     if (this.isEditing && this.currentInstallation.id) {
       this.installationService.updateInstallation(this.currentInstallation.id, this.currentInstallation).subscribe({
         next: () => {
-          this.loadInstallations();
-          this.showModal = false;
-          this.refreshService.triggerRefresh();
-          this.toastService.show('Installation mise à jour', 'success');
+          this.loadInstallations(() => {
+            this.showModal = false;
+            this.refreshService.triggerRefresh();
+            this.toastService.show('Installation mise à jour', 'success');
+          });
         },
         error: (err) => {
           console.error('Error updating installation:', err);
@@ -163,10 +165,11 @@ export class InstallationsComponent implements OnInit, OnDestroy {
     } else {
       this.installationService.createInstallation(this.currentInstallation).subscribe({
         next: () => {
-          this.loadInstallations();
-          this.showModal = false;
-          this.refreshService.triggerRefresh();
-          this.toastService.show('Installation créée', 'success');
+          this.loadInstallations(() => {
+            this.showModal = false;
+            this.refreshService.triggerRefresh();
+            this.toastService.show('Installation créée', 'success');
+          });
         },
         error: (err) => {
           console.error('Error creating installation:', err);
@@ -180,9 +183,10 @@ export class InstallationsComponent implements OnInit, OnDestroy {
     if (confirm('Supprimer ce dossier d\'installation ?')) {
       this.installationService.deleteInstallation(id).subscribe({
         next: () => {
-          this.loadInstallations();
-          this.refreshService.triggerRefresh();
-          this.toastService.show('Installation supprimée', 'success');
+          this.loadInstallations(() => {
+            this.refreshService.triggerRefresh();
+            this.toastService.show('Installation supprimée', 'success');
+          });
         },
         error: (err) => {
           console.error('Error deleting installation:', err);
