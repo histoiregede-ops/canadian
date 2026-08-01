@@ -68,7 +68,7 @@
       </div>
 
       <div class="modal-body">
-        <form (submit)="saveTechnician()" class="form">
+        <form (ngSubmit)="saveTechnician($event)" class="form">
           <div class="form-group">
             <label class="form-label">Nom complet *</label>
             <input type="text" [(ngModel)]="currentTechnician.fullName" name="fullName" required placeholder="Ex: Koffi Amégnigan" class="form-input" />

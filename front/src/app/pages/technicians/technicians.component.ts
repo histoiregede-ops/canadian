@@ -99,7 +99,8 @@ export class TechniciansComponent implements OnInit, OnDestroy {
     this.showModal = true;
   }
 
-  saveTechnician(): void {
+  saveTechnician(event?: Event): void {
+    event?.preventDefault();
     if (!this.currentTechnician.fullName || !this.currentTechnician.email) return;
 
     if (this.isEditing && this.editingId) {

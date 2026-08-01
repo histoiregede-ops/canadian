@@ -184,7 +184,8 @@ export class TransfersComponent implements OnInit {
     this.form.operator = op;
   }
 
-  saveTransfer(): void {
+  saveTransfer(event?: Event): void {
+    event?.preventDefault();
     if (!this.form.operator || !this.form.amount) return;
 
     const payload: any = {

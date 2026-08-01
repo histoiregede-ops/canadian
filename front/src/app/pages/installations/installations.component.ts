@@ -145,7 +145,8 @@ export class InstallationsComponent implements OnInit, OnDestroy {
     this.showModal = true;
   }
 
-  saveInstallation(): void {
+  saveInstallation(event?: Event): void {
+    event?.preventDefault();
     if (this.isEditing && this.currentInstallation.id) {
       this.installationService.updateInstallation(this.currentInstallation.id, this.currentInstallation).subscribe({
         next: () => {

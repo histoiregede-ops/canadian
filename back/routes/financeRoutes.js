@@ -5,6 +5,7 @@ const { Op, fn, col, literal } = require('sequelize');
 const sequelize = require('../config/database');
 
 const { authenticate, authorize } = require('../utils/auth');
+const { logAudit } = require('../utils/audit');
 
 const dateFormat = (colRef) => {
   if (sequelize.getDialect() === 'sqlite') return fn('strftime', '%Y-%m', colRef);
@@ -201,7 +202,13 @@ router.post('/transactions', authenticate, authorize('admin'), async (req, res) 
     allowedFields.forEach(f => { if (req.body[f] !== undefined) data[f] = req.body[f]; });
     data.customerId = customerId || null;
     data.customerName = customerName || null;
-    const transaction = await CashTransaction.create(data);
+    const userMeta = {
+      userId: req.user?.id || null,
+      username: req.user?.username || null,
+      role: req.user?.role || null
+    };
+    const transaction = await CashTransaction.create({ ...data, ...userMeta });
+    await logAudit(req, 'CashTransaction', transaction.id, 'create', { type, amount, category: data.category, customerId: data.customerId, customerName: data.customerName });
     res.status(201).json(transaction);
   } catch (error) {
     res.status(400).json({ error: error.message });
@@ -219,8 +226,14 @@ router.put('/transactions/:id', authenticate, authorize('admin'), async (req, re
     const allowedFields = ['type', 'amount', 'description', 'category', 'date', 'comment', 'customerId', 'customerName'];
     const data = {};
     allowedFields.forEach(f => { if (req.body[f] !== undefined) data[f] = req.body[f]; });
-    const [updated] = await CashTransaction.update(data, { where: { id: req.params.id } });
+    const updateMeta = {
+      userId: req.user?.id || null,
+      username: req.user?.username || null,
+      role: req.user?.role || null
+    };
+    const [updated] = await CashTransaction.update({ ...data, ...updateMeta }, { where: { id: req.params.id } });
     if (!updated) return res.status(404).json({ message: 'Transaction not found' });
+    await logAudit(req, 'CashTransaction', req.params.id, 'update', data);
     const transaction = await CashTransaction.findByPk(req.params.id);
     res.json(transaction);
   } catch (error) {
@@ -231,8 +244,14 @@ router.put('/transactions/:id', authenticate, authorize('admin'), async (req, re
 router.put('/transactions/:id/comment', authenticate, authorize('admin'), async (req, res) => {
   try {
     const { comment } = req.body;
-    const [updated] = await CashTransaction.update({ comment }, { where: { id: req.params.id } });
+    const updateMeta = {
+      userId: req.user?.id || null,
+      username: req.user?.username || null,
+      role: req.user?.role || null
+    };
+    const [updated] = await CashTransaction.update({ comment, ...updateMeta }, { where: { id: req.params.id } });
     if (!updated) return res.status(404).json({ message: 'Transaction not found' });
+    await logAudit(req, 'CashTransaction', req.params.id, 'comment', { comment });
     res.json({ message: 'Comment updated', id: req.params.id, comment });
   } catch (error) {
     res.status(400).json({ error: error.message });
@@ -243,6 +262,7 @@ router.delete('/transactions/:id', authenticate, authorize('admin'), async (req,
   try {
     const deleted = await CashTransaction.destroy({ where: { id: req.params.id } });
     if (!deleted) return res.status(404).json({ message: 'Transaction not found' });
+    await logAudit(req, 'CashTransaction', req.params.id, 'delete', {});
     res.json({ message: 'Transaction deleted' });
   } catch (error) {
     res.status(500).json({ error: error.message });

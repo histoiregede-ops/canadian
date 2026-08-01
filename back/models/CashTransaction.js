@@ -36,6 +36,30 @@ const CashTransaction = sequelize.define('CashTransaction', {
   comment: {
     type: DataTypes.TEXT,
     allowNull: true
+  },
+  userId: {
+    type: DataTypes.STRING,
+    allowNull: true
+  },
+  username: {
+    type: DataTypes.STRING,
+    allowNull: true
+  },
+  role: {
+    type: DataTypes.STRING,
+    allowNull: true
+  },
+  referenceId: {
+    type: DataTypes.STRING,
+    allowNull: true
+  },
+  referenceType: {
+    type: DataTypes.STRING,
+    allowNull: true
+  },
+  notes: {
+    type: DataTypes.TEXT,
+    allowNull: true
   }
 });
 

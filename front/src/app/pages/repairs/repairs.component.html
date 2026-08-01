@@ -135,7 +135,7 @@
       </div>
 
       <div class="modal-body">
-        <form (submit)="saveRepair()" class="form">
+        <form (ngSubmit)="saveRepair($event)" class="form">
           <div class="form-row">
             <div class="form-group">
               <label class="form-label">Marque *</label>

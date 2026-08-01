@@ -134,7 +134,8 @@ export class FinanceComponent implements OnInit, OnDestroy, AfterViewInit {
     this.showModal = true;
   }
 
-  saveTransaction(): void {
+  saveTransaction(event?: Event): void {
+    event?.preventDefault();
     if (!this.newTransaction.description || this.newTransaction.amount <= 0) {
       this.toastService.show('Veuillez remplir tous les champs obligatoires.', 'warning');
       return;

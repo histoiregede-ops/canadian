@@ -101,7 +101,8 @@ export class UserManagementComponent implements OnInit {
     this.showModal = true;
   }
 
-  save(): void {
+  save(event?: Event): void {
+    event?.preventDefault();
     if (!this.form.username) return;
     const payload = {
       username: this.form.username,

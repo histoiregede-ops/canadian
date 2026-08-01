@@ -117,8 +117,7 @@ import { ToastService } from '../../services/toast.service';
           <button class="modal-close" (click)="showModal = false">×</button>
         </div>
         <div class="modal-body">
-          <form (submit)="saveOrder()" class="form">
-            <div class="form-row">
+          <form (ngSubmit)="saveOrder($event)" class="form">
               <div class="form-group">
                 <label class="form-label">Fournisseur *</label>
                 <select [(ngModel)]="form.supplierId" name="supplierId" required class="form-select">
@@ -130,7 +129,6 @@ import { ToastService } from '../../services/toast.service';
                 <label class="form-label">Date livraison prévue</label>
                 <input type="date" [(ngModel)]="form.expectedDate" name="expectedDate" class="form-input" />
               </div>
-            </div>
 
             <div class="form-group">
               <label class="form-label">Notes</label>
@@ -393,7 +391,8 @@ export class PurchaseOrdersComponent implements OnInit {
     return this.form.items.reduce((sum, item) => sum + (item.quantity * item.unitPrice), 0);
   }
 
-  saveOrder(): void {
+  saveOrder(event?: Event): void {
+    event?.preventDefault();
     const payload = {
       supplierId: this.form.supplierId ?? undefined,
       expectedDate: this.form.expectedDate || undefined,

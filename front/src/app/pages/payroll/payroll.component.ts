@@ -1,6 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { ActivatedRoute } from '@angular/router';
 import { UserService, User } from '../../services/user.service';
 import { ToastService } from '../../services/toast.service';
 import * as XLSX from 'xlsx';
@@ -35,10 +36,14 @@ export class PayrollComponent implements OnInit {
   bonuses = 0;
   status: 'pending' | 'paid' = 'pending';
 
-  constructor(private userService: UserService, private toastService: ToastService) {}
+  constructor(private userService: UserService, private toastService: ToastService, private route: ActivatedRoute) {}
 
   ngOnInit(): void {
-    this.loadStaff();
+    const resolved = this.route.snapshot.data['data'] as { staff: User[] } | undefined;
+    this.staff = resolved?.staff || [];
+    if (!this.staff.length) {
+      this.loadStaff();
+    }
   }
 
   loadStaff(): void {

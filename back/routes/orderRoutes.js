@@ -3,6 +3,7 @@ const router = express.Router();
 const { Order, OrderItem, Product, Category, CashTransaction, Customer, Installation } = require('../models');
 const sequelize = require('../config/database');
 const { authenticate, authorize } = require('../utils/auth');
+const { logAudit } = require('../utils/audit');
 
 const computeLoyaltyLevel = (points) => {
   if (points >= 1000) return 'platinum';
@@ -105,8 +106,8 @@ router.post('/', authenticate, async (req, res) => {
       await product.save({ transaction: t });
       const threshold = product.lowStockThreshold || 15;
       await sequelize.query(
-        'INSERT INTO stock_movements (productId, previousQuantity, newQuantity, changeAmount, reason, reference, createdAt) VALUES (?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)',
-        { replacements: [item.productId, prev, product.stockQuantity, product.stockQuantity - prev, 'sale', order.orderNumber] }
+        'INSERT INTO stock_movements (productId, previousQuantity, newQuantity, changeAmount, reason, reference, createdBy, createdByRole, userId, referenceType, createdAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)',
+        { replacements: [item.productId, prev, product.stockQuantity, product.stockQuantity - prev, 'sale', order.orderNumber, req.user?.username || 'system', req.user?.role || null, req.user?.id || null, 'order_sale'] }
       ).catch(err => console.error('Failed to log stock movement:', err));
       if (product.stockQuantity <= threshold && product.stockQuantity > 0 && global.broadcastNotification) {
         global.broadcastNotification({
@@ -153,6 +154,7 @@ router.post('/', authenticate, async (req, res) => {
     }
 
     await t.commit();
+    await logAudit(req, 'Order', order.id, 'create', { orderNumber: order.orderNumber, customerId: resolvedCustomerId, totalAmount, paidAmount, status });
 
     // Auto-create installation for solar kit orders
     try {
@@ -292,6 +294,7 @@ router.put('/:id', authenticate, authorize('admin', 'cashier'), async (req, res)
     const safeData = {};
     allowedOrderFields.forEach(f => { if (req.body[f] !== undefined) safeData[f] = req.body[f]; });
     await order.update(safeData);
+    await logAudit(req, 'Order', order.id, 'update', safeData);
     res.json(order);
   } catch (error) {
     res.status(400).json({ error: error.message });
@@ -315,8 +318,8 @@ router.delete('/:id', authenticate, authorize('admin', 'cashier'), async (req, r
         product.stockQuantity += item.quantity;
         await product.save({ transaction: t });
         await sequelize.query(
-          'INSERT INTO stock_movements (productId, previousQuantity, newQuantity, changeAmount, reason, reference, createdAt) VALUES (?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)',
-          { replacements: [item.productId, prev, product.stockQuantity, product.stockQuantity - prev, 'return', order.orderNumber] }
+          'INSERT INTO stock_movements (productId, previousQuantity, newQuantity, changeAmount, reason, reference, createdBy, createdByRole, userId, referenceType, createdAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)',
+          { replacements: [item.productId, prev, product.stockQuantity, product.stockQuantity - prev, 'return', order.orderNumber, req.user?.username || 'system', req.user?.role || null, req.user?.id || null, 'order_return'] }
         ).catch(err => console.error('Failed to log stock movement:', err));
       }
       await item.destroy({ transaction: t });
@@ -335,12 +338,19 @@ router.delete('/:id', authenticate, authorize('admin', 'cashier'), async (req, r
         category: 'Refunds',
         date: new Date(),
         customerId: order.customerId,
-        customerName
+        customerName,
+        userId: req.user?.id || null,
+        username: req.user?.username || null,
+        role: req.user?.role || null,
+        referenceType: 'order_refund',
+        referenceId: order.id,
+        notes: `Refund for cancelled order ${order.orderNumber}`
       }, { transaction: t });
     }
 
     await order.destroy({ transaction: t });
     await t.commit();
+    await logAudit(req, 'Order', order.id, 'delete', { orderNumber: order.orderNumber, paidAmount: order.paidAmount, status: order.status });
 
     if (global.broadcastNotification) {
       global.broadcastNotification({

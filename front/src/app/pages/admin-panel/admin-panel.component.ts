@@ -67,7 +67,8 @@ export class AdminPanelComponent implements OnInit {
     });
   }
 
-  saveCompany(): void {
+  saveCompany(event?: Event): void {
+    event?.preventDefault();
     this.saving = true;
     this.adminService.updateCompany(this.company).subscribe({
       next: () => {
@@ -127,7 +128,8 @@ export class AdminPanelComponent implements OnInit {
     this.showUserModal = true;
   }
 
-  saveUser(): void {
+  saveUser(event?: Event): void {
+    event?.preventDefault();
     if (this.editingUser) {
       const update: any = {};
       if (this.userForm.fullName) update.fullName = this.userForm.fullName;

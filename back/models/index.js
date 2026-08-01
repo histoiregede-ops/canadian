@@ -11,6 +11,7 @@ const Payment = require('./Payment');
 const Supplier = require('./Supplier');
 const PurchaseOrder = require('./PurchaseOrder');
 const Transfer = require('./Transfer');
+const AuditLog = require('./AuditLog');
 
 // Associations
 Category.hasMany(Product, { foreignKey: 'categoryId' });
@@ -64,5 +65,6 @@ module.exports = {
   Payment,
   Supplier,
   PurchaseOrder,
-  Transfer
+  Transfer,
+  AuditLog
 };

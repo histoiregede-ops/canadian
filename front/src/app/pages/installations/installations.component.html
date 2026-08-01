@@ -80,7 +80,7 @@
       </div>
 
       <div class="modal-body">
-        <form (submit)="saveInstallation()" class="form">
+        <form (ngSubmit)="saveInstallation($event)" class="form">
           <div class="form-group">
             <label class="form-label">Emplacement / Adresse *</label>
             <input type="text" [(ngModel)]="currentInstallation.location" name="location" required placeholder="Ex: Quartier Adidogomé, Lomé" class="form-input" />

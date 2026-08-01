@@ -32,6 +32,7 @@ import { TransfersComponent } from './pages/transfers/transfers.component';
 import { AccountingComponent } from './pages/accounting/accounting.component';
 import { PayrollComponent } from './pages/payroll/payroll.component';
 import { AdminPanelComponent } from './pages/admin-panel/admin-panel.component';
+import { AuditComponent } from './pages/audit/audit.component';
 
 import { DashboardResolver } from './resolvers/dashboard.resolver';
 import { InventoryResolver } from './resolvers/inventory.resolver';
@@ -44,6 +45,7 @@ import { InstallationsResolver } from './resolvers/installations.resolver';
 import { CustomersResolver } from './resolvers/customers.resolver';
 import { TechniciansResolver } from './resolvers/technicians.resolver';
 import { FinanceResolver } from './resolvers/finance.resolver';
+import { PayrollResolver } from './resolvers/payroll.resolver';
 import { ReportsResolver } from './resolvers/reports.resolver';
 import { ShopResolver } from './resolvers/shop.resolver';
 import { UserManagementResolver } from './resolvers/user-management.resolver';
@@ -74,8 +76,9 @@ export const routes: Routes = [
   { path: 'receipts', component: ReceiptsComponent, canActivate: [RoleGuard], resolve: { data: ReceiptsResolver }, data: { roles: ['admin', 'cashier'] } },
   { path: 'purchase-orders', component: PurchaseOrdersComponent, canActivate: [RoleGuard], resolve: { data: PurchaseOrdersResolver }, data: { roles: ['admin'] } },
   { path: 'transfers', component: TransfersComponent, canActivate: [RoleGuard], resolve: { data: TransfersResolver }, data: { roles: ['admin', 'cashier'] } },
-  { path: 'accounting', component: AccountingComponent, canActivate: [RoleGuard], data: { roles: ['admin', 'cashier'] } },
-  { path: 'payroll', component: PayrollComponent, canActivate: [RoleGuard], data: { roles: ['admin'] } },
+  { path: 'audit', component: AuditComponent, canActivate: [RoleGuard], data: { roles: ['admin'] } },
+  { path: 'accounting', component: AccountingComponent, canActivate: [RoleGuard], resolve: { data: FinanceResolver }, data: { roles: ['admin', 'cashier'] } },
+  { path: 'payroll', component: PayrollComponent, canActivate: [RoleGuard], resolve: { data: PayrollResolver }, data: { roles: ['admin'] } },
   { path: 'admin-panel', component: AdminPanelComponent, canActivate: [RoleGuard], data: { roles: ['admin'] } },
   // Client Routes
   { path: 'client', canActivate: [ClientAuthGuard], children: [

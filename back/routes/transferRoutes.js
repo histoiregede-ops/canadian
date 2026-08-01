@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const { Transfer } = require('../models');
 const { authenticate, authorize } = require('../utils/auth');
+const { logAudit } = require('../utils/audit');
 const { Op } = require('sequelize');
 
 function getTodayRange() {
@@ -117,6 +118,7 @@ router.post('/', authenticate, authorize('admin', 'cashier'), async (req, res) =
       status: status || 'pending',
       note
     });
+    await logAudit(req, 'Transfer', transfer.id, 'create', { operator, type, amount, fees, status: transfer.status, reference });
 
     res.status(201).json(transfer);
   } catch (err) {
@@ -130,9 +132,11 @@ router.put('/:id', authenticate, authorize('admin', 'cashier'), async (req, res)
     if (!transfer) return res.status(404).json({ message: 'Transfert non trouvé' });
 
     const allowed = ['operator', 'type', 'transferType', 'country', 'amount', 'fees', 'customerPhone', 'agentId', 'agentName', 'reference', 'status', 'note'];
-    allowed.forEach(f => { if (req.body[f] !== undefined) transfer[f] = req.body[f]; });
+    const data = {};
+    allowed.forEach(f => { if (req.body[f] !== undefined) { transfer[f] = req.body[f]; data[f] = req.body[f]; } });
 
     await transfer.save();
+    await logAudit(req, 'Transfer', transfer.id, 'update', data);
     res.json(transfer);
   } catch (err) {
     res.status(400).json({ error: err.message });
@@ -141,8 +145,10 @@ router.put('/:id', authenticate, authorize('admin', 'cashier'), async (req, res)
 
 router.delete('/:id', authenticate, authorize('admin'), async (req, res) => {
   try {
-    const deleted = await Transfer.destroy({ where: { id: req.params.id } });
-    if (!deleted) return res.status(404).json({ message: 'Transfert non trouvé' });
+    const transfer = await Transfer.findByPk(req.params.id);
+    if (!transfer) return res.status(404).json({ message: 'Transfert non trouvé' });
+    await transfer.destroy();
+    await logAudit(req, 'Transfer', req.params.id, 'delete', { reference: transfer.reference, amount: transfer.amount, status: transfer.status });
     res.json({ message: 'Transfert supprimé' });
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -154,6 +160,7 @@ router.post('/:id/confirm', authenticate, authorize('admin', 'cashier'), async (
     const transfer = await Transfer.findByPk(req.params.id);
     if (!transfer) return res.status(404).json({ message: 'Transfert non trouvé' });
     await transfer.update({ status: 'completed' });
+    await logAudit(req, 'Transfer', transfer.id, 'confirm', { reference: transfer.reference, amount: transfer.amount, status: 'completed' });
     res.json(transfer);
   } catch (err) {
     res.status(400).json({ error: err.message });
@@ -165,6 +172,7 @@ router.post('/:id/fail', authenticate, authorize('admin', 'cashier'), async (req
     const transfer = await Transfer.findByPk(req.params.id);
     if (!transfer) return res.status(404).json({ message: 'Transfert non trouvé' });
     await transfer.update({ status: 'failed' });
+    await logAudit(req, 'Transfer', transfer.id, 'fail', { reference: transfer.reference, amount: transfer.amount, status: 'failed' });
     res.json(transfer);
   } catch (err) {
     res.status(400).json({ error: err.message });

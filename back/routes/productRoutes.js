@@ -10,6 +10,7 @@ const Product = require('../models/Product');
 const Supplier = require('../models/Supplier');
 const sequelize = require('../config/database');
 const { authenticate, authorize } = require('../utils/auth');
+const { logAudit } = require('../utils/audit');
 
 if (process.env.CLOUDINARY_CLOUD_NAME) {
   cloudinary.config({
@@ -116,6 +117,7 @@ router.post('/', authenticate, authorize('admin', 'cashier'), upload.single('pho
     }
 
     const product = await Product.create(productData);
+    await logAudit(req, 'Product', product.id, 'create', productData);
     res.status(201).json(product);
   } catch (error) {
     console.error('Error creating product:', error);
@@ -174,8 +176,9 @@ router.put('/:id', authenticate, authorize('admin', 'cashier'), upload.single('p
 
     const oldStock = product.stockQuantity;
     await product.update(productData);
+    await logAudit(req, 'Product', id, 'update', productData);
     if (stockQuantity !== undefined && Number(stockQuantity) !== oldStock) {
-      await logStockMovement(id, oldStock, Number(stockQuantity), 'adjustment', null, req.user?.username);
+      await logStockMovement(id, oldStock, Number(stockQuantity), 'adjustment', null, req.user?.username, req.user?.id, req.user?.role, 'product_adjustment');
     }
     res.json(product);
   } catch (error) {
@@ -184,11 +187,11 @@ router.put('/:id', authenticate, authorize('admin', 'cashier'), upload.single('p
   }
 });
 
-async function logStockMovement(productId, previousQuantity, newQuantity, reason, reference, createdBy) {
+async function logStockMovement(productId, previousQuantity, newQuantity, reason, reference, createdBy, userId, createdByRole, referenceType) {
   const changeAmount = newQuantity - previousQuantity;
   await sequelize.query(
-    'INSERT INTO stock_movements (productId, previousQuantity, newQuantity, changeAmount, reason, reference, createdBy, createdAt) VALUES (?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)',
-    { replacements: [productId, previousQuantity, newQuantity, changeAmount, reason, reference || null, createdBy || null] }
+    'INSERT INTO stock_movements (productId, previousQuantity, newQuantity, changeAmount, reason, reference, createdBy, createdByRole, userId, referenceType, createdAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)',
+    { replacements: [productId, previousQuantity, newQuantity, changeAmount, reason, reference || null, createdBy || null, createdByRole || null, userId || null, referenceType || null] }
   );
   const [p] = await sequelize.query('SELECT name, lowStockThreshold FROM Products WHERE id = ?', { replacements: [productId] });
   const name = p[0]?.name || 'Produit';
@@ -211,7 +214,7 @@ router.post('/:id/restock', authenticate, authorize('admin', 'cashier'), async (
     const prev = product.stockQuantity;
     const next = prev + quantity;
     await product.update({ stockQuantity: next, status: 'available' });
-    await logStockMovement(id, prev, next, 'restock', null, req.user?.username);
+    await logStockMovement(id, prev, next, 'restock', null, req.user?.username, req.user?.id, req.user?.role, 'product_restock');
     res.json(product);
   } catch (error) {
     res.status(400).json({ error: error.message });
@@ -231,7 +234,7 @@ router.post('/:id/adjust-stock', authenticate, authorize('admin', 'cashier'), as
     const prev = product.stockQuantity;
     const next = Number(quantity);
     await product.update({ stockQuantity: next, status: next > 0 ? 'available' : 'out_of_stock' });
-    await logStockMovement(id, prev, next, reason || 'adjustment', null, req.user?.username);
+    await logStockMovement(id, prev, next, reason || 'adjustment', null, req.user?.username, req.user?.id, req.user?.role, 'product_adjustment');
     res.json(product);
   } catch (error) {
     res.status(400).json({ error: error.message });
@@ -261,6 +264,7 @@ router.delete('/:id', authenticate, authorize('admin', 'cashier'), async (req, r
     }
 
     await product.destroy();
+    await logAudit(req, 'Product', id, 'delete', { name: product.name, supplierId: product.supplierId });
     res.status(204).send();
   } catch (error) {
     res.status(500).json({ error: error.message });

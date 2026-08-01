@@ -100,6 +100,7 @@ const movementRoutes = require('./routes/movementRoutes');
 const seedRoutes = require('./routes/seedRoutes');
 const purchaseOrderRoutes = require('./routes/purchaseOrderRoutes');
 const transferRoutes = require('./routes/transferRoutes');
+const auditRoutes = require('./routes/auditRoutes');
 
 const loginLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
@@ -143,6 +144,7 @@ app.use('/api/reports', reportsRoutes);
 app.use('/api/suppliers', supplierRoutes);
 app.use('/api/purchase-orders', purchaseOrderRoutes);
 app.use('/api/transfers', transferRoutes);
+app.use('/api/audit', auditRoutes);
 
 app.use('/api/notifications', notificationRoutes);
 
@@ -572,6 +574,9 @@ sequelize.sync()
         reason VARCHAR(50) NOT NULL DEFAULT 'manual',
         reference VARCHAR(255),
         createdBy VARCHAR(255),
+        createdByRole VARCHAR(50),
+        userId VARCHAR(255),
+        referenceType VARCHAR(100),
         createdAt DATETIME DEFAULT CURRENT_TIMESTAMP
       )
     `).catch(err => console.error('Error creating stock_movements table:', err));

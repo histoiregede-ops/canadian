@@ -1,7 +1,9 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { ActivatedRoute } from '@angular/router';
 import { FinanceService, Transaction, FluxJournalier } from '../../services/finance.service';
+import { FinanceResolved } from '../../resolvers/finance.resolver';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import * as XLSX from 'xlsx';
@@ -23,10 +25,16 @@ export class AccountingComponent implements OnInit {
   reportLoading = false;
   showReportSection = true;
 
-  constructor(private financeService: FinanceService) {}
+  constructor(private financeService: FinanceService, private route: ActivatedRoute) {}
 
   ngOnInit(): void {
-    this.loadAccountingData();
+    const resolved = this.route.snapshot.data['data'] as FinanceResolved | undefined;
+    if (resolved?.data) {
+      this.transactions = resolved.data.data || [];
+      this.summary = resolved.data.summary || { revenue: 0, expense: 0, balance: 0 };
+    } else {
+      this.loadAccountingData();
+    }
     this.loadFlux();
   }
 

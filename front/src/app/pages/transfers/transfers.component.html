@@ -249,7 +249,7 @@
           <h3 class="card-title">{{ editing ? '✏️ Modifier le transfert' : '➕ Nouveau transfert' }}</h3>
         </div>
         <div class="card-body">
-          <form (submit)="saveTransfer()" class="transfer-form">
+          <form (ngSubmit)="saveTransfer($event)" class="transfer-form">
 
             <!-- Type de transfert : National / International -->
             <div class="form-section">

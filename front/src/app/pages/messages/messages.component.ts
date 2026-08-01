@@ -26,6 +26,9 @@ export class MessagesComponent implements OnInit, OnDestroy {
   loading = true;
   sendingMessage = false;
   typingUsers = new Map<string, string>();
+  isSpeechSupported = false;
+  isListening = false;
+  private recognition: any;
 
   @ViewChild('messagesContainer') messagesContainer!: ElementRef;
 
@@ -46,6 +49,7 @@ export class MessagesComponent implements OnInit, OnDestroy {
     this.isAdmin = this.currentUser?.role === 'admin' || this.currentUser?.role === 'support';
     this.loadConversations();
     this.setupRealTime();
+    this.setupSpeechRecognition();
   }
 
   ngOnDestroy(): void {
@@ -159,6 +163,59 @@ export class MessagesComponent implements OnInit, OnDestroy {
     if (event.key === 'Enter' && !event.shiftKey) {
       event.preventDefault();
       this.sendMessage();
+    }
+  }
+
+  private setupSpeechRecognition(): void {
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+      this.isSpeechSupported = false;
+      return;
+    }
+
+    this.recognition = new SpeechRecognition();
+    this.recognition.lang = 'fr-FR';
+    this.recognition.interimResults = true;
+    this.recognition.maxAlternatives = 1;
+    this.recognition.continuous = false;
+
+    this.recognition.onresult = (event: any) => {
+      let transcript = '';
+      for (let i = event.resultIndex; i < event.results.length; i++) {
+        transcript += event.results[i][0].transcript;
+      }
+      if (event.results[event.results.length - 1].isFinal) {
+        this.newMessage = (this.newMessage.trim() ? this.newMessage + ' ' : '') + transcript.trim();
+      }
+    };
+
+    this.recognition.onerror = (event: any) => {
+      console.error('Speech recognition error:', event);
+      this.isListening = false;
+    };
+
+    this.recognition.onend = () => {
+      this.isListening = false;
+    };
+
+    this.isSpeechSupported = true;
+  }
+
+  toggleVoiceInput(): void {
+    if (!this.isSpeechSupported || !this.recognition) return;
+
+    if (this.isListening) {
+      this.recognition.stop();
+      this.isListening = false;
+      return;
+    }
+
+    try {
+      this.recognition.start();
+      this.isListening = true;
+    } catch (error) {
+      console.error('Unable to start speech recognition:', error);
+      this.isListening = false;
     }
   }
 

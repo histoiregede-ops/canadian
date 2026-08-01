@@ -108,6 +108,11 @@
       <span class="label" [class.hide]="isCollapsed">Rapports</span>
       <span class="tooltip" *ngIf="isCollapsed">Rapports</span>
     </a>
+    <a *ngIf="user?.role === 'admin'" routerLink="/audit" routerLinkActive="active" class="nav-item" [class.collapsed]="isCollapsed">
+      <span class="icon">&#x1F4DD;</span>
+      <span class="label" [class.hide]="isCollapsed">Audit</span>
+      <span class="tooltip" *ngIf="isCollapsed">Audit</span>
+    </a>
   </nav>
 
   <div class="sidebar-footer">

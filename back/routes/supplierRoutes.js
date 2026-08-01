@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const Supplier = require('../models/Supplier');
 const { authenticate, authorize } = require('../utils/auth');
+const { logAudit } = require('../utils/audit');
 
 router.get('/', authenticate, authorize('admin', 'cashier'), async (req, res) => {
   try {
@@ -37,6 +38,7 @@ router.post('/', authenticate, authorize('admin'), async (req, res) => {
     allowedFields.forEach(f => { if (req.body[f] !== undefined) data[f] = req.body[f]; });
     if (!data.contactName && req.body.contactPerson) data.contactName = req.body.contactPerson;
     const supplier = await Supplier.create(data);
+    await logAudit(req, 'Supplier', supplier.id, 'create', { supplier: supplier.name });
     res.status(201).json(supplier);
   } catch (error) {
     res.status(400).json({ error: error.message });
@@ -52,6 +54,7 @@ router.put('/:id', authenticate, authorize('admin'), async (req, res) => {
     allowedFields.forEach(f => { if (req.body[f] !== undefined) data[f] = req.body[f]; });
     if (!data.contactName && req.body.contactPerson) data.contactName = req.body.contactPerson;
     await supplier.update(data);
+    await logAudit(req, 'Supplier', supplier.id, 'update', data);
     res.json(supplier);
   } catch (error) {
     res.status(400).json({ error: error.message });
@@ -63,6 +66,7 @@ router.delete('/:id', authenticate, authorize('admin'), async (req, res) => {
     const supplier = await Supplier.findByPk(req.params.id);
     if (!supplier) return res.status(404).json({ error: 'Fournisseur non trouvé' });
     await supplier.destroy();
+    await logAudit(req, 'Supplier', req.params.id, 'delete', { supplier: supplier.name });
     res.status(204).send();
   } catch (error) {
     res.status(500).json({ error: error.message });

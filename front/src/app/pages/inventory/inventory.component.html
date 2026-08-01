@@ -135,7 +135,7 @@
       </div>
 
       <div class="modal-body">
-        <form (submit)="saveProduct()" class="form">
+        <form (ngSubmit)="saveProduct($event)" class="form">
           <div class="form-group">
             <label class="form-label">Nom du Produit *</label>
             <input type="text" [(ngModel)]="currentProduct.name" name="name" required placeholder="Ex: Panneau Solaire 400W" class="form-input" />

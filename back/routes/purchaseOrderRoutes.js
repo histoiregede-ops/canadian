@@ -3,6 +3,7 @@ const router = express.Router();
 const { PurchaseOrder, Supplier } = require('../models');
 const { Op } = require('sequelize');
 const { authenticate, authorize } = require('../utils/auth');
+const { logAudit } = require('../utils/audit');
 
 // Helper to generate order number
 async function generateOrderNumber() {
@@ -71,6 +72,7 @@ router.post('/', authenticate, authorize('admin'), async (req, res) => {
     const data = { orderNumber, status: 'pending' };
     allowedFields.forEach(f => { if (req.body[f] !== undefined) data[f] = req.body[f]; });
     const order = await PurchaseOrder.create(data);
+    await logAudit(req, 'PurchaseOrder', order.id, 'create', { orderNumber: order.orderNumber, supplierId: order.supplierId });
     const full = await PurchaseOrder.findByPk(order.id, {
       include: [{ model: Supplier, attributes: ['id', 'name', 'phone', 'contactName'] }]
     });
@@ -91,6 +93,7 @@ router.put('/:id', authenticate, authorize('admin'), async (req, res) => {
     allowedFields.forEach(f => { if (req.body[f] !== undefined) data[f] = req.body[f]; });
 
     await order.update(data);
+    await logAudit(req, 'PurchaseOrder', order.id, 'update', data);
     const updated = await PurchaseOrder.findByPk(order.id, {
       include: [{ model: Supplier, attributes: ['id', 'name', 'phone', 'contactName'] }]
     });
@@ -115,6 +118,7 @@ router.post('/:id/receive', authenticate, authorize('admin'), async (req, res) =
       status: allReceived ? 'received' : anyReceived ? 'partial' : order.status,
       receivedDate: allReceived ? new Date().toISOString().split('T')[0] : null
     });
+    await logAudit(req, 'PurchaseOrder', order.id, 'receive', { items, status: order.status });
 
     const updated = await PurchaseOrder.findByPk(order.id, {
       include: [{ model: Supplier, attributes: ['id', 'name', 'phone', 'contactName'] }]
@@ -133,6 +137,7 @@ router.post('/:id/remind', authenticate, authorize('admin'), async (req, res) =>
 
     const today = new Date().toISOString().split('T')[0];
     await order.update({ lastReminderSent: today });
+    await logAudit(req, 'PurchaseOrder', order.id, 'remind', { supplierId: order.supplierId, reminderDate: today });
 
     const supplier = await Supplier.findByPk(order.supplierId);
     res.json({
@@ -155,6 +160,7 @@ router.delete('/:id', authenticate, authorize('admin'), async (req, res) => {
   try {
     const deleted = await PurchaseOrder.destroy({ where: { id: req.params.id } });
     if (!deleted) return res.status(404).json({ message: 'Purchase order not found' });
+    await logAudit(req, 'PurchaseOrder', req.params.id, 'delete', { orderId: req.params.id });
     res.json({ message: 'Purchase order deleted' });
   } catch (err) {
     res.status(500).json({ error: err.message });

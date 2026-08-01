@@ -372,7 +372,8 @@ export class InventoryComponent implements OnInit, OnDestroy, AfterViewInit {
     this.isScanning = false;
   }
 
-  saveProduct(): void {
+  saveProduct(event?: Event): void {
+    event?.preventDefault();
     if (this.saving) return;
     this.saving = true;
 

@@ -566,6 +566,34 @@
 
 .catalogue-toolbar .search-box .form-input {
   padding-left: 44px;
+  padding-right: 50px;
+}
+
+.voice-btn {
+  position: absolute;
+  right: 8px;
+  width: 36px;
+  height: 36px;
+  border: none;
+  background: var(--surface);
+  color: var(--text-primary);
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.25);
+  transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+}
+
+.voice-btn:hover {
+  transform: scale(1.05);
+  box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.12);
+}
+
+.voice-btn.listening {
+  background: #dc2626;
+  color: #fff;
 }
 
 .filter-select {

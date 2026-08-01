@@ -121,6 +121,17 @@
       <div class="search-box">
         <span class="search-icon">🔍</span>
         <input type="text" placeholder="Rechercher un produit..." [(ngModel)]="searchQuery" class="form-input" />
+        <button
+          *ngIf="isSpeechSupported"
+          type="button"
+          class="voice-btn"
+          [class.listening]="isListening"
+          (click)="toggleVoiceSearch()"
+          aria-label="Recherche vocale"
+        >
+          <span *ngIf="!isListening">🎙️</span>
+          <span *ngIf="isListening">⏹️</span>
+        </button>
       </div>
 
       <div class="category-chips">

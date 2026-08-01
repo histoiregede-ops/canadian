@@ -32,7 +32,7 @@
         <h3 class="card-title">🏢 Informations société</h3>
       </div>
       <div class="card-body">
-        <form (submit)="saveCompany()" class="settings-form">
+        <form (ngSubmit)="saveCompany($event)" class="settings-form">
           <div class="form-row">
             <div class="form-group">
               <label class="form-label">Nom de l'entreprise</label>
@@ -178,7 +178,7 @@
           <button class="modal-close" (click)="showUserModal = false">✕</button>
         </div>
         <div class="modal-body">
-          <form (submit)="saveUser()" class="modal-form">
+          <form (ngSubmit)="saveUser($event)" class="modal-form">
             <div class="form-group" *ngIf="!editingUser">
               <label class="form-label">Identifiant *</label>
               <input type="text" class="form-input" [(ngModel)]="userForm.username" name="u_username" required />

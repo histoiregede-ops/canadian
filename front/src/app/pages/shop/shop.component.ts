@@ -39,6 +39,10 @@ export class ShopComponent implements OnInit, OnDestroy {
   selectedCategoryId = '';
   sortBy: 'name' | 'price-low' | 'price-high' | 'rating' = 'name';
 
+  isSpeechSupported = false;
+  isListening = false;
+  private recognition: any;
+
   loading = true;
   private refreshSub?: Subscription;
 
@@ -164,6 +168,7 @@ export class ShopComponent implements OnInit, OnDestroy {
       this.loadCategories();
     });
     this.startCarousel();
+    this.setupSpeechRecognition();
   }
 
   ngOnDestroy(): void {
@@ -200,6 +205,59 @@ export class ShopComponent implements OnInit, OnDestroy {
   logoutCustomer(): void {
     this.customerAuth.logout();
     this.router.navigate(['/login']);
+  }
+
+  private setupSpeechRecognition(): void {
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+      this.isSpeechSupported = false;
+      return;
+    }
+
+    this.recognition = new SpeechRecognition();
+    this.recognition.lang = 'fr-FR';
+    this.recognition.interimResults = true;
+    this.recognition.maxAlternatives = 1;
+    this.recognition.continuous = false;
+
+    this.recognition.onresult = (event: any) => {
+      let transcript = '';
+      for (let i = event.resultIndex; i < event.results.length; i++) {
+        transcript += event.results[i][0].transcript;
+      }
+      if (event.results[event.results.length - 1].isFinal) {
+        this.searchQuery = transcript.trim();
+      }
+    };
+
+    this.recognition.onerror = (event: any) => {
+      console.error('Speech recognition error:', event);
+      this.isListening = false;
+    };
+
+    this.recognition.onend = () => {
+      this.isListening = false;
+    };
+
+    this.isSpeechSupported = true;
+  }
+
+  toggleVoiceSearch(): void {
+    if (!this.isSpeechSupported || !this.recognition) return;
+
+    if (this.isListening) {
+      this.recognition.stop();
+      this.isListening = false;
+      return;
+    }
+
+    try {
+      this.recognition.start();
+      this.isListening = true;
+    } catch (error) {
+      console.error('Unable to start speech recognition:', error);
+      this.isListening = false;
+    }
   }
 
   getWhatsAppLink(product: Product): string {

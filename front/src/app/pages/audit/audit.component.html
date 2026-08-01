@@ -1,0 +1,47 @@
+<div class="audit-page">
+  <h2>Audit Logs</h2>
+
+  <div class="filters">
+    <input placeholder="Utilisateur (id)" [(ngModel)]="userId" />
+    <input placeholder="Entity type (ex: Order, Product)" [(ngModel)]="entityType" />
+    <input placeholder="Action (create, update, delete)" [(ngModel)]="action" />
+    <input type="date" [(ngModel)]="startDate" />
+    <input type="date" [(ngModel)]="endDate" />
+    <button (click)="applyFilters()">Filtrer</button>
+    <button (click)="clearFilters()">Réinitialiser</button>
+    <button (click)="downloadCsv()" class="btn-export">Export CSV</button>
+  </div>
+
+  <div *ngIf="loading">Chargement...</div>
+
+  <table *ngIf="!loading && logs.length" class="audit-table">
+    <thead>
+      <tr>
+        <th>Date</th>
+        <th>Utilisateur</th>
+        <th>Rôle</th>
+        <th>Entity</th>
+        <th>Action</th>
+        <th>Details</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr *ngFor="let l of logs">
+        <td>{{ fmt(l.createdAt || l.created_at || l.created) }}</td>
+        <td>{{ l.username || l.userId || '-' }}</td>
+        <td>{{ l.role || '-' }}</td>
+        <td>{{ l.entityType }}</td>
+        <td>{{ l.action }}</td>
+        <td style="max-width:360px; overflow:auto">{{ l.details }}</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div *ngIf="!loading && !logs.length">Aucun log trouvé.</div>
+
+  <div class="pager" *ngIf="total > limit">
+    <button (click)="load(page-1)" [disabled]="page<=1">Préc.</button>
+    <span>Page {{page}} / {{ totalPages }}</span>
+    <button (click)="load(page+1)" [disabled]="page>=totalPages">Suiv.</button>
+  </div>
+</div>

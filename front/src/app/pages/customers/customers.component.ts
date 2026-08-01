@@ -147,7 +147,8 @@ export class CustomersComponent implements OnInit, OnDestroy {
     this.showModal = true;
   }
 
-  saveCustomer(): void {
+  saveCustomer(event?: Event): void {
+    event?.preventDefault();
     if (this.isEditing && this.currentCustomer.id) {
       this.customerService.updateCustomer(this.currentCustomer.id, this.currentCustomer).subscribe({
         next: () => {

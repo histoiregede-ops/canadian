@@ -111,7 +111,7 @@
       </div>
 
       <div class="modal-body">
-        <form (submit)="save()" class="form">
+        <form (ngSubmit)="save($event)" class="form">
           <div class="form-group">
             <label class="form-label">Nom d'utilisateur *</label>
             <input type="text" [(ngModel)]="form.username" name="username" required placeholder="ex: jean.dupont" class="form-input" />

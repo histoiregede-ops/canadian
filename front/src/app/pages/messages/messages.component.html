@@ -122,6 +122,18 @@
             rows="1"
           ></textarea>
           <button
+            *ngIf="isSpeechSupported"
+            type="button"
+            class="btn btn-secondary btn-mic"
+            (click)="toggleVoiceInput()"
+            [class.listening]="isListening"
+            [attr.aria-pressed]="isListening"
+            title="Activer la dictée vocale"
+          >
+            <span *ngIf="!isListening">🎙️</span>
+            <span *ngIf="isListening">⏹️</span>
+          </button>
+          <button
             class="btn btn-primary btn-send"
             (click)="sendMessage()"
             [disabled]="!newMessage.trim() || sendingMessage"
@@ -129,6 +141,7 @@
             <span style="font-size:1.2rem">{{ sendingMessage ? '...' : '→' }}</span>
           </button>
         </div>
+        <div *ngIf="isListening" class="voice-status">Parlez maintenant…</div>
 
         <div *ngIf="selectedConversation.status === 'closed'" class="closed-banner">
           Cette conversation est fermee. Creez-en une nouvelle pour continuer.

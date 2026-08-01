@@ -3,6 +3,7 @@ const router = express.Router();
 const { Order, CashTransaction, Payment } = require('../models');
 const sequelize = require('../config/database');
 const { authenticate, authorize } = require('../utils/auth');
+const { logAudit } = require('../utils/audit');
 const cinetpay = require('../services/cinetpayProvider');
 
 // =============================================
@@ -66,6 +67,7 @@ router.post('/initiate', authenticate, async (req, res) => {
       transactionId: result.transactionId,
       notes: `CinetPay v1 | transId: ${result.transactionId} | canal: ${paymentMethod} | notifyToken: ${result.notifyToken || ''}`
     });
+    await logAudit(req, 'Payment', payment.id, 'initiate', { orderId, amount: requestedAmount, paymentMethod, transactionId: result.transactionId });
 
     res.json({
       success: result.success,
@@ -271,8 +273,15 @@ router.post('/', authenticate, async (req, res) => {
     await CashTransaction.create({
       type: 'income', amount: requestedAmount,
       description: `Paiement ${order.orderNumber || order.id}`,
-      category: 'Sales', date: new Date()
+      category: 'Sales', date: new Date(),
+      userId: req.user?.id || null,
+      username: req.user?.username || null,
+      role: req.user?.role || null,
+      referenceType: 'payment',
+      referenceId: transactionId,
+      notes: notes || null
     }, { transaction: t });
+    await logAudit(req, 'Payment', payment.id, 'create', { orderId, amount: requestedAmount, transactionId });
 
     await t.commit();
     res.json(payment);
@@ -313,6 +322,20 @@ router.post('/:id/refund', authenticate, authorize('admin'), async (req, res) =>
     const refundAmount = amount || payment.amount;
     const refundStatus = refundAmount === parseFloat(payment.amount) ? 'refunded' : 'partially_refunded';
     await payment.update({ status: refundStatus });
+    await CashTransaction.create({
+      type: 'expense',
+      amount: refundAmount,
+      description: `Remboursement paiement ${payment.transactionId}`,
+      category: 'Refunds',
+      date: new Date(),
+      userId: req.user?.id || null,
+      username: req.user?.username || null,
+      role: req.user?.role || null,
+      referenceType: 'payment_refund',
+      referenceId: payment.id,
+      notes: `Refund for payment ${payment.transactionId}`
+    });
+    await logAudit(req, 'Payment', payment.id, 'refund', { refundAmount, status: refundStatus });
 
     res.json({
       id: `REF-${Date.now()}`,
@@ -355,6 +378,7 @@ router.post('/verify-mobile-money', authenticate, async (req, res) => {
     } else if (liveStatus.isFailed && payment.status === 'pending') {
       await payment.update({ status: 'failed' });
     }
+    await logAudit(req, 'Payment', payment.id, 'verify', { status: payment.status, liveStatus: liveStatus.status });
 
     res.json({
       success: payment.status === 'completed' || liveStatus.isCompleted,

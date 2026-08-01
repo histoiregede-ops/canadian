@@ -157,7 +157,8 @@ export class RepairsComponent implements OnInit, OnDestroy {
     this.showModal = true;
   }
 
-  saveRepair(): void {
+  saveRepair(event?: Event): void {
+    event?.preventDefault();
     if (this.isEditing && this.currentRepair.id) {
       this.repairService.updateRepair(this.currentRepair.id, this.currentRepair).subscribe({
         next: () => {
