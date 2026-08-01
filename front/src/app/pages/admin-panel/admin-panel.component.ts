@@ -4,9 +4,9 @@ import { FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
 import { AdminService, CompanySettings, PermissionMatrix, FeatureFlag } from '../../services/admin.service';
 import { UserService, User } from '../../services/user.service';
+import { ToastService } from '../../services/toast.service';
 
 @Component({
-  selector: 'app-admin-panel',
   standalone: true,
   imports: [CommonModule, FormsModule, RouterModule],
   templateUrl: './admin-panel.component.html',
@@ -18,7 +18,6 @@ export class AdminPanelComponent implements OnInit {
   // ========== Onglet Général ==========
   company: CompanySettings = {} as CompanySettings;
   saving = false;
-  message: { type: 'success' | 'error'; text: string } | null = null;
 
   // ========== Onglet Utilisateurs ==========
   users: User[] = [];
@@ -45,7 +44,8 @@ export class AdminPanelComponent implements OnInit {
 
   constructor(
     private adminService: AdminService,
-    private userService: UserService
+    private userService: UserService,
+    private toastService: ToastService
   ) {}
 
   ngOnInit(): void {
@@ -63,7 +63,7 @@ export class AdminPanelComponent implements OnInit {
   private loadCompany(): void {
     this.adminService.getSettings().subscribe({
       next: (settings) => { this.company = settings.company; },
-      error: () => this.showMessage('error', 'Erreur chargement paramètres')
+      error: () => this.toastService.show('Erreur chargement paramètres', 'error')
     });
   }
 
@@ -71,11 +71,11 @@ export class AdminPanelComponent implements OnInit {
     this.saving = true;
     this.adminService.updateCompany(this.company).subscribe({
       next: () => {
-        this.showMessage('success', 'Paramètres enregistrés');
+        this.toastService.show('Paramètres enregistrés', 'success');
         this.saving = false;
       },
       error: () => {
-        this.showMessage('error', 'Erreur lors de la sauvegarde');
+        this.toastService.show('Erreur lors de la sauvegarde', 'error');
         this.saving = false;
       }
     });
@@ -136,8 +136,12 @@ export class AdminPanelComponent implements OnInit {
       if (this.userForm.password) update.password = this.userForm.password;
 
       this.userService.updateUser(this.editingUser.id, update).subscribe({
-        next: () => { this.showUserModal = false; this.loadUsers(); },
-        error: (err) => alert(err.error?.error || 'Erreur modification')
+        next: () => {
+          this.showUserModal = false;
+          this.loadUsers();
+          this.toastService.show('Utilisateur mis à jour', 'success');
+        },
+        error: (err) => this.toastService.show(err.error?.error || 'Erreur modification', 'error')
       });
     } else {
       this.userService.createUser({
@@ -147,8 +151,12 @@ export class AdminPanelComponent implements OnInit {
         email: this.userForm.email,
         role: this.userForm.role
       }).subscribe({
-        next: () => { this.showUserModal = false; this.loadUsers(); },
-        error: (err) => alert(err.error?.error || 'Erreur création')
+        next: () => {
+          this.showUserModal = false;
+          this.loadUsers();
+          this.toastService.show('Utilisateur créé', 'success');
+        },
+        error: (err) => this.toastService.show(err.error?.error || 'Erreur création', 'error')
       });
     }
   }
@@ -156,23 +164,32 @@ export class AdminPanelComponent implements OnInit {
   deleteUser(user: User): void {
     if (!confirm(`Supprimer définitivement l'utilisateur "${user.username}" ?`)) return;
     this.userService.deleteUser(user.id).subscribe({
-      next: () => this.loadUsers(),
-      error: () => alert('Erreur suppression')
+      next: () => {
+        this.loadUsers();
+        this.toastService.show('Utilisateur supprimé', 'success');
+      },
+      error: () => this.toastService.show('Erreur suppression', 'error')
     });
   }
 
   blockUser(user: User): void {
     if (!confirm(`Bloquer l'utilisateur "${user.username}" ?`)) return;
     this.userService.blockUser(user.id).subscribe({
-      next: () => this.loadUsers(),
-      error: () => alert("Le backend ne supporte pas encore le blocage d'utilisateurs")
+      next: () => {
+        this.loadUsers();
+        this.toastService.show('Utilisateur bloqué', 'success');
+      },
+      error: () => this.toastService.show("Le backend ne supporte pas encore le blocage d'utilisateurs", 'error')
     });
   }
 
   unblockUser(user: User): void {
     this.userService.unblockUser(user.id).subscribe({
-      next: () => this.loadUsers(),
-      error: () => alert("Le backend ne supporte pas encore le déblocage d'utilisateurs")
+      next: () => {
+        this.loadUsers();
+        this.toastService.show('Utilisateur débloqué', 'success');
+      },
+      error: () => this.toastService.show("Le backend ne supporte pas encore le déblocage d'utilisateurs", 'error')
     });
   }
 
@@ -200,15 +217,15 @@ export class AdminPanelComponent implements OnInit {
 
   savePermissions(): void {
     this.adminService.updatePermissions(this.permissions).subscribe({
-      next: () => this.showMessage('success', 'Permissions mises à jour'),
-      error: () => this.showMessage('error', 'Erreur sauvegarde permissions')
+      next: () => this.toastService.show('Permissions mises à jour', 'success'),
+      error: () => this.toastService.show('Erreur sauvegarde permissions', 'error')
     });
   }
 
   resetPermissions(): void {
     if (!confirm('Réinitialiser toutes les permissions par défaut ?')) return;
     this.loadPermissions();
-    this.showMessage('success', 'Permissions réinitialisées');
+    this.toastService.show('Permissions réinitialisées', 'success');
   }
 
   // ------ FONCTIONNALITÉS ------
@@ -226,7 +243,7 @@ export class AdminPanelComponent implements OnInit {
     this.adminService.updateFeature(feature.key, feature.enabled).subscribe({
       error: () => {
         feature.enabled = previous;
-        this.showMessage('error', 'Erreur mise à jour');
+        this.toastService.show('Erreur mise à jour', 'error');
       }
     });
   }
@@ -236,11 +253,6 @@ export class AdminPanelComponent implements OnInit {
   }
 
   // ------ MESSAGES ------
-  private showMessage(type: 'success' | 'error', text: string): void {
-    this.message = { type, text };
-    setTimeout(() => this.message = null, 3000);
-  }
-
   trackById(index: number, item: any): string {
     return item?.id ?? index;
   }

@@ -5,6 +5,7 @@ import { RouterModule, ActivatedRoute } from '@angular/router';
 import { Subscription } from 'rxjs';
 import { MessagingService, Conversation, Message } from '../../services/messaging';
 import { CustomerAuthService, Customer } from '../../services/customer-auth';
+import { ToastService } from '../../services/toast.service';
 
 @Component({
   selector: 'app-client-messages',
@@ -48,7 +49,8 @@ export class ClientMessagesComponent implements OnInit, OnDestroy {
   constructor(
     private messagingService: MessagingService,
     private customerAuth: CustomerAuthService,
-    private route: ActivatedRoute
+    private route: ActivatedRoute,
+    private toastService: ToastService
   ) {}
 
   ngOnInit(): void {
@@ -242,9 +244,7 @@ export class ClientMessagesComponent implements OnInit, OnDestroy {
       },
       error: (err) => {
         console.error('Error sending message:', err);
-        this.notificationMessage = 'Erreur lors de l\'envoi du message. Veuillez réessayer.';
-        this.showNotificationBanner = true;
-        setTimeout(() => { this.showNotificationBanner = false; }, 6000);
+        this.toastService.show('Erreur lors de l\'envoi du message. Veuillez réessayer.', 'error');
       },
       complete: () => {
         this.newMessage = '';
@@ -298,9 +298,7 @@ export class ClientMessagesComponent implements OnInit, OnDestroy {
           },
           error: (err) => {
             console.error('Error sending message:', err);
-            this.notificationMessage = 'Erreur lors de l\'envoi du message. Veuillez réessayer.';
-            this.showNotificationBanner = true;
-            setTimeout(() => { this.showNotificationBanner = false; }, 6000);
+            this.toastService.show('Erreur lors de l\'envoi du message. Veuillez réessayer.', 'error');
           },
           complete: () => {
             this.newMessage = '';
@@ -311,9 +309,7 @@ export class ClientMessagesComponent implements OnInit, OnDestroy {
       error: (err) => {
         console.error('Error creating conversation:', err);
         this.sendingMessage = false;
-        this.notificationMessage = 'Erreur lors de la création de la conversation. Veuillez réessayer.';
-        this.showNotificationBanner = true;
-        setTimeout(() => { this.showNotificationBanner = false; }, 6000);
+        this.toastService.show('Erreur lors de la création de la conversation. Veuillez réessayer.', 'error');
       }
     });
   }
@@ -331,12 +327,11 @@ export class ClientMessagesComponent implements OnInit, OnDestroy {
     this.messagingService.closeConversation(this.selectedConversation.id!).subscribe({
       next: (updated) => {
         this.selectedConversation!.status = 'closed';
+        this.toastService.show('Conversation fermée', 'success');
       },
       error: (err) => {
         console.error('Error closing conversation:', err);
-        this.notificationMessage = 'Erreur lors de la fermeture de la conversation.';
-        this.showNotificationBanner = true;
-        setTimeout(() => { this.showNotificationBanner = false; }, 6000);
+        this.toastService.show('Erreur lors de la fermeture de la conversation.', 'error');
       }
     });
   }

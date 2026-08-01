@@ -6,6 +6,7 @@ import { HttpClient } from '@angular/common/http';
 import { environment } from '../../../environments/environment';
 import { AuthService } from '../../services/auth';
 import { UserService } from '../../services/user.service';
+import { ToastService } from '../../services/toast.service';
 
 interface CompanySettings {
   name: string;
@@ -79,7 +80,6 @@ export class SettingsComponent implements OnInit {
   };
 
   saving = false;
-  message: { type: 'success' | 'error'; text: string } | null = null;
 
   trackByNotifKey(index: number, item: any): string {
     return item?.key ?? index;
@@ -98,7 +98,8 @@ export class SettingsComponent implements OnInit {
     private route: ActivatedRoute,
     private http: HttpClient,
     private authService: AuthService,
-    private userService: UserService
+    private userService: UserService,
+    private toastService: ToastService
   ) {
     this.user = this.authService.getUser();
   }
@@ -154,40 +155,40 @@ export class SettingsComponent implements OnInit {
   saveGeneral(): void {
     this.saving = true;
     localStorage.setItem('company_settings', JSON.stringify(this.company));
-    this.showMessage('success', 'Paramètres généraux enregistrés avec succès');
+    this.toastService.show('Paramètres généraux enregistrés avec succès', 'success');
     this.saving = false;
   }
 
   changePassword(): void {
     if (!this.passwordForm.current || !this.passwordForm.newPassword) {
-      this.showMessage('error', 'Veuillez remplir tous les champs');
+      this.toastService.show('Veuillez remplir tous les champs', 'error');
       return;
     }
     if (this.passwordForm.newPassword !== this.passwordForm.confirm) {
-      this.showMessage('error', 'Les mots de passe ne correspondent pas');
+      this.toastService.show('Les mots de passe ne correspondent pas', 'error');
       return;
     }
     if (this.passwordForm.newPassword.length < 6) {
-      this.showMessage('error', 'Le mot de passe doit contenir au moins 6 caractères');
+      this.toastService.show('Le mot de passe doit contenir au moins 6 caractères', 'error');
       return;
     }
 
     this.saving = true;
     const userId = this.user?.id;
     if (!userId) {
-      this.showMessage('error', 'Utilisateur non identifié');
+      this.toastService.show('Utilisateur non identifié', 'error');
       this.saving = false;
       return;
     }
 
     this.userService.updateUser(userId, { password: this.passwordForm.newPassword } as any).subscribe({
       next: () => {
-        this.showMessage('success', 'Mot de passe modifié avec succès');
+        this.toastService.show('Mot de passe modifié avec succès', 'success');
         this.passwordForm = { current: '', newPassword: '', confirm: '' };
         this.saving = false;
       },
       error: (err) => {
-        this.showMessage('error', err.error?.error || 'Erreur lors du changement de mot de passe');
+        this.toastService.show(err.error?.error || 'Erreur lors du changement de mot de passe', 'error');
         this.saving = false;
       }
     });
@@ -195,13 +196,13 @@ export class SettingsComponent implements OnInit {
 
   saveNotifications(): void {
     localStorage.setItem('notification_settings', JSON.stringify(this.notifications));
-    this.showMessage('success', 'Préférences de notification mises à jour');
+    this.toastService.show('Préférences de notification mises à jour', 'success');
   }
 
   saveAppearance(): void {
     localStorage.setItem('appearance_settings', JSON.stringify(this.appearance));
     this.applyAppearance();
-    this.showMessage('success', 'Apparence appliquée');
+    this.toastService.show('Apparence appliquée', 'success');
   }
 
   private applyAppearance(): void {
@@ -223,7 +224,7 @@ export class SettingsComponent implements OnInit {
     a.download = `backup-electro-canadien-${new Date().toISOString().split('T')[0]}.json`;
     a.click();
     URL.revokeObjectURL(url);
-    this.showMessage('success', 'Données exportées avec succès');
+    this.toastService.show('Données exportées avec succès', 'success');
   }
 
   importData(event: Event): void {
@@ -248,9 +249,9 @@ export class SettingsComponent implements OnInit {
           localStorage.setItem('appearance_settings', JSON.stringify(this.appearance));
           this.applyAppearance();
         }
-        this.showMessage('success', 'Données importées avec succès');
+        this.toastService.show('Données importées avec succès', 'success');
       } catch {
-        this.showMessage('error', 'Fichier invalide');
+        this.toastService.show('Fichier invalide', 'error');
       }
     };
     reader.readAsText(file);
@@ -265,11 +266,6 @@ export class SettingsComponent implements OnInit {
     this.loadCompanySettings();
     this.loadNotifications();
     this.loadAppearance();
-    this.showMessage('success', 'Paramètres réinitialisés');
-  }
-
-  private showMessage(type: 'success' | 'error', text: string): void {
-    this.message = { type, text };
-    setTimeout(() => { this.message = null; }, 3000);
+    this.toastService.show('Paramètres réinitialisés', 'success');
   }
 }

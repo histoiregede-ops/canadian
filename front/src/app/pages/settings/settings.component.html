@@ -46,11 +46,6 @@
     </div>
 
     <div class="settings-content">
-      <div class="alert" [class.alert-success]="message.type === 'success'" [class.alert-danger]="message.type === 'error'" *ngIf="message">
-        <span class="alert-icon">{{ message.type === 'success' ? '✅' : '⚠️' }}</span>
-        <span>{{ message.text }}</span>
-      </div>
-
       <div *ngIf="activeTab === 'general'" class="settings-section">
         <div class="section-header">
           <h2 class="section-title">Informations Entreprise</h2>
