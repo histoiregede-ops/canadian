@@ -27,9 +27,6 @@ const allowedOrigins = [
   process.env.FRONTEND_URL_SHOP
 ].filter(Boolean);
 const corsOrigin = function (origin, callback) {
-  if (!origin && process.env.NODE_ENV === 'production') {
-    return callback(new Error('Not allowed by CORS'), false);
-  }
   if (!origin) {
     return callback(null, true);
   }
