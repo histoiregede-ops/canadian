@@ -57,7 +57,9 @@ const OrderItem = sequelize.define('OrderItem', {
     type: DataTypes.UUID
   },
   productId: {
-    type: DataTypes.STRING
+    // Corrigé : STRING -> UUID pour matcher Product.id (DataTypes.UUID = CHAR(36))
+    // MySQL refusait la FK car VARCHAR(255) et CHAR(36) sont incompatibles.
+    type: DataTypes.UUID
   },
   quantity: {
     type: DataTypes.INTEGER,

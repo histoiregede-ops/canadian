@@ -1,15 +1,24 @@
 'use strict';
 
+const SEQUELIZE_DIALECT = process.env.DB_DIALECT || 'mysql';
+
 module.exports = {
   up: async (queryInterface, Sequelize) => {
     // Add missing columns to Installations table
-    // priority column - check if it exists first
     try {
-      const [columns] = await queryInterface.sequelize.query(
-        "PRAGMA table_info('Installations')"
-      );
-      const columnNames = columns.map(c => c.name);
-      
+      let columnNames = [];
+      if (SEQUELIZE_DIALECT === 'mysql') {
+        const [columns] = await queryInterface.sequelize.query(
+          "SHOW COLUMNS FROM Installations"
+        );
+        columnNames = columns.map(c => c.Field);
+      } else {
+        const [columns] = await queryInterface.sequelize.query(
+          "PRAGMA table_info('Installations')"
+        );
+        columnNames = columns.map(c => c.name);
+      }
+
       if (!columnNames.includes('priority')) {
         await queryInterface.addColumn('Installations', 'priority', {
           type: Sequelize.ENUM('low', 'normal', 'high', 'urgent'),
@@ -36,10 +45,20 @@ module.exports = {
 
     // Create Suppliers table if it doesn't exist
     try {
-      const [results] = await queryInterface.sequelize.query(
-        "SELECT name FROM sqlite_master WHERE type='table' AND name='Suppliers'"
-      );
-      if (results.length === 0) {
+      let tableExists = false;
+      if (SEQUELIZE_DIALECT === 'mysql') {
+        const [results] = await queryInterface.sequelize.query(
+          "SELECT TABLE_NAME FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'Suppliers'"
+        );
+        tableExists = results.length > 0;
+      } else {
+        const [results] = await queryInterface.sequelize.query(
+          "SELECT name FROM sqlite_master WHERE type='table' AND name='Suppliers'"
+        );
+        tableExists = results.length > 0;
+      }
+
+      if (!tableExists) {
         await queryInterface.createTable('Suppliers', {
           id: {
             type: Sequelize.INTEGER,
@@ -95,10 +114,20 @@ module.exports = {
 
     // Create PurchaseOrders table if it doesn't exist
     try {
-      const [results] = await queryInterface.sequelize.query(
-        "SELECT name FROM sqlite_master WHERE type='table' AND name='PurchaseOrders'"
-      );
-      if (results.length === 0) {
+      let tableExists = false;
+      if (SEQUELIZE_DIALECT === 'mysql') {
+        const [results] = await queryInterface.sequelize.query(
+          "SELECT TABLE_NAME FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'PurchaseOrders'"
+        );
+        tableExists = results.length > 0;
+      } else {
+        const [results] = await queryInterface.sequelize.query(
+          "SELECT name FROM sqlite_master WHERE type='table' AND name='PurchaseOrders'"
+        );
+        tableExists = results.length > 0;
+      }
+
+      if (!tableExists) {
         await queryInterface.createTable('PurchaseOrders', {
           id: {
             type: Sequelize.UUID,
@@ -168,7 +197,6 @@ module.exports = {
   },
 
   down: async (queryInterface, Sequelize) => {
-    // Remove added columns
     try {
       await queryInterface.removeColumn('Installations', 'priority');
     } catch (err) {
