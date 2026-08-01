@@ -4,10 +4,12 @@
   "scripts": {
     "ng": "ng",
     "start": "node server.js",
-    "dev": "ng serve",
-    "build": "ng build",
-    "watch": "ng build --watch --configuration development",
-    "test": "ng test"
+    "dev": "ng serve front",
+    "build": "ng build front",
+    "watch": "ng build front --watch --configuration development",
+    "test": "ng test front",
+    "build:shop": "ng build shop",
+    "dev:shop": "ng serve shop"
   },
   "private": true,
   "packageManager": "npm@11.11.0",
@@ -40,5 +42,13 @@
     "prettier": "^3.8.1",
     "typescript": "~5.9.2",
     "vitest": "^4.0.8"
+  },
+  "allowScripts": {
+    "@parcel/watcher@2.6.0": true,
+    "core-js@3.49.0": true,
+    "esbuild@0.28.1": true,
+    "lmdb@3.5.1": true,
+    "msgpackr-extract@3.0.4": true,
+    "sharp@0.34.5": true
   }
 }

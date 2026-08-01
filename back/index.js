@@ -21,7 +21,10 @@ const allowedOrigins = [
   'http://localhost:3000',
   'https://canada-erp.vercel.app',
   'https://canada-erp-frontend.onrender.com',
-  process.env.FRONTEND_URL
+  'https://canadian-shop.onrender.com',
+  'https://shop.monsite.com',
+  process.env.FRONTEND_URL,
+  process.env.FRONTEND_URL_SHOP
 ].filter(Boolean);
 const corsOrigin = function (origin, callback) {
   if (!origin && process.env.NODE_ENV === 'production') {
