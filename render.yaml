@@ -1,6 +1,19 @@
+#
+# ─── CANADIAN SOLAR ERP — Render Deployment ───
+#
+# Le Dockerfile combine backend + frontend + nginx dans un seul conteneur.
+# Le nginx route automatiquement selon le domaine :
+#
+#   shop.monsite.com  → clients uniquement (shop, cart, checkout, contact)
+#   staff.monsite.com → staff (dashboard, sales, stock, + shop)
+#
+# Les deux domaines pointent vers LA MÊME adresse IP Render.
+# Ajoute-les dans Render → Settings → Custom Domains.
+#
+
 services:
   - type: web
-    name: canadian-backend
+    name: canadian-erp
     runtime: docker
     repo: https://github.com/histoiregede-ops/canadian.git
     branch: main
@@ -8,46 +21,72 @@ services:
     plan: free
     region: frankfurt
     envVars:
+      # ── App ──
       - key: NODE_ENV
         value: production
+      - key: PORT
+        value: 3000
+
+      # ── Domaines clients (nginx server_name) ──
+      - key: DOMAIN_CLIENT
+        value: shop.monsite.com
+      - key: DOMAIN_STAFF
+        value: staff.monsite.com
+
+      # ── URL publique (utilisée par CinetPay pour les retours IPN) ──
+      - key: APP_URL
+        value: https://staff.monsite.com
+
+      # ── CORS / Frontend ──
+      - key: FRONTEND_URL
+        value: https://staff.monsite.com
+
+      # ── Base de données MySQL (externe : Aiven, DigitalOcean, Clever Cloud...) ──
       - key: DB_DIALECT
         value: mysql
       - key: DB_HOST
-        value: db
-      - key: DB_USER
-        value: root
+        sync: false
       - key: DB_PORT
         value: 3306
+      - key: DB_USER
+        sync: false
+      - key: DB_PASS
+        sync: false
+      - key: DB_NAME
+        sync: false
+
+      # ── JWT (généré automatiquement au premier déploiement) ──
       - key: JWT_SECRET
         generateValue: true
-      - key: FRONTEND_URL
-        value: https://canadian-frontend.onrender.com
 
-  - type: static
-    name: canadian-frontend
-    runtime: static
-    repo: https://github.com/histoiregede-ops/canadian.git
-    branch: main
-    buildCommand: npm install && npm run build
-    publishPath: dist/front/browser
-    plan: free
-    region: frankfurt
-    headers:
-      - path: /*
-        name: Cache-Control
-        value: no-cache, no-store, must-revalidate, max-age=0
-      - path: /*.html
-        name: Cache-Control
-        value: no-cache, no-store, must-revalidate, max-age=0
-      - path: /*.js
-        name: Cache-Control
-        value: no-cache, no-store, must-revalidate, max-age=0
-      - path: /*.css
-        name: Cache-Control
-        value: no-cache, no-store, must-revalidate, max-age=0
-      - path: /*
-        name: X-Frame-Options
-        value: DENY
-      - path: /*
-        name: X-Content-Type-Options
-        value: nosniff
+      # ── CinetPay (production — clés depuis https://cinetpay.com) ──
+      - key: CINETPAY_API_KEY
+        sync: false
+      - key: CINETPAY_API_PASSWORD
+        sync: false
+      - key: CINETPAY_SANDBOX
+        value: false
+
+      # ── Brevo (Email transactionnel) ──
+      - key: BREVO_API_KEY
+        sync: false
+      - key: BREVO_SENDER_EMAIL
+        sync: false
+      - key: ADMIN_EMAIL
+        sync: false
+
+      # ── Twilio (SMS) ──
+      - key: TWILIO_ACCOUNT_SID
+        sync: false
+      - key: TWILIO_AUTH_TOKEN
+        sync: false
+      - key: TWILIO_PHONE_NUMBER
+        sync: false
+
+      # ── Cloudinary (Images) ──
+      - key: CLOUDINARY_CLOUD_NAME
+        sync: false
+      - key: CLOUDINARY_API_KEY
+        sync: false
+      - key: CLOUDINARY_API_SECRET
+        sync: false

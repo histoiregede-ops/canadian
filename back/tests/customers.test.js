@@ -1,4 +1,4 @@
-const request = require('supertest');
+﻿const request = require('supertest');
 const app = require('../index');
 
 describe('Customers API', () => {
@@ -8,7 +8,7 @@ describe('Customers API', () => {
   beforeAll(async () => {
     const loginRes = await request(app)
       .post('/api/auth/login')
-      .send({ username: 'admin', password: 'admin123' });
+      .send({ username: 'admin', password: 'admin' });
     authToken = loginRes.body.token;
   });
 
@@ -16,9 +16,10 @@ describe('Customers API', () => {
     it('should return all customers', async () => {
       const res = await request(app)
         .get('/api/customers')
+        .set('Authorization', 'Bearer ' + authToken)
         .expect(200);
       
-      expect(Array.isArray(res.body)).toBe(true);
+      expect(Array.isArray(res.body.data)).toBe(true);
     });
   });
 
@@ -48,10 +49,11 @@ describe('Customers API', () => {
       
       const res = await request(app)
         .get('/api/customers/' + createdCustomerId + '/loyalty')
+        .set('Authorization', 'Bearer ' + authToken)
         .expect(200);
       
       expect(res.body).toHaveProperty('points');
-      expect(res.body).toHaveProperty('loyaltyLevel');
+      expect(res.body).toHaveProperty('level');
     });
   });
 });

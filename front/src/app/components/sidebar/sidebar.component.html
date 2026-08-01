@@ -88,6 +88,16 @@
       <span class="label" [class.hide]="isCollapsed">Utilisateurs</span>
       <span class="tooltip" *ngIf="isCollapsed">Utilisateurs</span>
     </a>
+    <a *ngIf="user?.role === 'admin' || user?.role === 'cashier'" routerLink="/accounting" routerLinkActive="active" class="nav-item" [class.collapsed]="isCollapsed">
+      <span class="icon">&#x1F4C8;</span>
+      <span class="label" [class.hide]="isCollapsed">Comptabilité</span>
+      <span class="tooltip" *ngIf="isCollapsed">Comptabilité</span>
+    </a>
+    <a *ngIf="user?.role === 'admin'" routerLink="/payroll" routerLinkActive="active" class="nav-item" [class.collapsed]="isCollapsed">
+      <span class="icon">&#x1F4B3;</span>
+      <span class="label" [class.hide]="isCollapsed">Paie</span>
+      <span class="tooltip" *ngIf="isCollapsed">Paie</span>
+    </a>
     <a *ngIf="user?.role === 'admin'" routerLink="/finance" routerLinkActive="active" class="nav-item" [class.collapsed]="isCollapsed">
       <span class="icon">&#x1F4B0;</span>
       <span class="label" [class.hide]="isCollapsed">Caisse &amp; Finance</span>

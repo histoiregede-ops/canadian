@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
 import { Product, ProductService } from '../../services/product';
+import { ToastService } from '../../services/toast.service';
 import { environment } from '../../../environments/environment';
 import { ActivatedRoute } from '@angular/router';
 
@@ -25,7 +26,7 @@ export class ScanComponent implements OnInit, OnDestroy, AfterViewInit {
   showCart = false;
   resolvedProducts: Product[] = [];
 
-  constructor(private route: ActivatedRoute, private productService: ProductService) {}
+  constructor(private route: ActivatedRoute, private productService: ProductService, private toastService: ToastService) {}
 
   ngOnInit(): void {
     this.route.data.subscribe(({ data }) => {
@@ -97,12 +98,12 @@ export class ScanComponent implements OnInit, OnDestroy, AfterViewInit {
       if (existing.quantity < (this.scannedProduct.stockQuantity || 0)) {
         existing.quantity++;
       } else {
-        alert('Stock insuffisant!');
+        this.toastService.show('Stock insuffisant!', 'warning');
         return;
       }
     } else {
       if ((this.scannedProduct.stockQuantity || 0) <= 0) {
-        alert('Ce produit est en rupture de stock.');
+        this.toastService.show('Ce produit est en rupture de stock.', 'warning');
         return;
       }
       this.cart.push({ product: this.scannedProduct, quantity: 1 });

@@ -5,6 +5,7 @@ import { FormsModule } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
 import { CustomerService, Customer, LoyaltyData } from '../../services/customer';
 import { RefreshService } from '../../services/refresh.service';
+import { ToastService } from '../../services/toast.service';
 
 @Component({
   selector: 'app-customers',
@@ -24,7 +25,12 @@ export class CustomersComponent implements OnInit, OnDestroy {
   currentCustomer: Customer = this.initCustomer();
   private refreshSub: Subscription | null = null;
 
-  constructor(private route: ActivatedRoute, private customerService: CustomerService, private refreshService: RefreshService) {}
+  constructor(
+    private route: ActivatedRoute,
+    private customerService: CustomerService,
+    private refreshService: RefreshService,
+    private toastService: ToastService
+  ) {}
 
   ngOnInit(): void {
     this.route.data.subscribe(({ data }) => {
@@ -143,25 +149,46 @@ export class CustomersComponent implements OnInit, OnDestroy {
 
   saveCustomer(): void {
     if (this.isEditing && this.currentCustomer.id) {
-      this.customerService.updateCustomer(this.currentCustomer.id, this.currentCustomer).subscribe(() => {
-        this.loadCustomers();
-        this.showModal = false;
-        this.refreshService.triggerRefresh();
+      this.customerService.updateCustomer(this.currentCustomer.id, this.currentCustomer).subscribe({
+        next: () => {
+          this.loadCustomers();
+          this.showModal = false;
+          this.refreshService.triggerRefresh();
+          this.toastService.show('Client mis à jour', 'success');
+        },
+        error: (err) => {
+          console.error('Error updating customer:', err);
+          this.toastService.show(err.error?.error || 'Impossible de mettre à jour le client.', 'error');
+        }
       });
     } else {
-      this.customerService.createCustomer(this.currentCustomer).subscribe(() => {
-        this.loadCustomers();
-        this.showModal = false;
-        this.refreshService.triggerRefresh();
+      this.customerService.createCustomer(this.currentCustomer).subscribe({
+        next: () => {
+          this.loadCustomers();
+          this.showModal = false;
+          this.refreshService.triggerRefresh();
+          this.toastService.show('Client créé', 'success');
+        },
+        error: (err) => {
+          console.error('Error creating customer:', err);
+          this.toastService.show(err.error?.error || 'Impossible de créer le client.', 'error');
+        }
       });
     }
   }
 
   deleteCustomer(id: string): void {
     if (confirm('Voulez-vous supprimer ce client ?')) {
-      this.customerService.deleteCustomer(id).subscribe(() => {
-        this.loadCustomers();
-        this.refreshService.triggerRefresh();
+      this.customerService.deleteCustomer(id).subscribe({
+        next: () => {
+          this.loadCustomers();
+          this.refreshService.triggerRefresh();
+          this.toastService.show('Client supprimé', 'success');
+        },
+        error: (err) => {
+          console.error('Error deleting customer:', err);
+          this.toastService.show(err.error?.error || 'Impossible de supprimer le client.', 'error');
+        }
       });
     }
   }

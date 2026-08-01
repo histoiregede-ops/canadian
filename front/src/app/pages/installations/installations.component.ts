@@ -8,6 +8,7 @@ import { CustomerService, Customer } from '../../services/customer';
 import { UserService } from '../../services/user.service';
 import { OrderService } from '../../services/order';
 import { RefreshService } from '../../services/refresh.service';
+import { ToastService } from '../../services/toast.service';
 
 @Component({
   selector: 'app-installations',
@@ -47,7 +48,8 @@ export class InstallationsComponent implements OnInit, OnDestroy {
     private customerService: CustomerService,
     private userService: UserService,
     private orderService: OrderService,
-    private refreshService: RefreshService
+    private refreshService: RefreshService,
+    private toastService: ToastService
   ) {}
 
   ngOnInit(): void {
@@ -145,25 +147,46 @@ export class InstallationsComponent implements OnInit, OnDestroy {
 
   saveInstallation(): void {
     if (this.isEditing && this.currentInstallation.id) {
-      this.installationService.updateInstallation(this.currentInstallation.id, this.currentInstallation).subscribe(() => {
-        this.loadInstallations();
-        this.showModal = false;
-        this.refreshService.triggerRefresh();
+      this.installationService.updateInstallation(this.currentInstallation.id, this.currentInstallation).subscribe({
+        next: () => {
+          this.loadInstallations();
+          this.showModal = false;
+          this.refreshService.triggerRefresh();
+          this.toastService.show('Installation mise à jour', 'success');
+        },
+        error: (err) => {
+          console.error('Error updating installation:', err);
+          this.toastService.show(err.error?.error || 'Impossible de mettre à jour l\'installation.', 'error');
+        }
       });
     } else {
-      this.installationService.createInstallation(this.currentInstallation).subscribe(() => {
-        this.loadInstallations();
-        this.showModal = false;
-        this.refreshService.triggerRefresh();
+      this.installationService.createInstallation(this.currentInstallation).subscribe({
+        next: () => {
+          this.loadInstallations();
+          this.showModal = false;
+          this.refreshService.triggerRefresh();
+          this.toastService.show('Installation créée', 'success');
+        },
+        error: (err) => {
+          console.error('Error creating installation:', err);
+          this.toastService.show(err.error?.error || 'Impossible de créer l\'installation.', 'error');
+        }
       });
     }
   }
 
   deleteInstallation(id: string): void {
     if (confirm('Supprimer ce dossier d\'installation ?')) {
-      this.installationService.deleteInstallation(id).subscribe(() => {
-        this.loadInstallations();
-        this.refreshService.triggerRefresh();
+      this.installationService.deleteInstallation(id).subscribe({
+        next: () => {
+          this.loadInstallations();
+          this.refreshService.triggerRefresh();
+          this.toastService.show('Installation supprimée', 'success');
+        },
+        error: (err) => {
+          console.error('Error deleting installation:', err);
+          this.toastService.show(err.error?.error || 'Impossible de supprimer l\'installation.', 'error');
+        }
       });
     }
   }

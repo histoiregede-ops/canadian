@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { CartService, CartItem } from '../../services/cart';
+import { ToastService } from '../../services/toast.service';
 import { environment } from '../../../environments/environment';
 import { Subscription } from 'rxjs';
 
@@ -29,7 +30,8 @@ export class CartComponent implements OnInit, OnDestroy {
   
   constructor(
     private cartService: CartService,
-    private router: Router
+    private router: Router,
+    private toastService: ToastService
   ) {}
 
   ngOnInit(): void {
@@ -61,6 +63,7 @@ export class CartComponent implements OnInit, OnDestroy {
   removeItem(productId: string): void {
     if (confirm('Êtes-vous sûr de vouloir supprimer cet article?')) {
       this.cartService.removeItem(productId);
+      this.toastService.show('Article supprimé', 'success');
     }
   }
 
@@ -70,7 +73,7 @@ export class CartComponent implements OnInit, OnDestroy {
 
   checkout(): void {
     if (this.cartItems.length === 0) {
-      alert('Votre panier est vide!');
+      this.toastService.show('Votre panier est vide.', 'warning');
       return;
     }
     this.router.navigate(['/checkout']);

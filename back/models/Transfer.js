@@ -15,6 +15,15 @@ const Transfer = sequelize.define('Transfer', {
     type: DataTypes.ENUM('sent', 'received'),
     allowNull: false
   },
+  transferType: {
+    type: DataTypes.STRING,
+    allowNull: false,
+    defaultValue: 'national'
+  },
+  country: {
+    type: DataTypes.STRING,
+    allowNull: true
+  },
   amount: {
     type: DataTypes.DECIMAL(12, 2),
     allowNull: false

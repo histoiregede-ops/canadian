@@ -1,4 +1,4 @@
-const request = require('supertest');
+﻿const request = require('supertest');
 const app = require('../index');
 
 describe('Products API', () => {
@@ -10,8 +10,16 @@ describe('Products API', () => {
   beforeAll(async () => {
     const loginRes = await request(app)
       .post('/api/auth/login')
-      .send({ username: 'admin', password: 'admin123' });
+      .send({ username: 'admin', password: 'admin' });
     authToken = loginRes.body.token;
+
+    // Le POST /api/products exige une categoryId existante (contrainte FK) :
+    // on crée une vraie catégorie pour le test.
+    const categoryRes = await request(app)
+      .post('/api/categories')
+      .set('Authorization', 'Bearer ' + authToken)
+      .send({ name: 'Product Test Category ' + Date.now(), type: 'electronics' });
+    createdCategoryId = categoryRes.body.id;
   });
 
   describe('GET /api/products', () => {
@@ -20,7 +28,7 @@ describe('Products API', () => {
         .get('/api/products')
         .expect(200);
       
-      expect(Array.isArray(res.body)).toBe(true);
+      expect(Array.isArray(res.body.data)).toBe(true);
     });
   });
 

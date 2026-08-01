@@ -5,7 +5,7 @@
 # Valeurs par défaut
 export DOMAIN_CLIENT="${DOMAIN_CLIENT:-localhost}"
 export DOMAIN_STAFF="${DOMAIN_STAFF:-localhost}"
-export BACKEND_HOST="${BACKEND_HOST:-backend}"
+export BACKEND_HOST="${BACKEND_HOST:-localhost}"
 export BACKEND_PORT="${BACKEND_PORT:-3000}"
 
 # Appliquer les variables au template

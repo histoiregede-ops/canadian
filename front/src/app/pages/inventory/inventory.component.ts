@@ -12,6 +12,7 @@ import { Product, StockMovement, ProductService } from '../../services/product';
 import { SupplierService } from '../../services/supplier';
 import { WebSocketService } from '../../services/websocket';
 import { RefreshService } from '../../services/refresh.service';
+import { ToastService } from '../../services/toast.service';
 import { BarcodeService } from '../../services/barcode.service';
 
 Chart.register(...registerables);
@@ -110,6 +111,7 @@ export class InventoryComponent implements OnInit, OnDestroy, AfterViewInit {
     private supplierService: SupplierService,
     private wsService: WebSocketService,
     private refreshService: RefreshService,
+    private toastService: ToastService,
     private barcodeService: BarcodeService
   ) { }
 
@@ -278,7 +280,7 @@ export class InventoryComponent implements OnInit, OnDestroy, AfterViewInit {
     if (!qty) return;
     const num = parseInt(qty, 10);
     if (isNaN(num) || num <= 0) {
-      alert('Veuillez entrer une quantite valide');
+      this.toastService.show('Veuillez entrer une quantite valide', 'warning');
       return;
     }
     this.productService.restockProduct(product.id!, num).subscribe({
@@ -289,10 +291,11 @@ export class InventoryComponent implements OnInit, OnDestroy, AfterViewInit {
           this.products = [...this.products];
         }
         this.refreshService.triggerRefresh();
+        this.toastService.show('Reapprovisionnement effectué', 'success');
       },
       error: (err) => {
         console.error('Error restocking:', err);
-        alert('Erreur lors du reapprovisionnement');
+        this.toastService.show('Erreur lors du reapprovisionnement', 'error');
       }
     });
   }
@@ -302,7 +305,7 @@ export class InventoryComponent implements OnInit, OnDestroy, AfterViewInit {
     if (qty === null) return;
     const num = parseInt(qty, 10);
     if (isNaN(num) || num < 0) {
-      alert('Veuillez entrer une quantite valide');
+      this.toastService.show('Veuillez entrer une quantite valide', 'warning');
       return;
     }
     const reason = prompt('Raison de l\'ajustement (optionnel):', 'Ajustement manuel') || 'Ajustement manuel';
@@ -314,10 +317,11 @@ export class InventoryComponent implements OnInit, OnDestroy, AfterViewInit {
           this.products = [...this.products];
         }
         this.refreshService.triggerRefresh();
+        this.toastService.show('Stock ajusté', 'success');
       },
       error: (err) => {
         console.error('Error adjusting stock:', err);
-        alert('Erreur lors de l\'ajustement du stock');
+        this.toastService.show('Erreur lors de l\'ajustement du stock', 'error');
       }
     });
   }
@@ -373,7 +377,7 @@ export class InventoryComponent implements OnInit, OnDestroy, AfterViewInit {
     this.saving = true;
 
     if (!this.isEditing && !this.selectedFile) {
-      alert("L'insertion d'une image est obligatoire pour enregistrer un produit !");
+      this.toastService.show("L'insertion d'une image est obligatoire pour enregistrer un produit !", 'warning');
       this.saving = false;
       return;
     }
@@ -393,12 +397,13 @@ export class InventoryComponent implements OnInit, OnDestroy, AfterViewInit {
           this.loadProducts();
           this.showModal = false;
           this.refreshService.triggerRefresh();
+          this.toastService.show('Produit mis à jour', 'success');
           finish();
         },
         error: (err) => {
           console.error('Erreur lors de la création:', err);
           const msg = err.error?.error || err.message || 'Erreur lors de la création du produit.';
-          alert(msg);
+          this.toastService.show(msg, 'error');
           finish();
         }
       });
@@ -408,12 +413,13 @@ export class InventoryComponent implements OnInit, OnDestroy, AfterViewInit {
         next: () => {
           this.loadProducts();
           this.showModal = false;
+          this.toastService.show('Produit créé', 'success');
           finish();
         },
         error: (err) => {
           console.error('Erreur lors de la création:', err);
           const msg = err.error?.error || err.message || 'Erreur lors de la création du produit.';
-          alert(msg);
+          this.toastService.show(msg, 'error');
           finish();
         }
       });
@@ -426,10 +432,11 @@ export class InventoryComponent implements OnInit, OnDestroy, AfterViewInit {
         next: () => {
           this.loadProducts();
           this.refreshService.triggerRefresh();
+          this.toastService.show('Produit supprimé', 'success');
         },
         error: (err) => {
           console.error('Erreur lors de la suppression:', err);
-          alert('Impossible de supprimer ce produit. Il est peut-être lié à une commande.');
+          this.toastService.show('Impossible de supprimer ce produit. Il est peut-être lié à une commande.', 'error');
         }
       });
     }
@@ -438,7 +445,7 @@ export class InventoryComponent implements OnInit, OnDestroy, AfterViewInit {
   downloadBarcode(product: Product): void {
     const code = product.barcode || product.id || '';
     if (!code) {
-      alert('Ce produit n\'a pas de code-barres.');
+      this.toastService.show('Ce produit n\'a pas de code-barres.', 'warning');
       return;
     }
     const filename = `${product.name.replace(/[^a-zA-Z0-9]/g, '_')}_${code}`;

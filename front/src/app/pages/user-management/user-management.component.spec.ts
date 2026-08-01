@@ -2,18 +2,18 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { UserManagementComponent } from './user-management.component';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { provideHttpClient } from '@angular/common/http';
 import { UserService } from '../../services/user.service';
 import { AuthService } from '../../services/auth';
 import { ActivatedRoute } from '@angular/router';
 import { of } from 'rxjs';
+import { vi } from 'vitest';
 
 describe('UserManagementComponent', () => {
   let component: UserManagementComponent;
   let fixture: ComponentFixture<UserManagementComponent>;
-  let mockUserService: jasmine.SpyObj<UserService>;
-  let mockAuthService: jasmine.SpyObj<AuthService>;
-  let mockActivatedRoute: jasmine.SpyObj<ActivatedRoute>;
+  let mockUserService: { getUsers: ReturnType<typeof vi.fn>; createUser: ReturnType<typeof vi.fn>; updateUser: ReturnType<typeof vi.fn> };
+  let mockAuthService: { logout: ReturnType<typeof vi.fn>; getUser: ReturnType<typeof vi.fn> };
+  let mockActivatedRoute: { data: any };
 
   const mockUsers = [
     { id: '1', username: 'admin', fullName: 'Admin User', email: 'admin@test.com', role: 'admin' },
@@ -21,12 +21,13 @@ describe('UserManagementComponent', () => {
   ];
 
   beforeEach(async () => {
-    mockUserService = jasmine.createSpyObj('UserService', ['getUsers']);
-    mockUserService.getUsers.and.returnValue(of(mockUsers));
-    mockAuthService = jasmine.createSpyObj('AuthService', ['logout', 'getUser']);
-    mockAuthService.getUser.and.returnValue({ username: 'admin', role: 'admin' });
-    mockActivatedRoute = jasmine.createSpyObj('ActivatedRoute', ['data']);
-    mockActivatedRoute.data.and.returnValue(of({ data: { users: mockUsers } }));
+    mockUserService = {
+      getUsers: vi.fn().mockReturnValue(of(mockUsers)),
+      createUser: vi.fn().mockReturnValue(of({})),
+      updateUser: vi.fn().mockReturnValue(of({}))
+    };
+    mockAuthService = { logout: vi.fn(), getUser: vi.fn().mockReturnValue({ username: 'admin', role: 'admin' }) };
+    mockActivatedRoute = { data: of({ data: { users: mockUsers } }) };
 
     await TestBed.configureTestingModule({
       imports: [UserManagementComponent, CommonModule, FormsModule],
@@ -42,6 +43,10 @@ describe('UserManagementComponent', () => {
     fixture = TestBed.createComponent(UserManagementComponent);
     component = fixture.componentInstance;
     fixture.detectChanges();
+  });
+
+  afterEach(() => {
+    fixture.destroy();
   });
 
   it('should create', () => {
@@ -71,15 +76,15 @@ describe('UserManagementComponent', () => {
 
   it('should open add modal', () => {
     component.openModal();
-    expect(component.showModal).toBeTrue();
-    expect(component.isEditing).toBeFalse();
+    expect(component.showModal).toBe(true);
+    expect(component.editingUser).toBeNull();
   });
 
   it('should open edit modal', () => {
-    component.openEditModal(mockUsers[0]);
-    expect(component.showModal).toBeTrue();
-    expect(component.isEditing).toBeTrue();
+    component.editUser(mockUsers[0]);
+    expect(component.showModal).toBe(true);
     expect(component.editingUser).toBe(mockUsers[0]);
+    expect(component.form.username).toBe('admin');
   });
 
   it('should logout', () => {
@@ -91,5 +96,19 @@ describe('UserManagementComponent', () => {
     expect(component.getRoleLabel('admin')).toBe('Administrateur');
     expect(component.getRoleLabel('cashier')).toBe('Caissier');
     expect(component.getRoleLabel('technician')).toBe('Technicien');
+  });
+
+  it('should save a new user when the username is filled', () => {
+    component.form.username = 'newuser';
+    component.form.password = 'pw';
+    component.save();
+    expect(mockUserService.createUser).toHaveBeenCalled();
+  });
+
+  it('should not save when the username is empty', () => {
+    component.form.username = '';
+    component.save();
+    expect(mockUserService.createUser).not.toHaveBeenCalled();
+    expect(mockUserService.updateUser).not.toHaveBeenCalled();
   });
 });

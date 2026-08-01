@@ -1,4 +1,4 @@
-const request = require('supertest');
+﻿const request = require('supertest');
 const app = require('../index');
 
 describe('Orders API', () => {
@@ -10,7 +10,7 @@ describe('Orders API', () => {
   beforeAll(async () => {
     const loginRes = await request(app)
       .post('/api/auth/login')
-      .send({ username: 'admin', password: 'admin123' });
+      .send({ username: 'admin', password: 'admin' });
     authToken = loginRes.body.token;
 
     const customerRes = await request(app)
@@ -42,7 +42,7 @@ describe('Orders API', () => {
         .set('Authorization', 'Bearer ' + authToken)
         .expect(200);
       
-      expect(Array.isArray(res.body)).toBe(true);
+      expect(Array.isArray(res.body.data)).toBe(true);
     });
   });
 
@@ -88,6 +88,7 @@ describe('Orders API', () => {
       
       const res = await request(app)
         .get('/api/orders/' + createdOrderId)
+        .set('Authorization', 'Bearer ' + authToken)
         .expect(200);
       
       expect(res.body).toHaveProperty('id', createdOrderId);

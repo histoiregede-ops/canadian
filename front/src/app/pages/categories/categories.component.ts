@@ -7,6 +7,7 @@ import { ActivatedRoute } from '@angular/router';
 import { CategoryService, Category } from '../../services/category';
 import { ProductService } from '../../services/product';
 import { RefreshService } from '../../services/refresh.service';
+import { ToastService } from '../../services/toast.service';
 
 @Component({
   selector: 'app-categories',
@@ -27,7 +28,13 @@ export class CategoriesComponent implements OnInit, OnDestroy {
   private refreshSub: Subscription | null = null;
   private productCounts: Map<string, number> = new Map();
 
-  constructor(private route: ActivatedRoute, private categoryService: CategoryService, private productService: ProductService, private refreshService: RefreshService) {}
+  constructor(
+    private route: ActivatedRoute,
+    private categoryService: CategoryService,
+    private productService: ProductService,
+    private refreshService: RefreshService,
+    private toastService: ToastService
+  ) {}
 
   ngOnInit(): void {
     this.route.data.subscribe({
@@ -127,10 +134,12 @@ export class CategoriesComponent implements OnInit, OnDestroy {
           this.loadCategories();
           this.showModal = false;
           this.refreshService.triggerRefresh();
+          this.toastService.show('Catégorie mise à jour', 'success');
         },
         error: (err) => {
           console.error('Error updating category:', err);
           this.errorMessage = 'Impossible de mettre à jour la catégorie.';
+          this.toastService.show('Impossible de mettre à jour la catégorie.', 'error');
         }
       });
     } else {
@@ -139,10 +148,12 @@ export class CategoriesComponent implements OnInit, OnDestroy {
           this.loadCategories();
           this.showModal = false;
           this.refreshService.triggerRefresh();
+          this.toastService.show('Catégorie créée', 'success');
         },
         error: (err) => {
           console.error('Error creating category:', err);
           this.errorMessage = 'Impossible de créer la catégorie.';
+          this.toastService.show('Impossible de créer la catégorie.', 'error');
         }
       });
     }
@@ -153,10 +164,15 @@ export class CategoriesComponent implements OnInit, OnDestroy {
 
     if (confirm('Êtes-vous sûr de vouloir supprimer cette catégorie ?')) {
       this.categoryService.deleteCategory(category.id).subscribe({
-        next: () => { this.loadCategories(); this.refreshService.triggerRefresh(); },
+        next: () => {
+          this.loadCategories();
+          this.refreshService.triggerRefresh();
+          this.toastService.show('Catégorie supprimée', 'success');
+        },
         error: (err) => {
           console.error('Error deleting category:', err);
           this.errorMessage = 'Impossible de supprimer la catégorie.';
+          this.toastService.show('Impossible de supprimer la catégorie.', 'error');
         }
       });
     }

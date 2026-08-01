@@ -24,11 +24,11 @@ describe('OrderService', () => {
     expect(typeof service.createOrder).toBe('function');
   });
 
-  it('should have getOrder method', () => {
-    expect(typeof service.getOrder).toBe('function');
+  it('should have updateOrder method', () => {
+    expect(typeof service.updateOrder).toBe('function');
   });
 
-  it('should have getCustomerOrders method', () => {
-    expect(typeof service.getCustomerOrders).toBe('function');
+  it('should have deleteOrder method', () => {
+    expect(typeof service.deleteOrder).toBe('function');
   });
 });

@@ -7,19 +7,23 @@ import { ProductService } from '../../services/product';
 import { CategoryService } from '../../services/category';
 import { CartService } from '../../services/cart';
 import { CustomerAuthService } from '../../services/customer-auth';
-import { Router } from '@angular/router';
-import { ActivatedRoute } from '@angular/router';
+import { ProductReviewService } from '../../services/product-review';
+import { RefreshService } from '../../services/refresh.service';
+import { Router, ActivatedRoute } from '@angular/router';
 import { of } from 'rxjs';
+import { vi } from 'vitest';
 
 describe('ShopComponent', () => {
   let component: ShopComponent;
   let fixture: ComponentFixture<ShopComponent>;
-  let mockProductService: jasmine.SpyObj<ProductService>;
-  let mockCategoryService: jasmine.SpyObj<CategoryService>;
-  let mockCartService: jasmine.SpyObj<CartService>;
-  let mockCustomerAuth: jasmine.SpyObj<CustomerAuthService>;
-  let mockRouter: jasmine.SpyObj<Router>;
-  let mockActivatedRoute: jasmine.SpyObj<ActivatedRoute>;
+  let mockProductService: { getProducts: ReturnType<typeof vi.fn> };
+  let mockCategoryService: { getCategories: ReturnType<typeof vi.fn> };
+  let mockCartService: { addItem: ReturnType<typeof vi.fn> };
+  let mockCustomerAuth: { isAuthenticated: ReturnType<typeof vi.fn>; logout: ReturnType<typeof vi.fn> };
+  let mockRouter: { navigate: ReturnType<typeof vi.fn> };
+  let mockActivatedRoute: { data: any };
+  let mockReviewService: { getBatchReviews: ReturnType<typeof vi.fn>; getStarArray: ReturnType<typeof vi.fn>; formatRating: ReturnType<typeof vi.fn> };
+  let mockRefreshService: { refresh$: any };
 
   const mockProducts = [
     { id: '1', name: 'Product 1', price: 1000, stockQuantity: 10, status: 'available', categoryId: 'cat1' },
@@ -32,16 +36,18 @@ describe('ShopComponent', () => {
   ];
 
   beforeEach(async () => {
-    mockProductService = jasmine.createSpyObj('ProductService', ['getProducts']);
-    mockProductService.getProducts.and.returnValue(of(mockProducts));
-    mockCategoryService = jasmine.createSpyObj('CategoryService', ['getCategories']);
-    mockCategoryService.getCategories.and.returnValue(of(mockCategories));
-    mockCartService = jasmine.createSpyObj('CartService', ['addItem']);
-    mockCustomerAuth = jasmine.createSpyObj('CustomerAuthService', ['isLoggedIn', 'logout']);
-    mockCustomerAuth.isLoggedIn.and.returnValue(false);
-    mockRouter = jasmine.createSpyObj('Router', ['navigate']);
-    mockActivatedRoute = jasmine.createSpyObj('ActivatedRoute', ['data']);
-    mockActivatedRoute.data.and.returnValue(of({ data: { products: mockProducts, categories: mockCategories } }));
+    mockProductService = { getProducts: vi.fn().mockReturnValue(of(mockProducts)) };
+    mockCategoryService = { getCategories: vi.fn().mockReturnValue(of(mockCategories)) };
+    mockCartService = { addItem: vi.fn() };
+    mockCustomerAuth = { isAuthenticated: vi.fn().mockReturnValue(false), logout: vi.fn() };
+    mockRouter = { navigate: vi.fn() };
+    mockActivatedRoute = { data: of({ data: { products: mockProducts, categories: mockCategories } }) };
+    mockReviewService = {
+      getBatchReviews: vi.fn().mockReturnValue(of({})),
+      getStarArray: vi.fn().mockReturnValue([true, true, true, false, false]),
+      formatRating: vi.fn().mockReturnValue('4.0')
+    };
+    mockRefreshService = { refresh$: of() };
 
     await TestBed.configureTestingModule({
       imports: [ShopComponent, CommonModule, FormsModule],
@@ -50,8 +56,11 @@ describe('ShopComponent', () => {
         { provide: CategoryService, useValue: mockCategoryService },
         { provide: CartService, useValue: mockCartService },
         { provide: CustomerAuthService, useValue: mockCustomerAuth },
+        { provide: ProductReviewService, useValue: mockReviewService },
+        { provide: RefreshService, useValue: mockRefreshService },
         { provide: Router, useValue: mockRouter },
-        { provide: ActivatedRoute, useValue: mockActivatedRoute }
+        { provide: ActivatedRoute, useValue: mockActivatedRoute },
+        provideHttpClient()
       ]
     }).compileComponents();
   });
@@ -60,6 +69,10 @@ describe('ShopComponent', () => {
     fixture = TestBed.createComponent(ShopComponent);
     component = fixture.componentInstance;
     fixture.detectChanges();
+  });
+
+  afterEach(() => {
+    fixture.destroy();
   });
 
   it('should create', () => {
@@ -84,10 +97,16 @@ describe('ShopComponent', () => {
   });
 
   it('should filter available products only', () => {
-    expect(component.products.every(p => p.status === 'available')).toBeTrue();
+    expect(component.products.every((p) => p.status === 'available')).toBe(true);
   });
 
   it('should set featured products', () => {
     expect(component.featuredProducts.length).toBeGreaterThan(0);
+  });
+
+  it('should apply price sort from low to high', () => {
+    component.sortBy = 'price-low';
+    component.applySorting();
+    expect(component.products[0].price).toBeLessThanOrEqual(component.products[1].price);
   });
 });

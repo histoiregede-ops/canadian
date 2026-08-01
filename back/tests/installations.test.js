@@ -1,4 +1,4 @@
-const request = require('supertest');
+﻿const request = require('supertest');
 const app = require('../index');
 
 describe('Installations API', () => {
@@ -9,7 +9,7 @@ describe('Installations API', () => {
   beforeAll(async () => {
     const loginRes = await request(app)
       .post('/api/auth/login')
-      .send({ username: 'admin', password: 'admin123' });
+      .send({ username: 'admin', password: 'admin' });
     authToken = loginRes.body.token;
 
     const customerRes = await request(app)
@@ -30,7 +30,7 @@ describe('Installations API', () => {
         .set('Authorization', 'Bearer ' + authToken)
         .expect(200);
       
-      expect(Array.isArray(res.body)).toBe(true);
+      expect(Array.isArray(res.body.data)).toBe(true);
     });
   });
 
@@ -84,10 +84,12 @@ describe('Installations API', () => {
     it('should delete an installation', async () => {
       if (!createdInstallationId) return;
       
-      await request(app)
+      const res = await request(app)
         .delete('/api/installations/' + createdInstallationId)
         .set('Authorization', 'Bearer ' + authToken)
-        .expect(204);
+        .expect(200);
+
+      expect(res.body).toHaveProperty('message');
     });
   });
 });

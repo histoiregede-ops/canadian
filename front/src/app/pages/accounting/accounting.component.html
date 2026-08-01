@@ -1,0 +1,98 @@
+<div class="page-container">
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">Comptabilité</h1>
+      <p class="page-subtitle">Suivi des entrées et sorties, reporting journalier et export.</p>
+    </div>
+    <div class="header-actions">
+      <button class="btn btn-primary" (click)="loadFlux()">🔄 Actualiser le rapport</button>
+    </div>
+  </div>
+
+  <div class="summary-grid">
+    <div class="stat-card">
+      <p class="stat-label">Entrées totales</p>
+      <h3 class="stat-value">{{ summary.revenue | number }} FCFA</h3>
+    </div>
+    <div class="stat-card">
+      <p class="stat-label">Sorties totales</p>
+      <h3 class="stat-value">{{ summary.expense | number }} FCFA</h3>
+    </div>
+    <div class="stat-card">
+      <p class="stat-label">Solde net</p>
+      <h3 class="stat-value">{{ summary.balance | number }} FCFA</h3>
+    </div>
+  </div>
+
+  <div class="form-card">
+    <div class="form-grid">
+      <div class="form-group">
+        <label>Période de</label>
+        <input type="date" [(ngModel)]="selectedStart" class="form-input" />
+      </div>
+      <div class="form-group">
+        <label>à</label>
+        <input type="date" [(ngModel)]="selectedEnd" class="form-input" />
+      </div>
+      <div class="form-group form-actions">
+        <button class="btn btn-primary" (click)="loadFlux()">Charger</button>
+      </div>
+    </div>
+  </div>
+
+  <div *ngIf="reportLoading" class="loading-state">
+    <div class="spinner"></div>
+    <p>Chargement du rapport...</p>
+  </div>
+
+  <div *ngIf="!reportLoading && fluxData" class="report-card">
+    <div class="report-header">
+      <div>
+        <h2>Flux journalier</h2>
+        <p>{{ selectedStart }} → {{ selectedEnd }}</p>
+      </div>
+      <div class="report-actions">
+        <button class="btn btn-secondary" (click)="exportPDF()">📄 Export PDF</button>
+        <button class="btn btn-secondary" (click)="exportXLSX()">📊 Export XLSX</button>
+      </div>
+    </div>
+
+    <div class="report-summary">
+      <div class="report-item report-income">
+        <span>Entrées</span>
+        <strong>+{{ fluxData.income | number }} FCFA</strong>
+      </div>
+      <div class="report-item report-expense">
+        <span>Sorties</span>
+        <strong>-{{ fluxData.expense | number }} FCFA</strong>
+      </div>
+      <div class="report-item report-balance">
+        <span>Solde</span>
+        <strong>{{ fluxData.balance | number }} FCFA</strong>
+      </div>
+    </div>
+
+    <div class="table-container">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Heure</th>
+            <th>Description</th>
+            <th>Type</th>
+            <th>Montant</th>
+            <th>Commentaire</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let transaction of fluxData.transactions">
+            <td>{{ transaction.time || '-' }}</td>
+            <td>{{ transaction.description }}</td>
+            <td>{{ formatType(transaction.type) }}</td>
+            <td>{{ transaction.amount | number }} FCFA</td>
+            <td>{{ transaction.comment || '-' }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>

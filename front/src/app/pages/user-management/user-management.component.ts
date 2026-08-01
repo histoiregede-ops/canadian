@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
 import { UserService, User } from '../../services/user.service';
 import { AuthService } from '../../services/auth';
+import { ToastService } from '../../services/toast.service';
 
 @Component({
   selector: 'app-user-management',
@@ -33,7 +34,8 @@ export class UserManagementComponent implements OnInit {
   constructor(
     private route: ActivatedRoute,
     private userService: UserService,
-    private authService: AuthService
+    private authService: AuthService,
+    private toastService: ToastService
   ) {}
 
   ngOnInit(): void {
@@ -111,14 +113,14 @@ export class UserManagementComponent implements OnInit {
       const updateData: any = { ...payload };
       if (this.form.password) updateData.password = this.form.password;
       this.userService.updateUser(this.editingUser.id, updateData).subscribe({
-        next: () => { this.showModal = false; this.loadUsers(); },
-        error: (err) => alert(err.error?.error || 'Erreur lors de la mise à jour')
+        next: () => { this.showModal = false; this.loadUsers(); this.toastService.show('Utilisateur mis à jour', 'success'); },
+        error: (err) => this.toastService.show(err.error?.error || 'Erreur lors de la mise à jour', 'error')
       });
     } else {
-      if (!this.form.password) { alert('Mot de passe requis'); return; }
+      if (!this.form.password) { this.toastService.show('Mot de passe requis', 'warning'); return; }
       this.userService.createUser({ ...payload, password: this.form.password }).subscribe({
-        next: () => { this.showModal = false; this.loadUsers(); },
-        error: (err) => alert(err.error?.error || 'Erreur lors de la création')
+        next: () => { this.showModal = false; this.loadUsers(); this.toastService.show('Utilisateur créé', 'success'); },
+        error: (err) => this.toastService.show(err.error?.error || 'Erreur lors de la création', 'error')
       });
     }
   }
@@ -126,8 +128,8 @@ export class UserManagementComponent implements OnInit {
   deleteUser(user: User): void {
     if (!confirm(`Supprimer l'utilisateur "${user.username}" ?`)) return;
     this.userService.deleteUser(user.id).subscribe({
-      next: () => this.loadUsers(),
-      error: () => alert('Erreur lors de la suppression')
+      next: () => { this.loadUsers(); this.toastService.show('Utilisateur supprimé', 'success'); },
+      error: () => this.toastService.show('Erreur lors de la suppression', 'error')
     });
   }
 

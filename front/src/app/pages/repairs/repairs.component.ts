@@ -6,6 +6,7 @@ import { ActivatedRoute } from '@angular/router';
 import { RepairService, Repair } from '../../services/repair';
 import { CustomerService, Customer } from '../../services/customer';
 import { RefreshService } from '../../services/refresh.service';
+import { ToastService } from '../../services/toast.service';
 
 @Component({
   selector: 'app-repairs',
@@ -31,7 +32,8 @@ export class RepairsComponent implements OnInit, OnDestroy {
     private route: ActivatedRoute,
     private repairService: RepairService,
     private customerService: CustomerService,
-    private refreshService: RefreshService
+    private refreshService: RefreshService,
+    private toastService: ToastService
   ) {}
 
   ngOnInit(): void {
@@ -157,25 +159,46 @@ export class RepairsComponent implements OnInit, OnDestroy {
 
   saveRepair(): void {
     if (this.isEditing && this.currentRepair.id) {
-      this.repairService.updateRepair(this.currentRepair.id, this.currentRepair).subscribe(() => {
-        this.loadRepairs();
-        this.showModal = false;
-        this.refreshService.triggerRefresh();
+      this.repairService.updateRepair(this.currentRepair.id, this.currentRepair).subscribe({
+        next: () => {
+          this.loadRepairs();
+          this.showModal = false;
+          this.refreshService.triggerRefresh();
+          this.toastService.show('Réparation mise à jour', 'success');
+        },
+        error: (err) => {
+          console.error('Error updating repair:', err);
+          this.toastService.show(err.error?.error || 'Impossible de mettre à jour la réparation.', 'error');
+        }
       });
     } else {
-      this.repairService.createRepair(this.currentRepair).subscribe(() => {
-        this.loadRepairs();
-        this.showModal = false;
-        this.refreshService.triggerRefresh();
+      this.repairService.createRepair(this.currentRepair).subscribe({
+        next: () => {
+          this.loadRepairs();
+          this.showModal = false;
+          this.refreshService.triggerRefresh();
+          this.toastService.show('Réparation ajoutée', 'success');
+        },
+        error: (err) => {
+          console.error('Error creating repair:', err);
+          this.toastService.show(err.error?.error || 'Impossible de créer la réparation.', 'error');
+        }
       });
     }
   }
 
   deleteRepair(id: string): void {
     if (confirm('Êtes-vous sûr de vouloir supprimer ce dossier de réparation ?')) {
-      this.repairService.deleteRepair(id).subscribe(() => {
-        this.loadRepairs();
-        this.refreshService.triggerRefresh();
+      this.repairService.deleteRepair(id).subscribe({
+        next: () => {
+          this.loadRepairs();
+          this.refreshService.triggerRefresh();
+          this.toastService.show('Réparation supprimée', 'success');
+        },
+        error: (err) => {
+          console.error('Error deleting repair:', err);
+          this.toastService.show(err.error?.error || 'Impossible de supprimer la réparation.', 'error');
+        }
       });
     }
   }

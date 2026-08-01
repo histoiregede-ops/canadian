@@ -29,6 +29,8 @@ import { MovementsComponent } from './pages/movements/movements.component';
 import { ReceiptsComponent } from './pages/receipts/receipts.component';
 import { PurchaseOrdersComponent } from './pages/purchase-orders/purchase-orders.component';
 import { TransfersComponent } from './pages/transfers/transfers.component';
+import { AccountingComponent } from './pages/accounting/accounting.component';
+import { PayrollComponent } from './pages/payroll/payroll.component';
 import { AdminPanelComponent } from './pages/admin-panel/admin-panel.component';
 
 import { DashboardResolver } from './resolvers/dashboard.resolver';
@@ -72,6 +74,8 @@ export const routes: Routes = [
   { path: 'receipts', component: ReceiptsComponent, canActivate: [RoleGuard], resolve: { data: ReceiptsResolver }, data: { roles: ['admin', 'cashier'] } },
   { path: 'purchase-orders', component: PurchaseOrdersComponent, canActivate: [RoleGuard], resolve: { data: PurchaseOrdersResolver }, data: { roles: ['admin'] } },
   { path: 'transfers', component: TransfersComponent, canActivate: [RoleGuard], resolve: { data: TransfersResolver }, data: { roles: ['admin', 'cashier'] } },
+  { path: 'accounting', component: AccountingComponent, canActivate: [RoleGuard], data: { roles: ['admin', 'cashier'] } },
+  { path: 'payroll', component: PayrollComponent, canActivate: [RoleGuard], data: { roles: ['admin'] } },
   { path: 'admin-panel', component: AdminPanelComponent, canActivate: [RoleGuard], data: { roles: ['admin'] } },
   // Client Routes
   { path: 'client', canActivate: [ClientAuthGuard], children: [

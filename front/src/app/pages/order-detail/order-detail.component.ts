@@ -6,6 +6,7 @@ import { environment } from '../../../environments/environment';
 import { ConfigService } from '../../services/config';
 import { PdfService } from '../../services/pdf';
 import { OrderService } from '../../services/order';
+import { ToastService } from '../../services/toast.service';
 
 interface OrderItem {
   id: string;
@@ -237,7 +238,7 @@ export class OrderDetailComponent implements OnInit {
   orderDates: (string | null)[] = [null, null, null, null];
   paymentLabels: Record<string, string> = {};
 
-  constructor(private route: ActivatedRoute, private http: HttpClient, private configService: ConfigService, private pdfService: PdfService, private orderService: OrderService) {}
+  constructor(private route: ActivatedRoute, private http: HttpClient, private configService: ConfigService, private pdfService: PdfService, private orderService: OrderService, private toastService: ToastService) {}
 
   ngOnInit() {
     this.configService.getPaymentMethods().subscribe(config => {
@@ -321,12 +322,12 @@ export class OrderDetailComponent implements OnInit {
     if (!this.order || !confirm(`Annuler la commande #${this.order.orderNumber} ? Le stock sera restauré.`)) return;
     this.orderService.deleteOrder(this.order.id).subscribe({
       next: () => {
-        alert('Commande annulée avec succès');
+        this.toastService.show('Commande annulée avec succès', 'success');
         if (this.order) {
           this.order = { ...this.order, status: 'cancelled' } as Order;
         }
       },
-      error: (err) => alert(err.error?.error || 'Erreur lors de l\'annulation')
+      error: (err) => this.toastService.show(err.error?.error || 'Erreur lors de l\'annulation', 'error')
     });
   }
 }

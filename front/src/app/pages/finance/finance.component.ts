@@ -8,6 +8,7 @@ import { FinanceService, Transaction, FluxJournalier } from '../../services/fina
 import { CustomerService, Customer } from '../../services/customer';
 import { ConfigService, ExpenseCategory } from '../../services/config';
 import { RefreshService } from '../../services/refresh.service';
+import { ToastService } from '../../services/toast.service';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import * as XLSX from 'xlsx';
@@ -60,7 +61,7 @@ export class FinanceComponent implements OnInit, OnDestroy, AfterViewInit {
     return item?.id ?? index;
   }
 
-  constructor(private route: ActivatedRoute, private financeService: FinanceService, private customerService: CustomerService, private configService: ConfigService, private refreshService: RefreshService) { }
+  constructor(private route: ActivatedRoute, private financeService: FinanceService, private customerService: CustomerService, private configService: ConfigService, private refreshService: RefreshService, private toastService: ToastService) { }
 
   ngOnInit(): void {
     this.loadExpenseCategories();
@@ -135,17 +136,18 @@ export class FinanceComponent implements OnInit, OnDestroy, AfterViewInit {
 
   saveTransaction(): void {
     if (!this.newTransaction.description || this.newTransaction.amount <= 0) {
-      alert('Veuillez remplir tous les champs obligatoires.');
+      this.toastService.show('Veuillez remplir tous les champs obligatoires.', 'warning');
       return;
     }
     this.financeService.createTransaction(this.newTransaction).subscribe({
       next: () => {
         this.showModal = false;
         this.loadFinanceData();
+        this.toastService.show('Transaction enregistrée', 'success');
       },
       error: (err) => {
         console.error('Error creating transaction:', err);
-        alert('Erreur lors de la création de la transaction.');
+        this.toastService.show('Erreur lors de la création de la transaction.', 'error');
       }
     });
   }
@@ -199,7 +201,7 @@ export class FinanceComponent implements OnInit, OnDestroy, AfterViewInit {
       },
       error: (err) => {
         console.error('Error saving comment:', err);
-        alert('Erreur lors de l\'enregistrement du commentaire.');
+        this.toastService.show('Erreur lors de l\'enregistrement du commentaire.', 'error');
       }
     });
   }

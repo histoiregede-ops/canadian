@@ -13,9 +13,10 @@ services:
       timeout: 10s
       retries: 10
 
+
   backend:
     build:
-      context: .
+      context: ./back
       dockerfile: Dockerfile.backend
     ports:
       - "3000:3000"
@@ -27,16 +28,17 @@ services:
       DB_PASS: ${DB_PASSWORD:-root}
       DB_NAME: ${DB_NAME:-solar_erp}
       DB_PORT: 3306
-      JWT_SECRET: ${JWT_SECRET:-change_me_in_production}
-      FRONTEND_URL: http://localhost:4200
+      JWT_SECRET: ${JWT_SECRET:-secret}
+      FRONTEND_URL: ${FRONTEND_URL:-http://localhost:4200}
       AUTO_SEED: ${AUTO_SEED:-false}
     depends_on:
       db:
         condition: service_healthy
 
+
   frontend:
     build:
-      context: .
+      context: ./front
       dockerfile: Dockerfile.frontend
     ports:
       - "80:80"
@@ -47,6 +49,7 @@ services:
       BACKEND_PORT: 3000
     depends_on:
       - backend
+
 
 volumes:
   mysql_data:

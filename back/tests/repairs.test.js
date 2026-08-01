@@ -1,4 +1,4 @@
-const request = require('supertest');
+﻿const request = require('supertest');
 const app = require('../index');
 
 describe('Repairs API', () => {
@@ -9,7 +9,7 @@ describe('Repairs API', () => {
   beforeAll(async () => {
     const loginRes = await request(app)
       .post('/api/auth/login')
-      .send({ username: 'admin', password: 'admin123' });
+      .send({ username: 'admin', password: 'admin' });
     authToken = loginRes.body.token;
 
     const customerRes = await request(app)
@@ -30,7 +30,7 @@ describe('Repairs API', () => {
         .set('Authorization', 'Bearer ' + authToken)
         .expect(200);
       
-      expect(Array.isArray(res.body)).toBe(true);
+      expect(Array.isArray(res.body.data)).toBe(true);
     });
   });
 
@@ -41,14 +41,15 @@ describe('Repairs API', () => {
         .set('Authorization', 'Bearer ' + authToken)
         .send({
           customerId: testCustomerId,
-          description: 'Test repair',
-          status: 'pending',
+          deviceType: 'Téléphone',
+          reportedIssue: 'Écran cassé',
+          status: 'received',
           estimatedCost: 5000
         })
         .expect(201);
       
       createdRepairId = res.body.id;
-      expect(res.body).toHaveProperty('description', 'Test repair');
+      expect(res.body).toHaveProperty('deviceType', 'Téléphone');
     });
   });
 
@@ -83,10 +84,12 @@ describe('Repairs API', () => {
     it('should delete a repair', async () => {
       if (!createdRepairId) return;
       
-      await request(app)
+      const res = await request(app)
         .delete('/api/repairs/' + createdRepairId)
         .set('Authorization', 'Bearer ' + authToken)
-        .expect(204);
+        .expect(200);
+
+      expect(res.body).toHaveProperty('message');
     });
   });
 });

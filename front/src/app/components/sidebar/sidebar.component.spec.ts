@@ -1,21 +1,21 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { SidebarComponent } from './sidebar.component';
 import { CommonModule } from '@angular/common';
-import { provideHttpClient } from '@angular/common/http';
-import { AuthService } from '../services/auth';
+import { AuthService } from '../../services/auth';
 import { Router } from '@angular/router';
 import { of } from 'rxjs';
+import { vi } from 'vitest';
 
 describe('SidebarComponent', () => {
   let component: SidebarComponent;
   let fixture: ComponentFixture<SidebarComponent>;
-  let mockAuthService: jasmine.SpyObj<AuthService>;
-  let mockRouter: jasmine.SpyObj<Router>;
+  let mockAuthService: { getUser: ReturnType<typeof vi.fn>; logout: ReturnType<typeof vi.fn> };
+  let mockRouter: { navigate: ReturnType<typeof vi.fn>; events: any };
 
   beforeEach(async () => {
-    mockAuthService = jasmine.createSpyObj('AuthService', ['getUser', 'logout']);
-    mockAuthService.getUser.and.returnValue({ username: 'test', role: 'admin', fullName: 'Test User' });
-    mockRouter = jasmine.createSpyObj('Router', ['navigate']);
+    mockAuthService = { getUser: vi.fn(), logout: vi.fn() };
+    mockAuthService.getUser.mockReturnValue({ username: 'test', role: 'admin', fullName: 'Test User' });
+    mockRouter = { navigate: vi.fn(), events: of() };
 
     await TestBed.configureTestingModule({
       imports: [SidebarComponent, CommonModule],

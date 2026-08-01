@@ -11,6 +11,7 @@ import { PaymentService, PaymentMethod } from '../../services/payment';
 import { ConfigService, PaymentMethod as ConfigPaymentMethod } from '../../services/config';
 import { RefreshService } from '../../services/refresh.service';
 import { CustomerService, Customer } from '../../services/customer';
+import { ToastService } from '../../services/toast.service';
 import { environment } from '../../../environments/environment';
 
 interface CartItem {
@@ -65,6 +66,7 @@ export class SalesComponent implements OnInit, OnDestroy {
     private configService: ConfigService,
     private refreshService: RefreshService,
     private customerService: CustomerService,
+    private toastService: ToastService,
     private cdr: ChangeDetectorRef,
     private ngZone: NgZone
   ) { }
@@ -243,7 +245,7 @@ export class SalesComponent implements OnInit, OnDestroy {
 
   addToCart(product: Product): void {
     if (product.stockQuantity <= 0) {
-      alert('Stock insuffisant !');
+      this.toastService.show('Stock insuffisant !', 'warning');
       return;
     }
     const existing = this.cart.find(item => item.product.id === product.id);
@@ -312,14 +314,14 @@ export class SalesComponent implements OnInit, OnDestroy {
     for (const item of this.cart) {
       if (item.quantity > (item.product.stockQuantity || 0)) {
         console.warn('[CHECKOUT] Stock insuffisant pour', item.product.name);
-        alert(`Stock insuffisant pour ${item.product.name}: ${item.product.stockQuantity} disponible(s), ${item.quantity} demandé(s).`);
+        this.toastService.show(`Stock insuffisant pour ${item.product.name}: ${item.product.stockQuantity} disponible(s), ${item.quantity} demandé(s).`, 'warning');
         return;
       }
     }
 
     if (this.isMobileMoney && !this.payerPhone.trim()) {
       console.warn('[CHECKOUT] Pas de numéro mobile money');
-      alert('Veuillez entrer le numéro de téléphone du client.');
+      this.toastService.show('Veuillez entrer le numéro de téléphone du client.', 'warning');
       return;
     }
 
@@ -441,7 +443,7 @@ export class SalesComponent implements OnInit, OnDestroy {
 
   printReceipt(): void {
     if (!this.lastCompletedOrder || !this.lastCompletedOrder.orderData) {
-      alert('Aucune vente récente à imprimer. Effectuez d\'abord une vente.');
+      this.toastService.show('Aucune vente récente à imprimer. Effectuez d\'abord une vente.', 'warning');
       return;
     }
     const { orderNumber, id, orderData, cartItems } = this.lastCompletedOrder;

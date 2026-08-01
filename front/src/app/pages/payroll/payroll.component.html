@@ -1,0 +1,92 @@
+<div class="page-container">
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">Paie du personnel</h1>
+      <p class="page-subtitle">Gère les salaires des techniciens et caissiers mois par mois.</p>
+    </div>
+    <div class="header-actions">
+      <button class="btn btn-primary" (click)="exportPayroll()">📊 Exporter la paie</button>
+    </div>
+  </div>
+
+  <div class="payroll-grid">
+    <div class="payroll-form-card">
+      <h2>Nouvelle fiche de paie</h2>
+      <div class="form-group">
+        <label>Personnel</label>
+        <select [(ngModel)]="selectedStaffId" class="form-input">
+          <option value="">Sélectionner un employé</option>
+          <option *ngFor="let staffMember of staff" [value]="staffMember.id">{{ staffMember.fullName || staffMember.username }} — {{ staffMember.role }}</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Mois</label>
+        <input type="month" [(ngModel)]="selectedMonth" class="form-input" />
+      </div>
+      <div class="form-group">
+        <label>Salaire brut</label>
+        <input type="number" [(ngModel)]="grossSalary" class="form-input" min="0" />
+      </div>
+      <div class="form-group">
+        <label>Déductions</label>
+        <input type="number" [(ngModel)]="deductions" class="form-input" min="0" />
+      </div>
+      <div class="form-group">
+        <label>Bonus</label>
+        <input type="number" [(ngModel)]="bonuses" class="form-input" min="0" />
+      </div>
+      <div class="form-group">
+        <label>Statut</label>
+        <select [(ngModel)]="status" class="form-input">
+          <option value="pending">En attente</option>
+          <option value="paid">Payé</option>
+        </select>
+      </div>
+      <div class="form-actions">
+        <button class="btn btn-secondary" (click)="resetForm()" type="button">Réinitialiser</button>
+        <button class="btn btn-primary" (click)="addPayrollEntry()" type="button">Enregistrer</button>
+      </div>
+    </div>
+
+    <div class="payroll-table-card">
+      <div class="table-header">
+        <h2>Fiches de paie</h2>
+        <p>Total net payé: {{ totalNetPayroll() | number }} FCFA</p>
+      </div>
+      <div class="table-container">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Personnel</th>
+              <th>Mois</th>
+              <th>Salaire brut</th>
+              <th>Déductions</th>
+              <th>Bonus</th>
+              <th>Net</th>
+              <th>Statut</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let entry of entries">
+              <td>{{ entry.staffName }}</td>
+              <td>{{ entry.month }}</td>
+              <td>{{ entry.grossSalary | number }} FCFA</td>
+              <td>{{ entry.deductions | number }} FCFA</td>
+              <td>{{ entry.bonuses | number }} FCFA</td>
+              <td>{{ entry.netSalary | number }} FCFA</td>
+              <td>{{ entry.status === 'paid' ? 'Payé' : 'En attente' }}</td>
+              <td>
+                <button class="btn-action" (click)="updateEntry(entry)">✏️</button>
+                <button class="btn-action btn-action-danger" (click)="deleteEntry(entry)">🗑️</button>
+              </td>
+            </tr>
+            <tr *ngIf="entries.length === 0">
+              <td colspan="8" class="empty-row">Aucune fiche de paie enregistrée.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>

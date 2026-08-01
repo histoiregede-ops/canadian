@@ -2,23 +2,27 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { LoginComponent } from './login.component';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { provideHttpClient } from '@angular/common/http';
-import { AuthService } from '../services/auth';
+import { AuthService } from '../../services/auth';
 import { Router } from '@angular/router';
 import { of, throwError } from 'rxjs';
+import { vi } from 'vitest';
 
 describe('LoginComponent', () => {
   let component: LoginComponent;
   let fixture: ComponentFixture<LoginComponent>;
-  let mockAuthService: jasmine.SpyObj<AuthService>;
-  let mockRouter: jasmine.SpyObj<Router>;
+  let mockAuthService: {
+    login: ReturnType<typeof vi.fn>;
+    isLoggedIn: ReturnType<typeof vi.fn>;
+    getUser: ReturnType<typeof vi.fn>;
+  };
+  let mockRouter: { navigate: ReturnType<typeof vi.fn> };
 
   beforeEach(async () => {
-    mockAuthService = jasmine.createSpyObj('AuthService', ['login', 'isLoggedIn', 'getUser']);
-    mockAuthService.login.and.returnValue(of({}));
-    mockAuthService.isLoggedIn.and.returnValue(false);
-    mockAuthService.getUser.and.returnValue({ role: 'admin' });
-    mockRouter = jasmine.createSpyObj('Router', ['navigate']);
+    mockAuthService = { login: vi.fn(), isLoggedIn: vi.fn(), getUser: vi.fn() };
+    mockAuthService.login.mockReturnValue(of({}));
+    mockAuthService.isLoggedIn.mockReturnValue(false);
+    mockAuthService.getUser.mockReturnValue({ role: 'admin' });
+    mockRouter = { navigate: vi.fn() };
 
     await TestBed.configureTestingModule({
       imports: [LoginComponent, CommonModule, FormsModule],
@@ -53,11 +57,27 @@ describe('LoginComponent', () => {
     expect(mockRouter.navigate).toHaveBeenCalledWith(['/dashboard']);
   });
 
+  it('should navigate to /sales for a cashier role', () => {
+    mockAuthService.getUser.mockReturnValue({ role: 'cashier' });
+    component.username = 'caissier';
+    component.password = 'x';
+    component.onSubmit({ preventDefault: () => {} } as Event);
+    expect(mockRouter.navigate).toHaveBeenCalledWith(['/sales']);
+  });
+
   it('should show error on invalid credentials', () => {
-    mockAuthService.login.and.returnValue(throwError(() => new Error('Invalid')));
+    mockAuthService.login.mockReturnValue(throwError(() => new Error('Invalid')));
     component.username = 'admin';
     component.password = 'wrong';
     component.onSubmit({ preventDefault: () => {} } as Event);
     expect(component.errorMessage).toContain('invalides');
+  });
+
+  // Cas limite : champs vides -> la requête est tout de même envoyée
+  it('should still call login with empty credentials (no client-side validation)', () => {
+    component.username = '';
+    component.password = '';
+    component.onSubmit({ preventDefault: () => {} } as Event);
+    expect(mockAuthService.login).toHaveBeenCalledWith({ username: '', password: '' });
   });
 });

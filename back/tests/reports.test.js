@@ -1,4 +1,4 @@
-const request = require('supertest');
+﻿const request = require('supertest');
 const app = require('../index');
 
 describe('Reports API', () => {
@@ -7,7 +7,7 @@ describe('Reports API', () => {
   beforeAll(async () => {
     const loginRes = await request(app)
       .post('/api/auth/login')
-      .send({ username: 'admin', password: 'admin123' });
+      .send({ username: 'admin', password: 'admin' });
     authToken = loginRes.body.token;
   });
 
@@ -20,7 +20,7 @@ describe('Reports API', () => {
       
       expect(res.body).toHaveProperty('revenueEvolution');
       expect(res.body).toHaveProperty('topProducts');
-      expect(res.body).toHaveProperty('categoryBreakdown');
+      expect(res.body).toHaveProperty('categoryDistribution');
     });
   });
 });

@@ -5,7 +5,7 @@ import { FormsModule } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
 import { UserService, CreateUserRequest, User } from '../../services/user.service';
 import { RefreshService } from '../../services/refresh.service';
-
+import { ToastService } from '../../services/toast.service';
 @Component({
   selector: 'app-technicians',
   standalone: true,
@@ -31,7 +31,12 @@ export class TechniciansComponent implements OnInit, OnDestroy {
   editingId: string | null = null;
   private refreshSub: Subscription | null = null;
 
-  constructor(private route: ActivatedRoute, private userService: UserService, private refreshService: RefreshService) {}
+  constructor(
+    private route: ActivatedRoute,
+    private userService: UserService,
+    private refreshService: RefreshService,
+    private toastService: ToastService
+  ) {}
 
   ngOnInit(): void {
     this.route.data.subscribe(({ data }) => {
@@ -106,8 +111,12 @@ export class TechniciansComponent implements OnInit, OnDestroy {
           this.loadTechnicians();
           this.showModal = false;
           this.refreshService.triggerRefresh();
+          this.toastService.show('Technicien mis à jour', 'success');
         },
-        error: (err) => console.error('Error updating technician:', err)
+        error: (err) => {
+          console.error('Error updating technician:', err);
+          this.toastService.show(err.error?.error || 'Erreur mise à jour technicien', 'error');
+        }
       });
     } else {
       if (!this.currentTechnician.username || !this.currentTechnician.password) return;
@@ -116,8 +125,12 @@ export class TechniciansComponent implements OnInit, OnDestroy {
           this.loadTechnicians();
           this.showModal = false;
           this.refreshService.triggerRefresh();
+          this.toastService.show('Technicien créé', 'success');
         },
-        error: (err) => console.error('Error saving technician:', err)
+        error: (err) => {
+          console.error('Error saving technician:', err);
+          this.toastService.show(err.error?.error || 'Erreur création technicien', 'error');
+        }
       });
     }
   }
@@ -125,8 +138,15 @@ export class TechniciansComponent implements OnInit, OnDestroy {
   deleteTechnician(id: string): void {
     if (confirm('Supprimer ce technicien ?')) {
       this.userService.deleteUser(id).subscribe({
-        next: () => { this.loadTechnicians(); this.refreshService.triggerRefresh(); },
-        error: (err) => console.error('Error deleting technician:', err)
+        next: () => {
+          this.loadTechnicians();
+          this.refreshService.triggerRefresh();
+          this.toastService.show('Technicien supprimé', 'success');
+        },
+        error: (err) => {
+          console.error('Error deleting technician:', err);
+          this.toastService.show(err.error?.error || 'Erreur suppression technicien', 'error');
+        }
       });
     }
   }

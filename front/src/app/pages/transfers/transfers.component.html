@@ -91,6 +91,21 @@
               </select>
             </div>
             <div class="filter-group">
+              <label class="filter-label">Type de transfert</label>
+              <select [(ngModel)]="filters.transferType" class="form-select">
+                <option value="">Tous</option>
+                <option value="national">National</option>
+                <option value="international">International</option>
+              </select>
+            </div>
+            <div class="filter-group">
+              <label class="filter-label">Pays</label>
+              <select [(ngModel)]="filters.country" class="form-select">
+                <option value="">Tous</option>
+                <option *ngFor="let c of countries" [value]="c.code">{{ c.name }}</option>
+              </select>
+            </div>
+            <div class="filter-group">
               <label class="filter-label">Statut</label>
               <select [(ngModel)]="filters.status" class="form-select">
                 <option value="">Tous</option>
@@ -194,15 +209,20 @@
                   </span>
                 </td>
                 <td class="td-actions">
-                  <div class="action-buttons" *ngIf="t.status === 'pending'">
-                    <button class="btn-action btn-action-success" (click)="confirm(t.id)" title="Confirmer" [disabled]="confirmingId === t.id || failingId === t.id">
+                  <div class="action-buttons">
+                    <button class="btn-action btn-action-edit" (click)="openEdit(t)" title="Modifier" [disabled]="submitting || confirmingId === t.id || failingId === t.id">
+                      <span>✏️</span>
+                    </button>
+                    <button class="btn-action btn-action-danger" (click)="deleteTransfer(t.id)" title="Supprimer" [disabled]="submitting || confirmingId === t.id || failingId === t.id">
+                      <span>🗑️</span>
+                    </button>
+                    <button class="btn-action btn-action-success" *ngIf="t.status === 'pending'" (click)="confirm(t.id)" title="Confirmer" [disabled]="confirmingId === t.id || failingId === t.id">
                       <span>✅</span>
                     </button>
-                    <button class="btn-action btn-action-danger" (click)="fail(t.id)" title="Marquer comme échoué" [disabled]="confirmingId === t.id || failingId === t.id">
+                    <button class="btn-action btn-action-danger" *ngIf="t.status === 'pending'" (click)="fail(t.id)" title="Marquer comme échoué" [disabled]="confirmingId === t.id || failingId === t.id">
                       <span>❌</span>
                     </button>
                   </div>
-                  <span class="text-muted" *ngIf="t.status !== 'pending'">—</span>
                 </td>
               </tr>
             </tbody>
@@ -226,10 +246,10 @@
     <div class="dashboard-sidebar">
       <div class="card new-transfer-card">
         <div class="card-header">
-          <h3 class="card-title">➕ Nouveau transfert</h3>
+          <h3 class="card-title">{{ editing ? '✏️ Modifier le transfert' : '➕ Nouveau transfert' }}</h3>
         </div>
         <div class="card-body">
-          <form (submit)="create()" class="transfer-form">
+          <form (submit)="saveTransfer()" class="transfer-form">
 
             <!-- Type de transfert : National / International -->
             <div class="form-section">
@@ -370,9 +390,12 @@
               <textarea [(ngModel)]="form.note" name="note" class="form-textarea" rows="2" placeholder="Optionnel"></textarea>
             </div>
 
-            <button type="submit" class="btn btn-primary btn-block btn-submit" [disabled]="!form.operator || !form.amount || submitting">
-              💾 Enregistrer le transfert
-            </button>
+            <div class="form-footer">
+              <button type="button" class="btn btn-secondary btn-block btn-cancel" *ngIf="editing" (click)="cancelEdit()">Annuler</button>
+              <button type="submit" class="btn btn-primary btn-block btn-submit" [disabled]="!form.operator || !form.amount || submitting">
+                {{ editing ? '💾 Mettre à jour le transfert' : '💾 Enregistrer le transfert' }}
+              </button>
+            </div>
           </form>
         </div>
       </div>

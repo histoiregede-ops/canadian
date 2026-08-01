@@ -26,6 +26,8 @@ export class TransfersComponent implements OnInit {
   submitting = false;
   confirmingId: string | null = null;
   failingId: string | null = null;
+  editing = false;
+  editingTransferId: string | null = null;
 
   // Countries list for international transfers (Afrique de l'Ouest et ailleurs)
   readonly countries: { code: string; name: string; flag: string }[] = [
@@ -182,7 +184,7 @@ export class TransfersComponent implements OnInit {
     this.form.operator = op;
   }
 
-  create(): void {
+  saveTransfer(): void {
     if (!this.form.operator || !this.form.amount) return;
 
     const payload: any = {
@@ -201,18 +203,65 @@ export class TransfersComponent implements OnInit {
     };
 
     this.submitting = true;
-    this.transferService.createTransfer(payload).subscribe({
+
+    const action = this.editing && this.editingTransferId
+      ? this.transferService.updateTransfer(this.editingTransferId, payload)
+      : this.transferService.createTransfer(payload);
+
+    action.subscribe({
       next: () => {
-        this.toastService.show('Transfert enregistré avec succès', 'success');
+        const message = this.editing ? 'Transfert mis à jour avec succès' : 'Transfert enregistré avec succès';
+        this.toastService.show(message, 'success');
         this.resetForm();
         this.loadSummary();
         this.loadTransfers();
         this.submitting = false;
       },
       error: (err) => {
-        const message = err.error?.error || 'Erreur lors de la création du transfert, veuillez réessayer';
+        const message = err.error?.error || 'Erreur lors de l’enregistrement du transfert, veuillez réessayer';
         this.toastService.show(message, 'error');
         this.submitting = false;
+      }
+    });
+  }
+
+  openEdit(transfer: Transfer): void {
+    this.editing = true;
+    this.editingTransferId = transfer.id;
+    this.form = {
+      transferType: transfer.transferType || 'national',
+      country: transfer.country || 'ML',
+      operator: transfer.operator,
+      type: transfer.type,
+      amount: Number(transfer.amount),
+      fees: Number(transfer.fees),
+      senderPhone: transfer.senderPhone || '',
+      recipientPhone: transfer.recipientPhone || '',
+      customerPhone: transfer.customerPhone || '',
+      reference: transfer.reference || '',
+      agentName: transfer.agentName || '',
+      note: transfer.note || ''
+    };
+  }
+
+  cancelEdit(): void {
+    this.resetForm();
+  }
+
+  deleteTransfer(id: string): void {
+    if (!confirm('Voulez-vous vraiment supprimer ce transfert ?')) return;
+    this.transferService.deleteTransfer(id).subscribe({
+      next: () => {
+        this.toastService.show('Transfert supprimé', 'success');
+        if (this.editing && this.editingTransferId === id) {
+          this.resetForm();
+        }
+        this.loadSummary();
+        this.loadTransfers();
+      },
+      error: (err) => {
+        const message = err.error?.error || 'Erreur lors de la suppression du transfert, veuillez réessayer';
+        this.toastService.show(message, 'error');
       }
     });
   }

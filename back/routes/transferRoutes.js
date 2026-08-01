@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const { Transfer } = require('../models');
 const { authenticate, authorize } = require('../utils/auth');
+const { Op } = require('sequelize');
 
 function getTodayRange() {
   const start = new Date();
@@ -20,19 +21,21 @@ router.get('/', authenticate, authorize('admin', 'cashier'), async (req, res) =>
 
     if (req.query.operator) where.operator = req.query.operator;
     if (req.query.type) where.type = req.query.type;
+    if (req.query.transferType) where.transferType = req.query.transferType;
+    if (req.query.country) where.country = req.query.country;
     if (req.query.status) where.status = req.query.status;
     if (req.query.agentId) where.agentId = req.query.agentId;
 
     if (req.query.from) {
       const from = new Date(req.query.from);
       from.setHours(0, 0, 0, 0);
-      where.createdAt = { [require('sequelize').Op.gte]: from };
+      where.createdAt = { [Op.gte]: from };
     }
     if (req.query.to) {
       const to = new Date(req.query.to);
       to.setHours(23, 59, 59, 999);
       where.createdAt = where.createdAt || {};
-      where.createdAt[require('sequelize').Op.lte] = to;
+      where.createdAt[Op.lte] = to;
     }
 
     const { count, rows } = await Transfer.findAndCountAll({
@@ -94,7 +97,7 @@ router.get('/summary/daily', authenticate, authorize('admin', 'cashier'), async 
 
 router.post('/', authenticate, authorize('admin', 'cashier'), async (req, res) => {
   try {
-    const { operator, type, amount, fees, customerPhone, agentId, agentName, reference, status, note } = req.body;
+    const { operator, type, transferType, country, amount, fees, customerPhone, agentId, agentName, reference, status, note } = req.body;
 
     if (!operator || !type || amount === undefined) {
       return res.status(400).json({ error: 'Opérateur, type et montant sont requis' });
@@ -103,6 +106,8 @@ router.post('/', authenticate, authorize('admin', 'cashier'), async (req, res) =
     const transfer = await Transfer.create({
       operator,
       type,
+      transferType: transferType || 'national',
+      country: country || 'ML',
       amount,
       fees: fees || 0,
       customerPhone,
@@ -124,7 +129,7 @@ router.put('/:id', authenticate, authorize('admin', 'cashier'), async (req, res)
     const transfer = await Transfer.findByPk(req.params.id);
     if (!transfer) return res.status(404).json({ message: 'Transfert non trouvé' });
 
-    const allowed = ['operator', 'type', 'amount', 'fees', 'customerPhone', 'agentId', 'agentName', 'reference', 'status', 'note'];
+    const allowed = ['operator', 'type', 'transferType', 'country', 'amount', 'fees', 'customerPhone', 'agentId', 'agentName', 'reference', 'status', 'note'];
     allowed.forEach(f => { if (req.body[f] !== undefined) transfer[f] = req.body[f]; });
 
     await transfer.save();

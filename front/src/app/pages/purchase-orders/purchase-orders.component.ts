@@ -5,6 +5,7 @@ import { ActivatedRoute } from '@angular/router';
 import { PurchaseOrderService, PurchaseOrder, PurchaseOrderItem } from '../../services/purchase-order';
 import { SupplierService, Supplier } from '../../services/supplier';
 import { PurchaseOrdersResolved } from '../../resolvers/purchase-orders.resolver';
+import { ToastService } from '../../services/toast.service';
 
 @Component({
   selector: 'app-purchase-orders',
@@ -292,7 +293,8 @@ export class PurchaseOrdersComponent implements OnInit {
   constructor(
     private poService: PurchaseOrderService,
     private supplierService: SupplierService,
-    private route: ActivatedRoute
+    private route: ActivatedRoute,
+    private toastService: ToastService
   ) {}
 
   ngOnInit(): void {
@@ -405,16 +407,16 @@ export class PurchaseOrdersComponent implements OnInit {
       : this.poService.createOrder(payload);
 
     action.subscribe({
-      next: () => { this.showModal = false; this.loadAll(); },
-      error: (err) => alert(err.error?.error || 'Erreur lors de la sauvegarde')
+      next: () => { this.showModal = false; this.loadAll(); this.toastService.show('Commande enregistrée', 'success'); },
+      error: (err) => this.toastService.show(err.error?.error || 'Erreur lors de la sauvegarde', 'error')
     });
   }
 
   deleteOrder(o: PurchaseOrder): void {
     if (!confirm(`Supprimer la commande ${o.orderNumber} ?`)) return;
     this.poService.deleteOrder(o.id!).subscribe({
-      next: () => this.loadAll(),
-      error: (err) => alert(err.error?.error || 'Erreur')
+      next: () => { this.loadAll(); this.toastService.show('Commande supprimée', 'success'); },
+      error: (err) => this.toastService.show(err.error?.error || 'Erreur', 'error')
     });
   }
 
@@ -427,8 +429,8 @@ export class PurchaseOrdersComponent implements OnInit {
   confirmReceive(): void {
     if (!this.receiveOrder) return;
     this.poService.receiveOrder(this.receiveOrder.id!, this.receiveItems).subscribe({
-      next: () => { this.showReceiveModal = false; this.loadAll(); },
-      error: (err) => alert(err.error?.error || 'Erreur lors de la réception')
+      next: () => { this.showReceiveModal = false; this.loadAll(); this.toastService.show('Commande reçue', 'success'); },
+      error: (err) => this.toastService.show(err.error?.error || 'Erreur lors de la réception', 'error')
     });
   }
 
@@ -439,8 +441,9 @@ export class PurchaseOrdersComponent implements OnInit {
           window.open(res.whatsappLink, '_blank');
         }
         this.loadAll();
+        this.toastService.show('Relance envoyée', 'success');
       },
-      error: (err) => alert(err.error?.error || 'Erreur lors de la relance')
+      error: (err) => this.toastService.show(err.error?.error || 'Erreur lors de la relance', 'error')
     });
   }
 }

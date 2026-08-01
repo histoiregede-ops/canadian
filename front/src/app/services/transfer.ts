@@ -54,6 +54,8 @@ export class TransferService {
     limit?: number;
     operator?: string;
     type?: string;
+    transferType?: string;
+    country?: string;
     status?: string;
     agentId?: string;
     from?: string;
@@ -62,6 +64,8 @@ export class TransferService {
     const params: Record<string, string | number> = { page: filters.page || 1, limit: filters.limit || 20 };
     if (filters.operator) params['operator'] = filters.operator;
     if (filters.type) params['type'] = filters.type;
+    if (filters.transferType) params['transferType'] = filters.transferType;
+    if (filters.country) params['country'] = filters.country;
     if (filters.status) params['status'] = filters.status;
     if (filters.agentId) params['agentId'] = filters.agentId;
     if (filters.from) params['from'] = filters.from;

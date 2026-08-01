@@ -6,6 +6,7 @@ import { ActivatedRoute } from '@angular/router';
 import { Supplier, SupplierService } from '../../services/supplier';
 import { ProductService } from '../../services/product';
 import { RefreshService } from '../../services/refresh.service';
+import { ToastService } from '../../services/toast.service';
 
 @Component({
   selector: 'app-suppliers',
@@ -29,7 +30,8 @@ export class SuppliersComponent implements OnInit, OnDestroy {
     private route: ActivatedRoute,
     private supplierService: SupplierService,
     private productService: ProductService,
-    private refreshService: RefreshService
+    private refreshService: RefreshService,
+    private toastService: ToastService
   ) {}
 
   ngOnInit(): void {
@@ -104,13 +106,13 @@ export class SuppliersComponent implements OnInit, OnDestroy {
   saveSupplier(): void {
     if (this.isEditing && this.currentSupplier.id) {
       this.supplierService.updateSupplier(this.currentSupplier.id, this.currentSupplier).subscribe({
-        next: () => { this.showModal = false; this.loadSuppliers(); this.refreshService.triggerRefresh(); },
-        error: (err) => alert('Erreur: ' + err.error?.error || err.message)
+        next: () => { this.showModal = false; this.loadSuppliers(); this.refreshService.triggerRefresh(); this.toastService.show('Fournisseur mis à jour', 'success'); },
+        error: (err) => this.toastService.show('Erreur: ' + err.error?.error || err.message, 'error')
       });
     } else {
       this.supplierService.createSupplier(this.currentSupplier).subscribe({
-        next: () => { this.showModal = false; this.loadSuppliers(); this.refreshService.triggerRefresh(); },
-        error: (err) => alert('Erreur: ' + err.error?.error || err.message)
+        next: () => { this.showModal = false; this.loadSuppliers(); this.refreshService.triggerRefresh(); this.toastService.show('Fournisseur créé', 'success'); },
+        error: (err) => this.toastService.show('Erreur: ' + err.error?.error || err.message, 'error')
       });
     }
   }
@@ -118,8 +120,8 @@ export class SuppliersComponent implements OnInit, OnDestroy {
   deleteSupplier(id: string): void {
     if (confirm('Supprimer ce fournisseur ?')) {
       this.supplierService.deleteSupplier(id).subscribe({
-        next: () => { this.loadSuppliers(); this.refreshService.triggerRefresh(); },
-        error: (err) => alert('Erreur: ' + err.error?.error || err.message)
+        next: () => { this.loadSuppliers(); this.refreshService.triggerRefresh(); this.toastService.show('Fournisseur supprimé', 'success'); },
+        error: (err) => this.toastService.show('Erreur: ' + err.error?.error || err.message, 'error')
       });
     }
   }
