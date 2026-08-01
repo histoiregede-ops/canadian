@@ -2,8 +2,10 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
+import { finalize } from 'rxjs/operators';
 import { TransferService, Transfer, TransferSummary, TransferType, TransferOperator, TransferDirection } from '../../services/transfer';
 import { TransfersResolved } from '../../resolvers/transfers.resolver';
+import { ToastService } from '../../services/toast.service';
 
 @Component({
   selector: 'app-transfers',
@@ -19,6 +21,11 @@ export class TransfersComponent implements OnInit {
   page = 1;
   totalPages = 1;
   filters: any = {};
+
+  // Anti-double-clic et états de soumission
+  submitting = false;
+  confirmingId: string | null = null;
+  failingId: string | null = null;
 
   // Countries list for international transfers (Afrique de l'Ouest et ailleurs)
   readonly countries: { code: string; name: string; flag: string }[] = [
@@ -105,7 +112,8 @@ export class TransfersComponent implements OnInit {
 
   constructor(
     private transferService: TransferService,
-    private route: ActivatedRoute
+    private route: ActivatedRoute,
+    private toastService: ToastService
   ) {}
 
   ngOnInit(): void {
@@ -192,13 +200,20 @@ export class TransfersComponent implements OnInit {
       country: this.form.transferType === 'international' ? this.form.country : 'ML'
     };
 
+    this.submitting = true;
     this.transferService.createTransfer(payload).subscribe({
       next: () => {
+        this.toastService.show('Transfert enregistré avec succès', 'success');
         this.resetForm();
         this.loadSummary();
         this.loadTransfers();
+        this.submitting = false;
       },
-      error: (err) => alert(err.error?.error || 'Erreur lors de la création')
+      error: (err) => {
+        const message = err.error?.error || 'Erreur lors de la création du transfert, veuillez réessayer';
+        this.toastService.show(message, 'error');
+        this.submitting = false;
+      }
     });
   }
 
@@ -220,11 +235,39 @@ export class TransfersComponent implements OnInit {
   }
 
   confirm(id: string): void {
-    this.transferService.confirmTransfer(id).subscribe(() => this.loadTransfers());
+    if (this.confirmingId) return;
+
+    this.confirmingId = id;
+    this.transferService.confirmTransfer(id)
+      .pipe(finalize(() => { this.confirmingId = null; }))
+      .subscribe({
+        next: () => {
+          this.toastService.show('Transfert validé avec succès', 'success');
+          this.loadTransfers();
+        },
+        error: (err) => {
+          const message = err.error?.error || 'Échec de la validation, veuillez réessayer';
+          this.toastService.show(message, 'error');
+        }
+      });
   }
 
   fail(id: string): void {
-    this.transferService.failTransfer(id).subscribe(() => this.loadTransfers());
+    if (this.failingId) return;
+
+    this.failingId = id;
+    this.transferService.failTransfer(id)
+      .pipe(finalize(() => { this.failingId = null; }))
+      .subscribe({
+        next: () => {
+          this.toastService.show('Transfert rejeté', 'success');
+          this.loadTransfers();
+        },
+        error: (err) => {
+          const message = err.error?.error || 'Échec du rejet, veuillez réessayer';
+          this.toastService.show(message, 'error');
+        }
+      });
   }
 
   trackById(index: number, item: Transfer): string {

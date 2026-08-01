@@ -195,10 +195,10 @@
                 </td>
                 <td class="td-actions">
                   <div class="action-buttons" *ngIf="t.status === 'pending'">
-                    <button class="btn-action btn-action-success" (click)="confirm(t.id)" title="Confirmer">
+                    <button class="btn-action btn-action-success" (click)="confirm(t.id)" title="Confirmer" [disabled]="confirmingId === t.id || failingId === t.id">
                       <span>✅</span>
                     </button>
-                    <button class="btn-action btn-action-danger" (click)="fail(t.id)" title="Marquer comme échoué">
+                    <button class="btn-action btn-action-danger" (click)="fail(t.id)" title="Marquer comme échoué" [disabled]="confirmingId === t.id || failingId === t.id">
                       <span>❌</span>
                     </button>
                   </div>
@@ -370,7 +370,7 @@
               <textarea [(ngModel)]="form.note" name="note" class="form-textarea" rows="2" placeholder="Optionnel"></textarea>
             </div>
 
-            <button type="submit" class="btn btn-primary btn-block btn-submit" [disabled]="!form.operator || !form.amount">
+            <button type="submit" class="btn btn-primary btn-block btn-submit" [disabled]="!form.operator || !form.amount || submitting">
               💾 Enregistrer le transfert
             </button>
           </form>

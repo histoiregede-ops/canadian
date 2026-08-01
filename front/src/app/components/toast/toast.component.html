@@ -1,0 +1,13 @@
+<div class="toast-container" *ngIf="toast">
+  <div
+    class="toast-card"
+    [class.toast-card--success]="toast.type === 'success'"
+    [class.toast-card--error]="toast.type === 'error'"
+    [class.toast-card--warning]="toast.type === 'warning'"
+    [class.toast-card--info]="toast.type === 'info'"
+  >
+    <span class="toast-icon" aria-hidden="true">{{ icon }}</span>
+    <span class="toast-body">{{ toast.message }}</span>
+    <button type="button" class="toast-close" (click)="dismiss()" aria-label="Fermer la notification">×</button>
+  </div>
+</div>
