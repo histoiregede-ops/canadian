@@ -17,48 +17,16 @@
   <div class="login-form-side">
     <div class="login-form-container">
       <div class="login-form-header">
-        <h2>{{ loginMode === 'staff' ? 'Accès Staff' : 'Espace Client' }}</h2>
-        <p>{{ loginMode === 'staff' ? 'Connectez-vous à votre espace de travail' : 'Connectez-vous pour finaliser vos achats' }}</p>
-      </div>
-
-      <!-- Staff / Client tabs compacts -->
-      <div class="mode-tabs">
-        <button type="button" class="mode-tab" [class.active]="loginMode === 'staff'" (click)="switchMode('staff')">
-          👤 Staff
-        </button>
-        <button type="button" class="mode-tab" [class.active]="loginMode === 'client'" (click)="switchMode('client')">
-          🛒 Client
-        </button>
-      </div>
-
-      <!-- Client sub-tabs : Connexion / Inscription -->
-      <div class="sub-tabs" *ngIf="loginMode === 'client'">
-        <button type="button" class="sub-tab" [class.active]="!isRegisterMode" (click)="isRegisterMode = false; errorMessage = ''">
-          Connexion
-        </button>
-        <button type="button" class="sub-tab" [class.active]="isRegisterMode" (click)="isRegisterMode = true; errorMessage = ''">
-          Inscription
-        </button>
+        <h2>Bienvenue</h2>
+        <p>Connectez-vous à votre espace</p>
       </div>
 
       <!-- Form -->
       <form (submit)="onSubmit($event)" class="login-form">
         <!-- Staff username -->
-        <div class="form-group" *ngIf="loginMode === 'staff'">
+        <div class="form-group">
           <label class="form-label" for="username">Nom d'utilisateur</label>
           <input type="text" id="username" class="form-input" [(ngModel)]="username" name="username" placeholder="Identifiant" required />
-        </div>
-
-        <!-- Client name (register only) -->
-        <div class="form-group" *ngIf="loginMode === 'client' && isRegisterMode">
-          <label class="form-label" for="name">Nom complet</label>
-          <input type="text" id="name" class="form-input" [(ngModel)]="name" name="name" placeholder="Votre nom" required />
-        </div>
-
-        <!-- Client email -->
-        <div class="form-group" *ngIf="loginMode === 'client'">
-          <label class="form-label" for="email">Adresse email</label>
-          <input type="email" id="email" class="form-input" [(ngModel)]="email" name="email" placeholder="votre@email.com" required />
         </div>
 
         <!-- Password -->
@@ -69,11 +37,7 @@
 
         <!-- Submit -->
         <button type="submit" class="btn btn-primary btn-lg btn-block" [disabled]="loading">
-          <span *ngIf="!loading">
-            <ng-container *ngIf="loginMode === 'staff'">SE CONNECTER</ng-container>
-            <ng-container *ngIf="loginMode === 'client' && isRegisterMode">CRÉER MON COMPTE</ng-container>
-            <ng-container *ngIf="loginMode === 'client' && !isRegisterMode">SE CONNECTER</ng-container>
-          </span>
+          <span *ngIf="!loading">SE CONNECTER</span>
           <span *ngIf="loading" class="spinner"></span>
         </button>
 
@@ -83,13 +47,6 @@
           <span>{{ errorMessage }}</span>
         </div>
       </form>
-
-      <!-- Lien vers la boutique -->
-      <div class="login-form-footer">
-        <a routerLink="/shop" class="shop-link">
-          🛍️ Continuer vers la boutique
-        </a>
-      </div>
     </div>
   </div>
 </div>
