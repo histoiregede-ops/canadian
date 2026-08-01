@@ -40,10 +40,11 @@
     "mysql2": "^3.22.3",
     "nodemailer": "^9.0.1",
     "sequelize": "^6.37.0",
+    "sqlite3": "^6.0.1",
     "swagger-jsdoc": "^6.3.0",
     "swagger-ui-express": "^5.0.1",
     "twilio": "^6.0.1",
-    "uuid": "^14.0.0",
+    "uuid": "^9.0.1",
     "ws": "^8.21.0"
   },
   "devDependencies": {
@@ -52,7 +53,6 @@
     "jest-environment-node": "^30.4.1",
     "nodemon": "^3.1.14",
     "sequelize-cli": "^6.6.2",
-    "sqlite3": "^6.0.1",
     "supertest": "^7.2.2"
   }
 }
