@@ -51,7 +51,7 @@ import { ReceiptsResolver } from './resolvers/receipts.resolver';
 import { PurchaseOrdersResolver } from './resolvers/purchase-orders.resolver';
 
 export const routes: Routes = [
-  { path: '', redirectTo: '/shop', pathMatch: 'full' },
+  { path: '', redirectTo: '/login', pathMatch: 'full' },
   { path: 'admin', redirectTo: 'dashboard', pathMatch: 'full' },
   // Admin / Internal Routes
   { path: 'dashboard', component: DashboardComponent, canActivate: [RoleGuard], resolve: { data: DashboardResolver }, data: { roles: ['admin', 'cashier'] } },
