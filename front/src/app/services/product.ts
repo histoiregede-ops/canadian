@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { map } from 'rxjs/operators';
+import { map, timeout } from 'rxjs/operators';
 import { environment } from '../../environments/environment';
 
 
@@ -43,6 +43,7 @@ export class ProductService {
 
   getProducts(): Observable<Product[]> {
     return this.http.get<any>(this.apiUrl).pipe(
+      timeout(10000),
       map(response => response.data || response)
     );
   }

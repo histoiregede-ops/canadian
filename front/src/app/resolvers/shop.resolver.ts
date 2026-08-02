@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { Resolve, ActivatedRouteSnapshot } from '@angular/router';
 import { Observable, forkJoin, of } from 'rxjs';
-import { catchError } from 'rxjs/operators';
+import { catchError, timeout } from 'rxjs/operators';
 import { ProductService } from '../services/product';
 import { CategoryService } from '../services/category';
 
@@ -16,8 +16,8 @@ export class ShopResolver implements Resolve<ShopResolved> {
 
   resolve(route: ActivatedRouteSnapshot): Observable<ShopResolved> {
     return forkJoin({
-      products: this.productService.getProducts().pipe(catchError(() => of([]))),
-      categories: this.categoryService.getCategories().pipe(catchError(() => of([])))
+      products: this.productService.getProducts().pipe(timeout(10000), catchError(() => of([]))),
+      categories: this.categoryService.getCategories().pipe(timeout(10000), catchError(() => of([])))
     });
   }
 }

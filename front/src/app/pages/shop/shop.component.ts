@@ -2,7 +2,7 @@ import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
-import { Subscription } from 'rxjs';
+import { Subscription, timeout } from 'rxjs';
 import { ActivatedRoute } from '@angular/router';
 
 import { environment } from '../../../environments/environment';
@@ -267,7 +267,9 @@ export class ShopComponent implements OnInit, OnDestroy {
 
   loadProducts(): void {
     this.loading = true;
-    this.productService.getProducts().subscribe({
+    this.productService.getProducts().pipe(
+      timeout(10000)
+    ).subscribe({
       next: (data) => {
         this.products = data
           .filter((p) => p.status === 'available')
@@ -306,7 +308,9 @@ export class ShopComponent implements OnInit, OnDestroy {
 
     if (productIds.length === 0) return;
 
-    this.reviewService.getBatchReviews(productIds).subscribe({
+    this.reviewService.getBatchReviews(productIds).pipe(
+      timeout(10000)
+    ).subscribe({
       next: (batchData) => {
         for (const product of this.products) {
           if (product.id && batchData[product.id]) {
