@@ -7,8 +7,14 @@ function createApiMetrics() {
   let previousCpu = process.cpuUsage();
   let previousCpuAt = process.hrtime.bigint();
 
+  function routePathFor(req) {
+    const originalPath = (req.originalUrl || req.path).split('?')[0];
+    if (req.route?.path && req.baseUrl) return `${req.baseUrl}${req.route.path}`;
+    return originalPath.replace(/\/([0-9a-f]{8}-[0-9a-f-]{27,}|\d+)(?=\/|$)/gi, '/:id');
+  }
+
   function keyFor(req) {
-    return `${req.method} ${req.baseUrl || ''}${req.route?.path || req.path}`;
+    return `${req.method} ${routePathFor(req)}`;
   }
 
   function middleware(req, res, next) {
@@ -20,7 +26,7 @@ function createApiMetrics() {
       const durationMs = Number(process.hrtime.bigint() - startedAt) / 1e6;
       const current = metrics.get(key) || {
         method: req.method,
-        path: req.path,
+        path: routePathFor(req),
         requests: 0,
         successes: 0,
         errors: 0,

@@ -282,12 +282,14 @@ router.delete('/:id', authenticate, authorize('admin', 'cashier'), async (req, r
     const product = await Product.findByPk(id);
     if (!product) return res.status(404).json({ error: 'Product not found' });
 
-    if (isCloudinaryUrl(product.photo)) {
-      await deleteFromCloudinary(product.photo);
-    }
-
+    const photoToDelete = product.photo;
     await product.destroy();
     await logAudit(req, 'Product', id, 'delete', { name: product.name, supplierId: product.supplierId });
+    if (isCloudinaryUrl(photoToDelete)) {
+      deleteFromCloudinary(photoToDelete).catch(error => {
+        console.error('[Product DELETE] Nettoyage Cloudinary différé échoué:', error.message);
+      });
+    }
     res.status(204).send();
   } catch (error) {
     res.status(500).json({ error: error.message });
