@@ -15,6 +15,7 @@
     "db:migrate": "npx sequelize-cli db:migrate --env production",
     "db:seed": "npx sequelize-cli db:seed:all --env production",
     "seed:images": "node scripts/seed-seed-images.js",
+    "seed:images:reset": "node scripts/seed-seed-images.js --reset",
     "db:setup": "npx sequelize-cli db:migrate --env production && npx sequelize-cli db:seed:all --env production",
     "db:reset": "npx sequelize-cli db:migrate:undo:all --env production && npx sequelize-cli db:migrate --env production && npx sequelize-cli db:seed:all --env production"
   },

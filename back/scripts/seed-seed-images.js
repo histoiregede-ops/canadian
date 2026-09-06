@@ -34,11 +34,16 @@ function safeFileName(file) {
   return file.normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-zA-Z0-9.]+/g, '-').toLowerCase();
 }
 
-async function seedImageProducts({ initializeDatabase = false } = {}) {
+async function seedImageProducts({ initializeDatabase = false, resetProducts = false } = {}) {
   fs.mkdirSync(targetDir, { recursive: true });
   if (initializeDatabase) {
     await sequelize.authenticate();
     await sequelize.sync();
+  }
+
+  if (resetProducts) {
+    const deleted = await Product.destroy({ where: {} });
+    console.log(`[seed-images] Catalogue produits vidé: ${deleted} produit(s) supprimé(s).`);
   }
 
   const categoryIds = new Map();
@@ -87,7 +92,8 @@ async function seedImageProducts({ initializeDatabase = false } = {}) {
 module.exports = { seedImageProducts };
 
 if (require.main === module) {
-  seedImageProducts({ initializeDatabase: true })
+  const resetProducts = process.argv.includes('--reset');
+  seedImageProducts({ initializeDatabase: true, resetProducts })
     .catch(error => {
       console.error('[seed-images] Échec:', error.message);
       process.exitCode = 1;
