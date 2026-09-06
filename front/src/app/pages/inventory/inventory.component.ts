@@ -104,6 +104,7 @@ export class InventoryComponent implements OnInit, OnDestroy, AfterViewInit {
   // Notification subscription
   private wsSub: Subscription | null = null;
   private refreshSub: Subscription | null = null;
+  private productsLoadRequest = 0;
 
   currentProduct: Product = this.initProduct();
 
@@ -295,15 +296,18 @@ export class InventoryComponent implements OnInit, OnDestroy, AfterViewInit {
   }
 
   loadProducts(callback?: () => void): void {
+    const requestId = ++this.productsLoadRequest;
     this.loading = true;
     this.productService.getProducts().subscribe({
       next: (data) => {
+        if (requestId !== this.productsLoadRequest) return;
         this.products = data;
         this.loading = false;
         this.updateCharts();
         callback?.();
       },
       error: (err) => {
+        if (requestId !== this.productsLoadRequest) return;
         console.error('Error loading products:', err);
         this.loading = false;
         callback?.();
@@ -496,7 +500,6 @@ export class InventoryComponent implements OnInit, OnDestroy, AfterViewInit {
           const totalTime = performance.now() - startTime;
           console.log(`[Produit] ${label} — TERMINÉ en ${this.formatDuration(totalTime)}`);
           if (this.isEditing) {
-            this.refreshService.triggerRefresh();
             this.toastService.show('Produit mis à jour', 'success');
           } else {
             this.toastService.show('Produit créé', 'success');
@@ -504,7 +507,14 @@ export class InventoryComponent implements OnInit, OnDestroy, AfterViewInit {
         },
         error: (err) => {
           const elapsed = performance.now() - startTime;
-          console.error(`[Produit] ${label} — ÉCHEC après ${this.formatDuration(elapsed)} :`, err);
+          console.error(`[Produit] ${label} — ÉCHEC après ${this.formatDuration(elapsed)} :`, {
+            status: err?.status,
+            statusText: err?.statusText,
+            url: err?.url,
+            name: err?.name,
+            message: err?.message,
+            error: err?.error
+          });
           const isTimeout = err?.name === 'TimeoutError' || String(err?.message || '').includes('Timeout');
           if (isTimeout) {
             saveTimedOut = true;
@@ -514,10 +524,13 @@ export class InventoryComponent implements OnInit, OnDestroy, AfterViewInit {
             });
             return;
           }
+          const apiError = err?.error?.error;
           const msg = isTimeout
             ? `Le serveur n'a pas répondu après ${this.formatDuration(elapsed)}. Vérifie ta connexion (et le throttling réseau des DevTools).`
-            : (err?.error?.error || err?.error?.message || err?.message || 'Erreur lors de la création du produit.');
-          this.toastService.show(String(msg), 'error');
+            : (typeof apiError === 'string' ? apiError : apiError?.message || err?.error?.message || err?.message || 'Erreur lors de la création du produit.');
+          const requestId = err?.error?.requestId || err?.headers?.get?.('X-Request-ID');
+          const displayMessage = requestId ? `${msg} (Référence : ${requestId})` : String(msg);
+          this.toastService.show(displayMessage, 'error');
         }
       });
     } catch (err: any) {
@@ -547,11 +560,31 @@ export class InventoryComponent implements OnInit, OnDestroy, AfterViewInit {
           this.products = this.products.filter(p => p.id !== id);
           this.changeDetector.detectChanges();
           this.updateCharts();
-          this.refreshService.triggerRefresh();
           this.toastService.show('Produit supprimé', 'success');
         },
         error: (err) => {
-          console.error('Erreur lors de la suppression:', err);
+          console.error('Erreur lors de la suppression:', {
+            status: err?.status,
+            statusText: err?.statusText,
+            url: err?.url,
+            name: err?.name,
+            message: err?.message,
+            error: err?.error
+          });
+          const isTimeout = err?.name === 'TimeoutError' || String(err?.message || '').includes('Timeout');
+          if (isTimeout) {
+            this.loadProducts(() => {
+              this.toastService.show('La suppression a tardé. La liste a été rechargée pour vérifier le résultat.', 'warning');
+            });
+            return;
+          }
+          const apiError = err?.error?.error;
+          const message = typeof apiError === 'string' ? apiError : apiError?.message || err?.error?.message;
+          if (message) {
+            const requestId = err?.error?.requestId || err?.headers?.get?.('X-Request-ID');
+            this.toastService.show(requestId ? `${message} (Référence : ${requestId})` : String(message), 'error');
+            return;
+          }
           this.toastService.show('Impossible de supprimer ce produit. Il est peut-être lié à une commande.', 'error');
         }
       });

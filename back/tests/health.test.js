@@ -17,7 +17,7 @@ describe('Root and Health', () => {
     it('should require authentication', async () => {
       await request(app)
         .get('/api/monitoring/metrics')
-        .expect(403);
+        .expect(401);
     });
   });
 });

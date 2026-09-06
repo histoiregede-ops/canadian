@@ -38,7 +38,7 @@ const verifyToken = (req, res, next) => {
     req.customer = verified;
     next();
   } catch (error) {
-    res.status(400).json({ message: 'Invalid token' });
+    res.status(401).json({ message: 'Invalid token' });
   }
 };
 
@@ -294,10 +294,10 @@ router.get('/', authenticate, authorize('admin', 'cashier'), async (req, res) =>
   }
 });
 
-// Get customer by ID (admin only)
-router.get('/:id', authenticate, authorize('admin', 'cashier'), async (req, res) => {
+// Get own profile (customer self)
+router.get('/profile/me', verifyToken, async (req, res) => {
   try {
-    const customer = await Customer.findByPk(req.params.id);
+    const customer = await Customer.findByPk(req.customer.id);
     if (!customer) return res.status(404).json({ message: 'Customer not found' });
     res.json(serializeCustomer(customer));
   } catch (error) {
@@ -305,10 +305,10 @@ router.get('/:id', authenticate, authorize('admin', 'cashier'), async (req, res)
   }
 });
 
-// Get own profile (customer self)
-router.get('/profile/me', verifyToken, async (req, res) => {
+// Get customer by ID (admin only)
+router.get('/:id', authenticate, authorize('admin', 'cashier'), async (req, res) => {
   try {
-    const customer = await Customer.findByPk(req.customer.id);
+    const customer = await Customer.findByPk(req.params.id);
     if (!customer) return res.status(404).json({ message: 'Customer not found' });
     res.json(serializeCustomer(customer));
   } catch (error) {

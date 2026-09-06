@@ -186,7 +186,7 @@ router.post('/', authenticate, async (req, res) => {
 router.put('/:id', authenticate, async (req, res) => {
   try {
     const { id } = req.params;
-    const { rating, title, comment, customerId } = req.body;
+    const { rating, title, comment } = req.body;
 
     if (rating !== undefined && (isNaN(rating) || rating < 1 || rating > 5)) {
       return res.status(400).json({ message: 'La note doit être comprise entre 1 et 5' });
@@ -198,7 +198,7 @@ router.put('/:id', authenticate, async (req, res) => {
     }
 
     // Check if the customer owns this review
-    if (review.customerId !== customerId) {
+    if (review.customerId !== req.user.id) {
       return res.status(403).json({ message: 'You can only update your own reviews' });
     }
 
@@ -213,14 +213,12 @@ router.put('/:id', authenticate, async (req, res) => {
 router.delete('/:id', authenticate, async (req, res) => {
   try {
     const { id } = req.params;
-    const { customerId } = req.body;
-
     const review = await ProductReview.findByPk(id);
     if (!review) {
       return res.status(404).json({ message: 'Review not found' });
     }
 
-    if (review.customerId !== customerId) {
+    if (review.customerId !== req.user.id) {
       return res.status(403).json({ message: 'You can only delete your own reviews' });
     }
 

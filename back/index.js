@@ -1,4 +1,5 @@
 const express = require('express');
+const crypto = require('crypto');
 const path = require('path');
 const fs = require('fs');
 const cors = require('cors');
@@ -21,6 +22,14 @@ const PORT = process.env.PORT || 3000;
 
 // Security & middleware
 app.disable('x-powered-by');
+app.use((req, res, next) => {
+  const incomingId = req.get('X-Request-ID');
+  req.requestId = incomingId && /^[A-Za-z0-9._:-]{1,100}$/.test(incomingId)
+    ? incomingId
+    : `REQ-${crypto.randomUUID()}`;
+  res.setHeader('X-Request-ID', req.requestId);
+  next();
+});
 const allowedOrigins = [
   'http://localhost:4200',
   'http://127.0.0.1:4200',
@@ -61,6 +70,24 @@ if (process.env.NODE_ENV === 'production') {
 app.use(bodyParser.json({ limit: '1mb' }));
 app.use(bodyParser.urlencoded({ limit: '1mb', extended: true }));
 app.use(apiMetrics.middleware);
+app.use((req, res, next) => {
+  if (!req.path.startsWith('/api')) return next();
+  const startedAt = Date.now();
+  res.once('finish', () => {
+    if (res.statusCode < 400) return;
+    console.error('[API] Requête en échec', {
+      method: req.method,
+      url: req.originalUrl,
+      requestId: req.requestId,
+      status: res.statusCode,
+      durationMs: Date.now() - startedAt,
+      userId: req.user?.id,
+      username: req.user?.username,
+      role: req.user?.role
+    });
+  });
+  next();
+});
 
 // Routes
 const productRoutes = require('./routes/productRoutes');
@@ -443,10 +470,34 @@ app.use('/docs', swaggerUi.serve, swaggerUi.setup(swaggerDocs));
 
 // Centralized error handler
 app.use((err, req, res, next) => {
-  console.error(err.stack);
+  console.error('[API] Erreur non gérée', {
+    method: req.method,
+    url: req.originalUrl,
+    requestId: req.requestId,
+    userId: req.user?.id,
+    username: req.user?.username,
+    role: req.user?.role,
+    name: err.name,
+    message: err.message,
+    code: err.parent?.code || err.original?.code || err.code,
+    sqlMessage: err.parent?.sqlMessage || err.original?.sqlMessage,
+    stack: err.stack
+  });
   const status = err.status || 500;
   const message = process.env.NODE_ENV === 'production' ? 'Erreur interne du serveur' : err.message;
-  res.status(status).json({ error: message });
+  const errorCode = typeof err.code === 'string' && !/^ER_|^SQLITE_|^Sequelize/i.test(err.code)
+    ? err.code
+    : (status >= 500 ? 'INTERNAL_SERVER_ERROR' : 'REQUEST_ERROR');
+  res.status(status).json({
+    success: false,
+    error: {
+      code: errorCode,
+      message,
+      details: null,
+      requestId: req.requestId
+    },
+    requestId: req.requestId
+  });
 });
 
 // Ensure Suppliers table uses InnoDB engine BEFORE sync (fix existing MyISAM tables)

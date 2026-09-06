@@ -107,6 +107,18 @@ describe('Products API', () => {
       
       expect(res.body).toHaveProperty('name', 'Updated Product');
     });
+
+    it('should return 404 with a request id for a missing product', async () => {
+      const res = await request(app)
+        .put('/api/products/00000000-0000-0000-0000-000000000000')
+        .set('Authorization', 'Bearer ' + authToken)
+        .send({ name: 'Missing Product', price: 2000 })
+        .expect(404);
+
+      expect(res.headers['x-request-id']).toBeTruthy();
+      expect(res.body.error.code).toBe('PRODUCT_NOT_FOUND');
+      expect(res.body.requestId).toBe(res.headers['x-request-id']);
+    });
   });
 
   describe('DELETE /api/products/:id', () => {
@@ -116,7 +128,23 @@ describe('Products API', () => {
       await request(app)
         .delete('/api/products/' + createdProductId)
         .set('Authorization', 'Bearer ' + authToken)
-        .expect(204);
+        .expect(200)
+        .expect(({ body }) => {
+          expect(body).toMatchObject({
+            success: true,
+            data: { id: createdProductId }
+          });
+        });
+    });
+
+    it('should return 404 when deleting a missing product', async () => {
+      const res = await request(app)
+        .delete('/api/products/00000000-0000-0000-0000-000000000000')
+        .set('Authorization', 'Bearer ' + authToken)
+        .expect(404);
+
+      expect(res.headers['x-request-id']).toBeTruthy();
+      expect(res.body.error.code).toBe('PRODUCT_NOT_FOUND');
     });
   });
 });

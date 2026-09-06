@@ -15,21 +15,31 @@ export class AuthInterceptor implements HttpInterceptor {
     if (!token) {
       token = localStorage.getItem('customer_token');
     }
-    if (token) {
-      const cloned = req.clone({
-        setHeaders: { Authorization: `Bearer ${token}` }
-      });
-      return next.handle(cloned).pipe(
-        catchError(err => {
-          if (err.status === 401) {
-            localStorage.removeItem('token');
-            localStorage.removeItem('customer_token');
-            this.router.navigate(['/login']);
-          }
-          return throwError(() => err);
-        })
-      );
-    }
-    return next.handle(req);
+    const request = token
+      ? req.clone({ setHeaders: { Authorization: `Bearer ${token}` } })
+      : req;
+    return next.handle(request).pipe(
+      catchError(err => {
+        const requestId = err.headers?.get('X-Request-ID') || err.error?.requestId;
+        console.error('[HTTP] Requête API échouée', {
+          method: req.method,
+          url: req.urlWithParams,
+          status: err.status,
+          statusText: err.statusText,
+          requestId,
+          error: err.error,
+          message: err.message
+        });
+        if (requestId && err.error && typeof err.error === 'object') {
+          err.error.requestId = requestId;
+        }
+        if (err.status === 401) {
+          localStorage.removeItem('token');
+          localStorage.removeItem('customer_token');
+          this.router.navigate(['/login']);
+        }
+        return throwError(() => err);
+      })
+    );
   }
 }

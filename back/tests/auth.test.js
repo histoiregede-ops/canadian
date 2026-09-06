@@ -97,7 +97,7 @@ describe('Authentication API', () => {
           password: 'testpass123'
         });
 
-      expect(res.statusCode).toBe(403);
+      expect(res.statusCode).toBe(401);
     });
   });
 });

@@ -59,6 +59,17 @@ const deleteFromCloudinary = async (url) => {
 
 const isBase64Image = (str) => str && str.startsWith('data:image');
 const isCloudinaryUrl = (url) => url && url.includes('cloudinary.com');
+const describeDatabaseError = (error) => ({
+  name: error?.name,
+  message: error?.message,
+  code: error?.parent?.code || error?.original?.code || error?.code,
+  sqlMessage: error?.parent?.sqlMessage || error?.original?.sqlMessage,
+  constraint: error?.parent?.constraint || error?.original?.constraint
+});
+const isMissingTableError = (error) => {
+  const code = error?.parent?.code || error?.original?.code || error?.code;
+  return code === 'ER_NO_SUCH_TABLE' || code === 'SQLITE_ERROR' && /no such table/i.test(error?.message || '');
+};
 
 router.get('/', async (req, res) => {
   try {
@@ -149,10 +160,15 @@ router.post('/', authenticate, authorize('admin', 'cashier'), upload.single('pho
 });
 
 router.put('/:id', authenticate, authorize('admin', 'cashier'), upload.single('photo'), async (req, res) => {
+  const startedAt = Date.now();
   try {
     const { id } = req.params;
     const product = await Product.findByPk(id);
-    if (!product) return res.status(404).json({ error: 'Product not found' });
+    if (!product) return res.status(404).json({
+      success: false,
+      error: { code: 'PRODUCT_NOT_FOUND', message: 'Product not found', details: null, requestId: req.requestId },
+      requestId: req.requestId
+    });
 
     const { name, description, price, stockQuantity, status, categoryId, supplierId } = req.body;
 
@@ -170,23 +186,26 @@ router.put('/:id', authenticate, authorize('admin', 'cashier'), upload.single('p
     productData.supplierId = supplierId && supplierId !== '' ? Number(supplierId) : null;
 
     if (req.file) {
-      if (isCloudinaryUrl(product.photo)) {
-        await deleteFromCloudinary(product.photo);
-      }
+      const previousPhoto = product.photo;
       try {
         productData.photo = await uploadToCloudinary(req.file.path);
       } finally {
         fs.unlink(req.file.path, () => {});
       }
+      if (isCloudinaryUrl(previousPhoto)) {
+        deleteFromCloudinary(previousPhoto).catch(error => {
+          console.error('[Product PUT] Suppression Cloudinary différée échouée:', error.message);
+        });
+      }
     } else if (req.body.photo === '') {
       if (isCloudinaryUrl(product.photo)) {
-        await deleteFromCloudinary(product.photo);
+        deleteFromCloudinary(product.photo).catch(error => {
+          console.error('[Product PUT] Suppression Cloudinary différée échouée:', error.message);
+        });
       }
       productData.photo = null;
     } else if (isBase64Image(req.body.photo)) {
-      if (isCloudinaryUrl(product.photo)) {
-        await deleteFromCloudinary(product.photo);
-      }
+      const previousPhoto = product.photo;
       const tmp = path.join(os.tmpdir(), `base64_${Date.now()}.jpg`);
       const raw = req.body.photo.replace(/^data:image\/\w+;base64,/, '');
       fs.writeFileSync(tmp, Buffer.from(raw, 'base64'));
@@ -195,18 +214,51 @@ router.put('/:id', authenticate, authorize('admin', 'cashier'), upload.single('p
       } finally {
         fs.unlink(tmp, () => {});
       }
+      if (isCloudinaryUrl(previousPhoto)) {
+        deleteFromCloudinary(previousPhoto).catch(error => {
+          console.error('[Product PUT] Suppression Cloudinary différée échouée:', error.message);
+        });
+      }
     }
 
     const oldStock = product.stockQuantity;
     await product.update(productData);
-    await logAudit(req, 'Product', id, 'update', productData);
+    logAudit(req, 'Product', id, 'update', productData).catch(error => {
+      console.error('[Product PUT] Audit différé échoué:', error.message);
+    });
     if (stockQuantity !== undefined && Number(stockQuantity) !== oldStock) {
-      await logStockMovement(id, oldStock, Number(stockQuantity), 'adjustment', null, req.user?.username, req.user?.id, req.user?.role, 'product_adjustment');
+      logStockMovement(id, oldStock, Number(stockQuantity), 'adjustment', null, req.user?.username, req.user?.id, req.user?.role, 'product_adjustment')
+        .catch(error => console.error('[Product PUT] Mouvement de stock différé échoué:', error.message));
     }
-    res.json(product);
+    res.json({
+      ...product.toJSON(),
+      success: true,
+      data: product,
+      requestId: req.requestId
+    });
   } catch (error) {
-    console.error('Error updating product:', error);
-    res.status(400).json({ error: error.message });
+    const details = describeDatabaseError(error);
+    console.error('[Product PUT] ERREUR', {
+      id: req.params.id,
+      userId: req.user?.id,
+      username: req.user?.username,
+      role: req.user?.role,
+      bodyFields: Object.keys(req.body || {}),
+      durationMs: Date.now() - startedAt,
+      ...details,
+      stack: error?.stack
+    });
+    const status = error?.status || (details.code ? 500 : 400);
+    res.status(status).json({
+      success: false,
+      error: {
+        code: status >= 500 ? 'PRODUCT_UPDATE_FAILED' : 'PRODUCT_UPDATE_INVALID',
+        message: error.message,
+        details: null,
+        requestId: req.requestId
+      },
+      requestId: req.requestId
+    });
   }
 });
 
@@ -276,23 +328,87 @@ router.get('/:id/movements', authenticate, authorize('admin', 'cashier'), async 
   }
 });
 
-router.delete('/:id', authenticate, authorize('admin', 'cashier'), async (req, res) => {
+router.delete('/:id', authenticate, authorize('admin', 'cashier', 'seller'), async (req, res) => {
+  const startedAt = Date.now();
+  let transaction;
   try {
     const { id } = req.params;
-    const product = await Product.findByPk(id);
-    if (!product) return res.status(404).json({ error: 'Product not found' });
+    transaction = await sequelize.transaction();
+    const product = await Product.findByPk(id, { transaction });
+    if (!product) {
+      await transaction.rollback();
+      transaction = null;
+      return res.status(404).json({
+        success: false,
+        error: { code: 'PRODUCT_NOT_FOUND', message: 'Product not found', details: null, requestId: req.requestId },
+        requestId: req.requestId
+      });
+    }
 
     const photoToDelete = product.photo;
-    await product.destroy();
-    await logAudit(req, 'Product', id, 'delete', { name: product.name, supplierId: product.supplierId });
+    try {
+      await sequelize.query('UPDATE OrderItems SET productId = NULL WHERE productId = ?', {
+        replacements: [id],
+        transaction
+      });
+    } catch (error) {
+      if (!isMissingTableError(error)) throw error;
+      console.warn('[Product DELETE] Table OrderItems absente, nettoyage ignoré');
+    }
+    try {
+      await sequelize.query('DELETE FROM ProductReviews WHERE productId = ?', {
+        replacements: [id],
+        transaction
+      });
+    } catch (error) {
+      if (!isMissingTableError(error)) throw error;
+      console.warn('[Product DELETE] Table ProductReviews absente, nettoyage ignoré');
+    }
+    const deleted = await Product.destroy({ where: { id }, transaction });
+    if (deleted !== 1) {
+      const deleteError = new Error(`Product ${id} was not deleted`);
+      deleteError.status = 409;
+      deleteError.code = 'PRODUCT_DELETE_NOT_CONFIRMED';
+      throw deleteError;
+    }
+    await transaction.commit();
+    logAudit(req, 'Product', id, 'delete', { name: product.name, supplierId: product.supplierId }).catch(error => {
+      console.error('[Product DELETE] Audit différé échoué:', error.message);
+    });
     if (isCloudinaryUrl(photoToDelete)) {
       deleteFromCloudinary(photoToDelete).catch(error => {
         console.error('[Product DELETE] Nettoyage Cloudinary différé échoué:', error.message);
       });
     }
-    res.status(204).send();
+    res.status(200).json({
+      success: true,
+      message: 'Produit supprimé avec succès',
+      data: { id },
+      requestId: req.requestId
+    });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    if (transaction) await transaction.rollback().catch(() => {});
+    const details = describeDatabaseError(error);
+    console.error('[Product DELETE] ERREUR', {
+      id: req.params.id,
+      userId: req.user?.id,
+      username: req.user?.username,
+      role: req.user?.role,
+      durationMs: Date.now() - startedAt,
+      ...details,
+      stack: error?.stack
+    });
+    const status = error?.status || 500;
+    res.status(status).json({
+      success: false,
+      error: {
+        code: status >= 500 ? 'PRODUCT_DELETE_FAILED' : 'PRODUCT_DELETE_INVALID',
+        message: error.message,
+        details: null,
+        requestId: req.requestId
+      },
+      requestId: req.requestId
+    });
   }
 });
 

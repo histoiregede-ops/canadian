@@ -20,9 +20,18 @@ export class DashboardResolver implements Resolve<DashboardResolved> {
       return of({ stats: null, recentOrders: [], urgentRepairs: [] });
     }
     return forkJoin({
-      stats: this.statsService.getDashboardStats().pipe(catchError(() => of(null))),
-      recentOrders: this.statsService.getRecentOrders().pipe(catchError(() => of([]))),
-      urgentRepairs: this.statsService.getUrgentRepairs().pipe(catchError(() => of([])))
+      stats: this.statsService.getDashboardStats().pipe(catchError(error => {
+        console.error('[DashboardResolver] Chargement des statistiques échoué:', error);
+        return of(null);
+      })),
+      recentOrders: this.statsService.getRecentOrders().pipe(catchError(error => {
+        console.error('[DashboardResolver] Chargement des commandes échoué:', error);
+        return of([]);
+      })),
+      urgentRepairs: this.statsService.getUrgentRepairs().pipe(catchError(error => {
+        console.error('[DashboardResolver] Chargement des réparations urgentes échoué:', error);
+        return of([]);
+      }))
     });
   }
 }
