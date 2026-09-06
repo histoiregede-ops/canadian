@@ -148,6 +148,13 @@ app.get('/api/monitoring/metrics', authenticate, adminOnly, (req, res) => {
 
 app.use('/api', seedRoutes);
 
+// Les images publiques sont consommées depuis les domaines boutique/staff.
+// Elles doivent donc rester accessibles entre origines différentes.
+app.use('/public', (req, res, next) => {
+  res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
+  next();
+});
+
 // Servir les fichiers statiques du dossier public
 app.use('/public', express.static(path.join(__dirname, 'public')));
 app.use('/uploads', express.static(path.join(__dirname, 'public', 'uploads')));
