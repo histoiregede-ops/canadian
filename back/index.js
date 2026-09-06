@@ -12,6 +12,7 @@ const Product = require('./models/Product');
 const models = require('./models');
 const { createApiMetrics } = require('./utils/apiMetrics');
 const { authenticate, adminOnly } = require('./utils/auth');
+const { seedImageProducts } = require('./scripts/seed-seed-images');
 require('dotenv').config();
 
 const app = express();
@@ -458,6 +459,7 @@ sequelize.sync()
       await barcodeSeed.up(sequelize.getQueryInterface());
       console.log('Barcode seeding completed.');
     }
+    await seedImageProducts();
     const server = app.listen(PORT, async () => {
       console.log(`Server is running on port ${PORT}`);
     });

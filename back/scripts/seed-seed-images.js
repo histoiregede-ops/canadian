@@ -34,10 +34,12 @@ function safeFileName(file) {
   return file.normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-zA-Z0-9.]+/g, '-').toLowerCase();
 }
 
-async function main() {
+async function seedImageProducts({ initializeDatabase = false } = {}) {
   fs.mkdirSync(targetDir, { recursive: true });
-  await sequelize.authenticate();
-  await sequelize.sync();
+  if (initializeDatabase) {
+    await sequelize.authenticate();
+    await sequelize.sync();
+  }
 
   const categoryIds = new Map();
   for (const item of products) {
@@ -82,9 +84,13 @@ async function main() {
   console.log(`[seed-images] ${created} produits créés, ${updated} produits mis à jour.`);
 }
 
-main()
-  .catch(error => {
-    console.error('[seed-images] Échec:', error.message);
-    process.exitCode = 1;
-  })
-  .finally(() => sequelize.close());
+module.exports = { seedImageProducts };
+
+if (require.main === module) {
+  seedImageProducts({ initializeDatabase: true })
+    .catch(error => {
+      console.error('[seed-images] Échec:', error.message);
+      process.exitCode = 1;
+    })
+    .finally(() => sequelize.close());
+}
