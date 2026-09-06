@@ -486,6 +486,13 @@ export class InventoryComponent implements OnInit, OnDestroy, AfterViewInit {
           const elapsed = performance.now() - startTime;
           console.error(`[Produit] ${label} — ÉCHEC après ${this.formatDuration(elapsed)} :`, err);
           const isTimeout = err?.name === 'TimeoutError' || String(err?.message || '').includes('Timeout');
+          if (isTimeout) {
+            this.showModal = false;
+            this.loadProducts(() => {
+              this.toastService.show('Le serveur a tardé à répondre. La liste a été rechargée pour vérifier le produit.', 'warning');
+            });
+            return;
+          }
           const msg = isTimeout
             ? `Le serveur n'a pas répondu après ${this.formatDuration(elapsed)}. Vérifie ta connexion (et le throttling réseau des DevTools).`
             : (err?.error?.error || err?.error?.message || err?.message || 'Erreur lors de la création du produit.');

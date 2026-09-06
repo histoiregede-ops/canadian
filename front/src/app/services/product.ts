@@ -53,11 +53,11 @@ export class ProductService {
   }
 
   createProduct(formData: FormData): Observable<Product> {
-    return this.http.post<Product>(this.apiUrl, formData).pipe(timeout(20000));
+    return this.http.post<Product>(this.apiUrl, formData).pipe(timeout(10000));
   }
 
   updateProduct(id: string, formData: FormData): Observable<Product> {
-    return this.http.put<Product>(`${this.apiUrl}/${id}`, formData).pipe(timeout(20000));
+    return this.http.put<Product>(`${this.apiUrl}/${id}`, formData).pipe(timeout(10000));
   }
 
   deleteProduct(id: string): Observable<void> {
