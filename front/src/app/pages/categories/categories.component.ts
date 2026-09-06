@@ -166,10 +166,11 @@ export class CategoriesComponent implements OnInit, OnDestroy {
     if (confirm('Êtes-vous sûr de vouloir supprimer cette catégorie ?')) {
       this.deletingId = category.id;
       this.categoryService.deleteCategory(category.id)
-        .pipe(finalize(() => { this.deletingId = null; }))
+        .pipe(finalize(() => { this.deletingId = null; this.changeDetector.detectChanges(); }))
         .subscribe({
           next: () => {
             this.categories = this.categories.filter(c => c.id !== category.id);
+            this.changeDetector.detectChanges();
             this.refreshService.triggerRefresh();
             this.toastService.show('Catégorie supprimée avec succès.', 'success');
           },

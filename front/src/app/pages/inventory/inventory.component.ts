@@ -541,10 +541,11 @@ export class InventoryComponent implements OnInit, OnDestroy, AfterViewInit {
     if (this.deletingId || !confirm('Êtes-vous sûr de vouloir supprimer ce produit ?')) return;
     this.deletingId = id;
     this.productService.deleteProduct(id)
-      .pipe(finalize(() => { this.deletingId = null; }))
+      .pipe(finalize(() => { this.deletingId = null; this.changeDetector.detectChanges(); }))
       .subscribe({
         next: () => {
           this.products = this.products.filter(p => p.id !== id);
+          this.changeDetector.detectChanges();
           this.updateCharts();
           this.refreshService.triggerRefresh();
           this.toastService.show('Produit supprimé', 'success');

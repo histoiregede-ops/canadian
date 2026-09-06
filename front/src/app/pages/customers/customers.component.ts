@@ -188,10 +188,11 @@ export class CustomersComponent implements OnInit, OnDestroy {
     if (this.deletingId || !confirm('Voulez-vous supprimer ce client ?')) return;
     this.deletingId = id;
     this.customerService.deleteCustomer(id)
-      .pipe(finalize(() => { this.deletingId = null; }))
+      .pipe(finalize(() => { this.deletingId = null; this.changeDetector.detectChanges(); }))
       .subscribe({
         next: () => {
           this.customers = this.customers.filter(c => c.id !== id);
+          this.changeDetector.detectChanges();
           this.refreshService.triggerRefresh();
           this.toastService.show('Client supprimé avec succès.', 'success');
         },

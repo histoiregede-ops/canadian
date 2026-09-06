@@ -144,11 +144,12 @@ export class SuppliersComponent implements OnInit, OnDestroy {
     if (this.deletingId || !confirm('Supprimer ce fournisseur ?')) return;
     this.deletingId = id;
     this.supplierService.deleteSupplier(id)
-      .pipe(finalize(() => { this.deletingId = null; }))
+      .pipe(finalize(() => { this.deletingId = null; this.changeDetector.detectChanges(); }))
       .subscribe({
         next: () => {
           this.suppliers = this.suppliers.filter(s => s.id !== id);
           this.applyFilter();
+          this.changeDetector.detectChanges();
           this.refreshService.triggerRefresh();
           this.toastService.show('Fournisseur supprimé avec succès.', 'success');
         },

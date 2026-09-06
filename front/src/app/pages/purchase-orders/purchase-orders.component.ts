@@ -433,9 +433,10 @@ export class PurchaseOrdersComponent implements OnInit {
     if (this.deletingId) return;
     this.deletingId = o.id!;
     this.poService.deleteOrder(o.id!)
-      .pipe(finalize(() => { this.deletingId = null; }))
+      .pipe(finalize(() => { this.deletingId = null; this.changeDetector.detectChanges(); }))
       .subscribe({
         next: () => {
+          this.changeDetector.detectChanges();
           this.loadAll(() => this.toastService.show('Commande supprimée', 'success'));
         },
         error: (err) => this.toastService.show(err.error?.error || 'Erreur', 'error')
