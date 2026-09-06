@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy, AfterViewInit, ViewChild, ElementRef } from '@angular/core';
+import { ChangeDetectorRef, Component, OnInit, OnDestroy, AfterViewInit, ViewChild, ElementRef } from '@angular/core';
 import { Subscription } from 'rxjs';
 import { finalize } from 'rxjs/operators';
 
@@ -115,7 +115,8 @@ export class InventoryComponent implements OnInit, OnDestroy, AfterViewInit {
     private wsService: WebSocketService,
     private refreshService: RefreshService,
     private toastService: ToastService,
-    private barcodeService: BarcodeService
+    private barcodeService: BarcodeService,
+    private changeDetector: ChangeDetectorRef
   ) { }
 
   ngOnInit(): void {
@@ -457,6 +458,7 @@ export class InventoryComponent implements OnInit, OnDestroy, AfterViewInit {
         saveTimedOut = true;
         this.saving = false;
         this.showModal = false;
+        this.changeDetector.detectChanges();
         this.loadProducts(() => {
           this.toastService.show('Le serveur a tardé à répondre. La liste a été rechargée pour vérifier le produit.', 'warning');
         });
@@ -471,6 +473,7 @@ export class InventoryComponent implements OnInit, OnDestroy, AfterViewInit {
           this.saving = false;
           this.selectedFile = null;
           this.photoPreview = '';
+          this.changeDetector.detectChanges();
         })
       ).subscribe({
         next: (saved) => {
@@ -479,6 +482,7 @@ export class InventoryComponent implements OnInit, OnDestroy, AfterViewInit {
           console.log(`[Produit] ${label} — API répond en ${this.formatDuration(apiTime)}`);
           this.saving = false;
           this.showModal = false;
+          this.changeDetector.detectChanges();
           if (this.isEditing && saved.id) {
             this.products = this.products.map(p => p.id === saved.id ? { ...p, ...saved } : p);
           } else {
