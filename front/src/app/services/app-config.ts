@@ -5,7 +5,7 @@
 
 export const APP_CONFIG = {
   /** Numéro WhatsApp de la boutique (format international sans +) */
-  whatsapp: '22377447844',
+  whatsapp: '22377447944',
 
   /** Préfixe pour les liens WhatsApp */
   get whatsappUrl(): string {
@@ -15,9 +15,10 @@ export const APP_CONFIG = {
   /** Informations boutique */
   shop: {
     name: 'Electro Canadien',
-    address: 'Mali Hamdalaye aci 2000 pres du terrain de foot',
+    address: 'Hamdallaye ACI 2000, à côté du terrain de foot de LCBA',
     email: 'contact@electrocanadien.com',
-    phone: '+223 77 44 78 44',
+    phones: ['+223 77 44 79 44', '+223 90 81 13 30'],
+    phone: '+223 77 44 79 44',
     hours: 'Lun-Sam: 08h00 - 19h00'
   }
 };

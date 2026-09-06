@@ -48,9 +48,9 @@
             <span class="contact-icon">📍</span>
             <span>{{ config.shop.address }}</span>
           </li>
-          <li>
+          <li *ngFor="let phone of phones">
             <span class="contact-icon">📞</span>
-            <a [href]="'tel:' + config.shop.phone.replace(/ /g, '')" class="footer-link">{{ config.shop.phone }}</a>
+            <a [href]="'tel:' + phone.replace(/ /g, '')" class="footer-link">{{ phone }}</a>
           </li>
           <li>
             <span class="contact-icon">✉️</span>

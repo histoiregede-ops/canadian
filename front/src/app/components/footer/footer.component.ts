@@ -13,6 +13,7 @@ import { APP_CONFIG, whatsappLink } from '../../services/app-config';
 export class FooterComponent {
   currentYear = new Date().getFullYear();
   config = APP_CONFIG;
+  phones = this.config.shop.phones;
 
   socialLinks = [
     { name: 'WhatsApp', icon: '💬', url: `https://wa.me/${this.config.whatsapp}` },

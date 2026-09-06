@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import { ChangeDetectorRef, Component, OnInit, OnDestroy } from '@angular/core';
 import { Subscription } from 'rxjs';
 import { finalize } from 'rxjs/operators';
 import { CommonModule } from '@angular/common';
@@ -32,7 +32,8 @@ export class CustomersComponent implements OnInit, OnDestroy {
     private route: ActivatedRoute,
     private customerService: CustomerService,
     private refreshService: RefreshService,
-    private toastService: ToastService
+    private toastService: ToastService,
+    private changeDetector: ChangeDetectorRef
   ) {}
 
   ngOnInit(): void {
@@ -162,7 +163,7 @@ export class CustomersComponent implements OnInit, OnDestroy {
       : this.customerService.createCustomer(payload);
 
     request$
-      .pipe(finalize(() => { this.saving = false; }))
+      .pipe(finalize(() => { this.saving = false; this.changeDetector.detectChanges(); }))
       .subscribe({
         next: (saved) => {
           if (isEdit) {
@@ -172,6 +173,7 @@ export class CustomersComponent implements OnInit, OnDestroy {
           }
           this.loadLoyaltyForCustomer(saved);
           this.showModal = false;
+          this.changeDetector.detectChanges();
           this.refreshService.triggerRefresh();
           this.toastService.show(isEdit ? 'Client modifié avec succès.' : 'Client créé avec succès.', 'success');
         },

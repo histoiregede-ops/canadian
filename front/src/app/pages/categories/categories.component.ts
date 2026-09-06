@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import { ChangeDetectorRef, Component, OnInit, OnDestroy } from '@angular/core';
 import { Subscription } from 'rxjs';
 import { finalize } from 'rxjs/operators';
 import { CommonModule } from '@angular/common';
@@ -36,7 +36,8 @@ export class CategoriesComponent implements OnInit, OnDestroy {
     private categoryService: CategoryService,
     private productService: ProductService,
     private refreshService: RefreshService,
-    private toastService: ToastService
+    private toastService: ToastService,
+    private changeDetector: ChangeDetectorRef
   ) {}
 
   ngOnInit(): void {
@@ -138,7 +139,7 @@ export class CategoriesComponent implements OnInit, OnDestroy {
       : this.categoryService.createCategory(payload);
 
     this.saving = true;
-    request$.pipe(finalize(() => { this.saving = false; })).subscribe({
+    request$.pipe(finalize(() => { this.saving = false; this.changeDetector.detectChanges(); })).subscribe({
       next: (saved) => {
         if (isEdit) {
           this.categories = this.categories.map(c => c.id === saved.id ? { ...c, ...saved } : c);
@@ -147,6 +148,7 @@ export class CategoriesComponent implements OnInit, OnDestroy {
         }
         this.updateProductCountsFor(saved);
         this.showModal = false;
+        this.changeDetector.detectChanges();
         this.refreshService.triggerRefresh();
         this.toastService.show(isEdit ? 'Catégorie modifiée avec succès.' : 'Catégorie créée avec succès.', 'success');
       },

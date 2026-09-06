@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
@@ -297,7 +297,8 @@ export class PurchaseOrdersComponent implements OnInit {
     private poService: PurchaseOrderService,
     private supplierService: SupplierService,
     private route: ActivatedRoute,
-    private toastService: ToastService
+    private toastService: ToastService,
+    private changeDetector: ChangeDetectorRef
   ) {}
 
   ngOnInit(): void {
@@ -416,10 +417,11 @@ export class PurchaseOrdersComponent implements OnInit {
       : this.poService.createOrder(payload);
 
     action
-      .pipe(finalize(() => { this.saving = false; }))
+      .pipe(finalize(() => { this.saving = false; this.changeDetector.detectChanges(); }))
       .subscribe({
         next: () => {
           this.showModal = false;
+          this.changeDetector.detectChanges();
           this.loadAll(() => this.toastService.show('Commande enregistrée', 'success'));
         },
         error: (err) => this.toastService.show(err.error?.error || 'Erreur lors de la sauvegarde', 'error')
