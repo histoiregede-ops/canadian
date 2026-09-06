@@ -113,8 +113,8 @@
         <span class="text-lg font-bold">Total:</span>
         <span class="text-xl font-bold text-green-600">{{ getTotal().toLocaleString() }} FCFA</span>
       </div>
-      <button class="btn-primary w-full mt-4" (click)="checkout()" style="width: 100%; padding: 14px; font-size: 1.1rem;">
-        ✅ Finaliser la vente ({{ cart.length }} produit{{ cart.length > 1 ? 's' : '' }})
+      <button type="button" class="btn-primary w-full mt-4" (click)="checkout()" [disabled]="checkingOut" style="width: 100%; padding: 14px; font-size: 1.1rem;">
+        {{ checkingOut ? 'Commande en cours...' : '✅ Finaliser la vente ({{ cart.length }} produit{{ cart.length > 1 ? \'s\' : \'\' }})' }}
       </button>
     </div>
   </div>

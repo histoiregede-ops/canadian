@@ -34,14 +34,20 @@ export class AdminPanelComponent implements OnInit {
     { value: 'seller', label: 'Commercial', icon: '🤝' },
     { value: 'technician', label: 'Technicien', icon: '🔧' }
   ];
+  savingUser = false;
+  deletingUserId: string | null = null;
+  blockingUserId: string | null = null;
+  unblockingUserId: string | null = null;
 
   // ========== Onglet Permissions ==========
   permissions: PermissionMatrix[] = [];
   permissionsLoading = true;
+  savingPermissions = false;
 
   // ========== Onglet Fonctionnalités ==========
   features: FeatureFlag[] = [];
   featuresLoading = true;
+  updatingFeatureKey: string | null = null;
 
   constructor(
     private adminService: AdminService,
@@ -131,6 +137,8 @@ export class AdminPanelComponent implements OnInit {
 
   saveUser(event?: Event): void {
     event?.preventDefault();
+    if (this.savingUser) return;
+    this.savingUser = true;
     if (this.editingUser) {
       const update: any = {};
       if (this.userForm.fullName) update.fullName = this.userForm.fullName;
@@ -138,15 +146,16 @@ export class AdminPanelComponent implements OnInit {
       if (this.userForm.role) update.role = this.userForm.role;
       if (this.userForm.password) update.password = this.userForm.password;
 
-      this.userService.updateUser(this.editingUser.id, update).subscribe({
-        next: () => {
-          this.loadUsers(() => {
+      this.userService.updateUser(this.editingUser.id, update)
+        .pipe(finalize(() => { this.savingUser = false; }))
+        .subscribe({
+          next: (saved) => {
+            this.users = this.users.map(u => u.id === saved.id ? saved : u);
             this.showUserModal = false;
             this.toastService.show('Utilisateur mis à jour', 'success');
-          });
-        },
-        error: (err) => this.toastService.show(err.error?.error || 'Erreur modification', 'error')
-      });
+          },
+          error: (err) => this.toastService.show(err.error?.error || 'Erreur modification', 'error')
+        });
     } else {
       this.userService.createUser({
         username: this.userForm.username,
@@ -154,51 +163,61 @@ export class AdminPanelComponent implements OnInit {
         fullName: this.userForm.fullName,
         email: this.userForm.email,
         role: this.userForm.role
-      }).subscribe({
-        next: () => {
-          this.loadUsers(() => {
+      })
+        .pipe(finalize(() => { this.savingUser = false; }))
+        .subscribe({
+          next: (saved) => {
+            this.users = [saved, ...this.users];
             this.showUserModal = false;
             this.toastService.show('Utilisateur créé', 'success');
-          });
-        },
-        error: (err) => this.toastService.show(err.error?.error || 'Erreur création', 'error')
-      });
+          },
+          error: (err) => this.toastService.show(err.error?.error || 'Erreur création', 'error')
+        });
     }
   }
 
   deleteUser(user: User): void {
     if (!confirm(`Supprimer définitivement l'utilisateur "${user.username}" ?`)) return;
-    this.userService.deleteUser(user.id).subscribe({
-      next: () => {
-        this.loadUsers(() => {
+    if (this.deletingUserId) return;
+    this.deletingUserId = user.id;
+    this.userService.deleteUser(user.id)
+      .pipe(finalize(() => { this.deletingUserId = null; }))
+      .subscribe({
+        next: () => {
+          this.users = this.users.filter(u => u.id !== user.id);
           this.toastService.show('Utilisateur supprimé', 'success');
-        });
-      },
-      error: () => this.toastService.show('Erreur suppression', 'error')
-    });
+        },
+        error: () => this.toastService.show('Erreur suppression', 'error')
+      });
   }
 
   blockUser(user: User): void {
     if (!confirm(`Bloquer l'utilisateur "${user.username}" ?`)) return;
-    this.userService.blockUser(user.id).subscribe({
-      next: () => {
-        this.loadUsers(() => {
+    if (this.blockingUserId) return;
+    this.blockingUserId = user.id;
+    this.userService.blockUser(user.id)
+      .pipe(finalize(() => { this.blockingUserId = null; }))
+      .subscribe({
+        next: () => {
+          this.users = this.users.map(u => u.id === user.id ? { ...u, isActive: false } : u);
           this.toastService.show('Utilisateur bloqué', 'success');
-        });
-      },
-      error: () => this.toastService.show("Le backend ne supporte pas encore le blocage d'utilisateurs", 'error')
-    });
+        },
+        error: () => this.toastService.show("Le backend ne supporte pas encore le blocage d'utilisateurs", 'error')
+      });
   }
 
   unblockUser(user: User): void {
-    this.userService.unblockUser(user.id).subscribe({
-      next: () => {
-        this.loadUsers(() => {
+    if (this.unblockingUserId) return;
+    this.unblockingUserId = user.id;
+    this.userService.unblockUser(user.id)
+      .pipe(finalize(() => { this.unblockingUserId = null; }))
+      .subscribe({
+        next: () => {
+          this.users = this.users.map(u => u.id === user.id ? { ...u, isActive: true } : u);
           this.toastService.show('Utilisateur débloqué', 'success');
-        });
-      },
-      error: () => this.toastService.show("Le backend ne supporte pas encore le déblocage d'utilisateurs", 'error')
-    });
+        },
+        error: () => this.toastService.show("Le backend ne supporte pas encore le déblocage d'utilisateurs", 'error')
+      });
   }
 
   roleLabel(role: string): string {
@@ -224,10 +243,14 @@ export class AdminPanelComponent implements OnInit {
   }
 
   savePermissions(): void {
-    this.adminService.updatePermissions(this.permissions).subscribe({
-      next: () => this.toastService.show('Permissions mises à jour', 'success'),
-      error: () => this.toastService.show('Erreur sauvegarde permissions', 'error')
-    });
+    if (this.savingPermissions) return;
+    this.savingPermissions = true;
+    this.adminService.updatePermissions(this.permissions)
+      .pipe(finalize(() => { this.savingPermissions = false; }))
+      .subscribe({
+        next: () => this.toastService.show('Permissions mises à jour', 'success'),
+        error: () => this.toastService.show('Erreur sauvegarde permissions', 'error')
+      });
   }
 
   resetPermissions(): void {
@@ -246,9 +269,14 @@ export class AdminPanelComponent implements OnInit {
   }
 
   toggleFeature(feature: FeatureFlag): void {
+    if (this.updatingFeatureKey) return;
     const previous = feature.enabled;
     feature.enabled = !feature.enabled;
-    this.adminService.updateFeature(feature.key, feature.enabled).subscribe({
+    this.updatingFeatureKey = feature.key;
+    this.adminService.updateFeature(feature.key, feature.enabled).pipe(
+      finalize(() => { this.updatingFeatureKey = null; })
+    ).subscribe({
+      next: () => this.toastService.show('Fonctionnalité mise à jour', 'success'),
       error: () => {
         feature.enabled = previous;
         this.toastService.show('Erreur mise à jour', 'error');

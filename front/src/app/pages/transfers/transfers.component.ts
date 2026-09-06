@@ -26,6 +26,7 @@ export class TransfersComponent implements OnInit {
   submitting = false;
   confirmingId: string | null = null;
   failingId: string | null = null;
+  deletingId: string | null = null;
   editing = false;
   editingTransferId: string | null = null;
 
@@ -188,7 +189,7 @@ export class TransfersComponent implements OnInit {
 
   saveTransfer(event?: Event): void {
     event?.preventDefault();
-    if (!this.form.operator || !this.form.amount) return;
+    if (!this.form.operator || !this.form.amount || this.submitting) return;
 
     const payload: any = {
       operator: this.form.operator,
@@ -211,20 +212,18 @@ export class TransfersComponent implements OnInit {
       ? this.transferService.updateTransfer(this.editingTransferId, payload)
       : this.transferService.createTransfer(payload);
 
-    action.subscribe({
+    action.pipe(finalize(() => { this.submitting = false; })).subscribe({
       next: () => {
         const message = this.editing ? 'Transfert mis à jour avec succès' : 'Transfert enregistré avec succès';
         this.resetForm();
         this.loadSummary();
         this.loadTransfers(() => {
           this.toastService.show(message, 'success');
-          this.submitting = false;
         });
       },
       error: (err) => {
         const message = err.error?.error || 'Erreur lors de l’enregistrement du transfert, veuillez réessayer';
         this.toastService.show(message, 'error');
-        this.submitting = false;
       }
     });
   }
@@ -253,22 +252,25 @@ export class TransfersComponent implements OnInit {
   }
 
   deleteTransfer(id: string): void {
-    if (!confirm('Voulez-vous vraiment supprimer ce transfert ?')) return;
-    this.transferService.deleteTransfer(id).subscribe({
-      next: () => {
-        if (this.editing && this.editingTransferId === id) {
-          this.resetForm();
+    if (this.deletingId || !confirm('Voulez-vous vraiment supprimer ce transfert ?')) return;
+    this.deletingId = id;
+    this.transferService.deleteTransfer(id)
+      .pipe(finalize(() => { this.deletingId = null; }))
+      .subscribe({
+        next: () => {
+          if (this.editing && this.editingTransferId === id) {
+            this.resetForm();
+          }
+          this.loadSummary();
+          this.loadTransfers(() => {
+            this.toastService.show('Transfert supprimé', 'success');
+          });
+        },
+        error: (err) => {
+          const message = err.error?.error || 'Erreur lors de la suppression du transfert, veuillez réessayer';
+          this.toastService.show(message, 'error');
         }
-        this.loadSummary();
-        this.loadTransfers(() => {
-          this.toastService.show('Transfert supprimé', 'success');
-        });
-      },
-      error: (err) => {
-        const message = err.error?.error || 'Erreur lors de la suppression du transfert, veuillez réessayer';
-        this.toastService.show(message, 'error');
-      }
-    });
+      });
   }
 
   private resetForm(): void {

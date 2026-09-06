@@ -107,16 +107,20 @@ router.post('/register', async (req, res) => {
 router.post('/login', async (req, res) => {
   try {
     const { email, password } = req.body;
-    const customer = await Customer.findOne({ where: { email } });
-    if (!customer) {
-      return res.status(400).json({ success: false, message: 'Customer not found' });
+    if (!email || !password) {
+      return res.status(400).json({ success: false, message: 'Email et mot de passe requis.' });
     }
 
-    if (customer.password) {
-      const validPassword = await bcrypt.compare(password, customer.password);
-      if (!validPassword) {
-        return res.status(400).json({ success: false, message: 'Invalid password' });
-      }
+    const customer = await Customer.findOne({ where: { email } });
+
+    // Même message pour compte inexistant, sans mot de passe ou mauvais mdp (anti-énumération)
+    if (!customer || !customer.password) {
+      return res.status(401).json({ success: false, message: 'Email ou mot de passe incorrect.' });
+    }
+
+    const validPassword = await bcrypt.compare(password, customer.password);
+    if (!validPassword) {
+      return res.status(401).json({ success: false, message: 'Email ou mot de passe incorrect.' });
     }
 
     const token = jwt.sign({ id: customer.id, email: customer.email }, JWT_SECRET, {

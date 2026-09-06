@@ -31,13 +31,19 @@ export class WebSocketService {
     // Re-send auth whenever customer logs in/out
     this.customerAuth.currentCustomer$.subscribe(customer => {
       if (this.isConnected()) {
-        if (customer?.id) {
-          this.send('auth', { customerId: customer.id });
-        } else {
-          this.send('auth', { customerId: null });
-        }
+        this.sendAuth();
       }
     });
+  }
+
+  private sendAuth(): void {
+    const customer = this.customerAuth.getCurrentCustomer();
+    const token = this.customerAuth.getCustomerToken();
+    if (customer?.id && token) {
+      this.send('auth', { customerId: customer.id, token });
+    } else {
+      this.send('auth', { customerId: null, token: null });
+    }
   }
 
   private connect(): void {
@@ -48,16 +54,13 @@ export class WebSocketService {
 
       this.ws = new WebSocket(wsUrl);
 
-      this.ws.onopen = () => {
-        console.log('WebSocket connected');
-        this.connectionStatus.next('connected');
-        this.reconnectAttempts = 0;
+this.ws.onopen = () => {
+          console.log('WebSocket connected');
+          this.connectionStatus.next('connected');
+          this.reconnectAttempts = 0;
 
-        const customer = this.customerAuth.getCurrentCustomer();
-        if (customer?.id) {
-          this.send('auth', { customerId: customer.id });
-        }
-      };
+          this.sendAuth();
+        };
 
       this.ws.onmessage = (event) => {
         try {

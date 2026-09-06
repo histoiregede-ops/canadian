@@ -120,10 +120,7 @@ export class CustomerAuthService {
 
   // Get current customer
   getCurrentCustomer(): Customer | null {
-    if (!this.getCustomerToken()) {
-      this.clearCustomerAuth();
-      return null;
-    }
+    if (!this.getCustomerToken()) return null;
     return this.currentCustomerSubject.value;
   }
 

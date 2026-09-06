@@ -20,7 +20,13 @@ describe('ShopComponent', () => {
   let mockCategoryService: { getCategories: ReturnType<typeof vi.fn> };
   let mockCartService: { addItem: ReturnType<typeof vi.fn> };
   let mockCustomerAuth: { isAuthenticated: ReturnType<typeof vi.fn>; logout: ReturnType<typeof vi.fn> };
-  let mockRouter: { navigate: ReturnType<typeof vi.fn> };
+  let mockRouter: {
+    navigate: ReturnType<typeof vi.fn>;
+    navigateByUrl: ReturnType<typeof vi.fn>;
+    createUrlTree: ReturnType<typeof vi.fn>;
+    serializeUrl: ReturnType<typeof vi.fn>;
+    events: any;
+  };
   let mockActivatedRoute: { data: any };
   let mockReviewService: { getBatchReviews: ReturnType<typeof vi.fn>; getStarArray: ReturnType<typeof vi.fn>; formatRating: ReturnType<typeof vi.fn> };
   let mockRefreshService: { refresh$: any };
@@ -40,7 +46,14 @@ describe('ShopComponent', () => {
     mockCategoryService = { getCategories: vi.fn().mockReturnValue(of(mockCategories)) };
     mockCartService = { addItem: vi.fn() };
     mockCustomerAuth = { isAuthenticated: vi.fn().mockReturnValue(false), logout: vi.fn() };
-    mockRouter = { navigate: vi.fn() };
+    // RouterLink/RouterLinkActive exigent un Router complet + ActivatedRoute
+    mockRouter = {
+      navigate: vi.fn(),
+      navigateByUrl: vi.fn(),
+      createUrlTree: vi.fn(() => ({ root: {} } as any)),
+      serializeUrl: vi.fn(() => ''),
+      events: of()
+    };
     mockActivatedRoute = { data: of({ data: { products: mockProducts, categories: mockCategories } }) };
     mockReviewService = {
       getBatchReviews: vi.fn().mockReturnValue(of({})),
@@ -49,6 +62,7 @@ describe('ShopComponent', () => {
     };
     mockRefreshService = { refresh$: of() };
 
+    await TestBed.resetTestingModule();
     await TestBed.configureTestingModule({
       imports: [ShopComponent, CommonModule, FormsModule],
       providers: [

@@ -6,6 +6,7 @@ describe('AuthService', () => {
   let service: AuthService;
 
   beforeEach(() => {
+    TestBed.resetTestingModule();
     TestBed.configureTestingModule({
       providers: [AuthService, provideHttpClient()]
     });
@@ -39,6 +40,9 @@ describe('AuthService', () => {
 
   it('should return user when logged in', () => {
     const mockUser = { id: '1', username: 'test', role: 'admin', token: 'test-token' };
+    // getUser() est conditionné par isLoggedIn() : un token valide est requis
+    localStorage.setItem('token', 'test-token');
+    localStorage.setItem('token_expiry', String(Date.now() + 3600000));
     localStorage.setItem('user', JSON.stringify(mockUser));
     expect(service.getUser()).toEqual(mockUser);
   });

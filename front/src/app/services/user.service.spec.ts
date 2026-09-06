@@ -18,6 +18,7 @@ describe('UserService', () => {
   };
 
   beforeEach(() => {
+    TestBed.resetTestingModule();
     TestBed.configureTestingModule({
       providers: [UserService, provideHttpClient(), provideHttpClientTesting()]
     });

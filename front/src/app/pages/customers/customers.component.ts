@@ -1,5 +1,6 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { Subscription } from 'rxjs';
+import { finalize } from 'rxjs/operators';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
@@ -21,6 +22,8 @@ export class CustomersComponent implements OnInit, OnDestroy {
   loading = true;
   showModal = false;
   isEditing = false;
+  saving = false;
+  deletingId: string | null = null;
 
   currentCustomer: Customer = this.initCustomer();
   private refreshSub: Subscription | null = null;
@@ -150,51 +153,50 @@ export class CustomersComponent implements OnInit, OnDestroy {
 
   saveCustomer(event?: Event): void {
     event?.preventDefault();
-    if (this.isEditing && this.currentCustomer.id) {
-      this.customerService.updateCustomer(this.currentCustomer.id, this.currentCustomer).subscribe({
-        next: () => {
-          this.loadCustomers(() => {
-            this.showModal = false;
-            this.refreshService.triggerRefresh();
-            this.toastService.show('Client mis à jour', 'success');
-          });
+    if (this.saving) return;
+    this.saving = true;
+    const isEdit = !!(this.isEditing && this.currentCustomer.id);
+    const payload = { ...this.currentCustomer };
+    const request$ = isEdit
+      ? this.customerService.updateCustomer(this.currentCustomer.id!, payload)
+      : this.customerService.createCustomer(payload);
+
+    request$
+      .pipe(finalize(() => { this.saving = false; }))
+      .subscribe({
+        next: (saved) => {
+          if (isEdit) {
+            this.customers = this.customers.map(c => c.id === saved.id ? { ...c, ...saved } : c);
+          } else {
+            this.customers = [saved, ...this.customers];
+          }
+          this.loadLoyaltyForCustomer(saved);
+          this.showModal = false;
+          this.refreshService.triggerRefresh();
+          this.toastService.show(isEdit ? 'Client modifié avec succès.' : 'Client créé avec succès.', 'success');
         },
         error: (err) => {
-          console.error('Error updating customer:', err);
-          this.toastService.show(err.error?.error || 'Impossible de mettre à jour le client.', 'error');
+          console.error('Error saving customer:', err);
+          this.toastService.show(err.error?.error || err.error?.message || 'Impossible d\'enregistrer le client.', 'error');
         }
       });
-    } else {
-      this.customerService.createCustomer(this.currentCustomer).subscribe({
-        next: () => {
-          this.loadCustomers(() => {
-            this.showModal = false;
-            this.refreshService.triggerRefresh();
-            this.toastService.show('Client créé', 'success');
-          });
-        },
-        error: (err) => {
-          console.error('Error creating customer:', err);
-          this.toastService.show(err.error?.error || 'Impossible de créer le client.', 'error');
-        }
-      });
-    }
   }
 
   deleteCustomer(id: string): void {
-    if (confirm('Voulez-vous supprimer ce client ?')) {
-      this.customerService.deleteCustomer(id).subscribe({
+    if (this.deletingId || !confirm('Voulez-vous supprimer ce client ?')) return;
+    this.deletingId = id;
+    this.customerService.deleteCustomer(id)
+      .pipe(finalize(() => { this.deletingId = null; }))
+      .subscribe({
         next: () => {
-          this.loadCustomers(() => {
-            this.refreshService.triggerRefresh();
-            this.toastService.show('Client supprimé', 'success');
-          });
+          this.customers = this.customers.filter(c => c.id !== id);
+          this.refreshService.triggerRefresh();
+          this.toastService.show('Client supprimé avec succès.', 'success');
         },
         error: (err) => {
           console.error('Error deleting customer:', err);
-          this.toastService.show(err.error?.error || 'Impossible de supprimer le client.', 'error');
+          this.toastService.show(err.error?.error || err.error?.message || 'Impossible de supprimer le client.', 'error');
         }
       });
-    }
   }
 }

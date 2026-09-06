@@ -22,7 +22,17 @@ if (process.env.CLOUDINARY_CLOUD_NAME) {
 
 const upload = multer({
   dest: os.tmpdir(),
-  limits: { fileSize: 10 * 1024 * 1024 }
+  limits: { fileSize: 10 * 1024 * 1024 },
+  fileFilter: (req, file, cb) => {
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+    if (allowedTypes.includes(file.mimetype)) {
+      cb(null, true);
+    } else {
+      const err = new Error('Format de fichier non autorisé. Utilisez JPG, PNG, WEBP ou GIF.');
+      err.status = 400;
+      cb(err);
+    }
+  }
 });
 
 const isCloudinaryConfigured = () => Boolean(process.env.CLOUDINARY_CLOUD_NAME && process.env.CLOUDINARY_API_KEY && process.env.CLOUDINARY_API_SECRET);
@@ -82,6 +92,8 @@ router.get('/:id', async (req, res) => {
 });
 
 router.post('/', authenticate, authorize('admin', 'cashier'), upload.single('photo'), async (req, res) => {
+  const tStart = Date.now();
+  const step = (label, t) => console.log(`[Product POST] ${label}: ${Date.now() - t} ms`);
   try {
     const { name, description, price, stockQuantity, status, categoryId, supplierId } = req.body;
 
@@ -100,27 +112,38 @@ router.post('/', authenticate, authorize('admin', 'cashier'), upload.single('pho
     };
 
     if (req.file) {
+      const tUpload = Date.now();
       try {
         productData.photo = await uploadToCloudinary(req.file.path);
+        step('upload Cloudinary', tUpload);
       } finally {
         fs.unlink(req.file.path, () => {});
       }
     } else if (isBase64Image(req.body.photo)) {
+      const tUpload = Date.now();
       const tmp = path.join(os.tmpdir(), `base64_${Date.now()}.jpg`);
       const raw = req.body.photo.replace(/^data:image\/\w+;base64,/, '');
       fs.writeFileSync(tmp, Buffer.from(raw, 'base64'));
       try {
         productData.photo = await uploadToCloudinary(tmp);
+        step('upload Cloudinary', tUpload);
       } finally {
         fs.unlink(tmp, () => {});
       }
     }
 
+    const tCreate = Date.now();
     const product = await Product.create(productData);
+    step('Product.create', tCreate);
+
+    const tAudit = Date.now();
     await logAudit(req, 'Product', product.id, 'create', productData);
+    step('logAudit', tAudit);
+
+    console.log(`[Product POST] TOTAL: ${Date.now() - tStart} ms`);
     res.status(201).json(product);
   } catch (error) {
-    console.error('Error creating product:', error);
+    console.error(`[Product POST] ERREUR après ${Date.now() - tStart} ms:`, error);
     res.status(400).json({ error: error.message });
   }
 });

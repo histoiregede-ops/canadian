@@ -1,0 +1,51 @@
+<main class="monitoring-page">
+  <header class="monitoring-header">
+    <div>
+      <p class="eyebrow">Observabilite API</p>
+      <h1>Monitoring en temps reel</h1>
+      <p class="lede">Suivi de toutes les routes API appelees, de la charge serveur et des problemes detectes.</p>
+    </div>
+    <div class="header-actions">
+      <span class="connection" [class.offline]="!connected"><i></i>{{ connected ? 'Connecte' : 'Hors ligne' }}</span>
+      <button class="refresh-button" type="button" (click)="refreshNow()" [disabled]="refreshing">↻ Actualiser</button>
+    </div>
+  </header>
+
+  <section class="connection-error" *ngIf="errorMessage">
+    <strong>Monitoring indisponible</strong>
+    <span>{{ errorMessage }}</span>
+  </section>
+
+  <section class="alert-list" *ngIf="alerts.length">
+    <article class="alert" *ngFor="let alert of alerts" [class.critical]="alert.level === 'critical'">
+      <strong>{{ alert.level === 'critical' ? 'Probleme critique' : 'Attention' }}</strong>
+      <span>{{ alert.message }}</span>
+    </article>
+  </section>
+
+  <section class="metric-cards">
+    <article><span>Endpoints observes</span><strong>{{ metrics.length }}</strong><small>routes avec trafic</small></article>
+    <article><span>Appels cumules</span><strong>{{ totalRequests | number }}</strong><small>requêtes mesurees</small></article>
+    <article><span>Erreurs API</span><strong class="danger-number">{{ totalErrors | number }}</strong><small>{{ healthyEndpoints }} endpoints sains</small></article>
+    <article><span>Latence moyenne</span><strong>{{ formatMs(averageLatency) }}</strong><small>mise a jour toutes les 5 secondes</small></article>
+  </section>
+
+  <section class="load-grid" *ngIf="system">
+    <article class="load-card"><div class="load-heading"><span>CPU backend</span><strong>{{ system.cpuPercent }}%</strong></div><div class="progress"><i [style.width.%]="system.cpuPercent" [class.warn]="system.cpuPercent >= 80"></i></div><p>{{ system.cpuPercent >= 80 ? 'Le processus est sous forte charge : verifier les traitements lourds.' : 'Charge CPU normale.' }}</p></article>
+    <article class="load-card"><div class="load-heading"><span>Memoire systeme</span><strong>{{ system.memory.usedPercent }}%</strong></div><div class="progress"><i [style.width.%]="system.memory.usedPercent" [class.warn]="system.memory.usedPercent >= 85"></i></div><p>{{ formatBytes(system.memory.usedBytes) }} utilises sur {{ formatBytes(system.memory.totalBytes) }}.</p></article>
+    <article class="load-card"><div class="load-heading"><span>Processus Node.js</span><strong>{{ formatBytes(system.process.rssBytes) }}</strong></div><p>Heap utilisee : {{ formatBytes(system.process.heapUsedBytes) }}. Uptime : {{ formatUptime(system.uptimeSeconds) }}.</p></article>
+  </section>
+
+  <section class="charts-grid">
+    <article class="panel chart-panel"><div class="panel-heading"><h2>Frequence et erreurs</h2><p>Volume de trafic par endpoint.</p></div><div class="chart-wrap"><canvas #trafficChart></canvas></div></article>
+    <article class="panel chart-panel"><div class="panel-heading"><h2>Temps de reponse</h2><p>Moyenne et maximum en millisecondes.</p></div><div class="chart-wrap"><canvas #latencyChart></canvas></div></article>
+  </section>
+
+  <section class="panel endpoints-panel">
+    <div class="panel-heading"><div><h2>Tous les endpoints suivis</h2><p>{{ metrics.length }} routes avec donnees · derniere mise a jour : {{ lastUpdated ? (lastUpdated | date:'HH:mm:ss') : 'en attente' }}</p></div><span class="live-badge" *ngIf="connected">LIVE</span></div>
+    <div class="table-scroll"><table><thead><tr><th>Endpoint</th><th>Appels</th><th>Succes</th><th>Erreurs</th><th>Moyenne</th><th>Maximum</th><th>Explication</th></tr></thead>
+      <tbody><tr *ngFor="let metric of metrics; trackBy: trackByMetric"><td><span class="method" [class]="'method-' + metric.method.toLowerCase()">{{ metric.method }}</span><code>{{ metric.path }}</code></td><td>{{ metric.requests | number }}</td><td>{{ formatRate(metric.successRate) }}</td><td class="error-cell">{{ metric.errors }}</td><td>{{ formatMs(metric.averageDurationMs) }}</td><td>{{ formatMs(metric.maxDurationMs) }}</td><td><span class="status-pill" [class.bad]="metric.errors > 0 || metric.maxDurationMs >= 2000">{{ metric.errors > 0 ? 'Erreur HTTP a verifier' : metric.maxDurationMs >= 2000 ? 'Endpoint lent' : 'Fonctionnement normal' }}</span></td></tr>
+      <tr *ngIf="!metrics.length"><td colspan="7" class="empty-cell">En attente de trafic API...</td></tr></tbody>
+    </table></div>
+  </section>
+</main>

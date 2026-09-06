@@ -2,6 +2,7 @@ import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Subscription } from 'rxjs';
+import { finalize } from 'rxjs/operators';
 import { ActivatedRoute } from '@angular/router';
 import { Supplier, SupplierService } from '../../services/supplier';
 import { ProductService } from '../../services/product';
@@ -23,6 +24,8 @@ export class SuppliersComponent implements OnInit, OnDestroy {
   loading = true;
   showModal = false;
   isEditing = false;
+  saving = false;
+  deletingId: string | null = null;
   currentSupplier: Supplier = this.emptySupplier();
   private refreshSub?: Subscription;
 
@@ -78,7 +81,8 @@ export class SuppliersComponent implements OnInit, OnDestroy {
           }
         });
         this.supplierProductCounts = counts;
-      }
+      },
+      error: (err) => console.error('Erreur chargement compteurs produits:', err)
     });
   }
 
@@ -108,42 +112,63 @@ export class SuppliersComponent implements OnInit, OnDestroy {
   }
 
   saveSupplier(): void {
-    if (this.isEditing && this.currentSupplier.id) {
-      this.supplierService.updateSupplier(this.currentSupplier.id, this.currentSupplier).subscribe({
-        next: () => {
-          this.loadSuppliers(() => {
-            this.showModal = false;
-            this.refreshService.triggerRefresh();
-            this.toastService.show('Fournisseur mis à jour', 'success');
-          });
+    if (this.saving) return;
+    this.saving = true;
+    const isEdit = !!(this.isEditing && this.currentSupplier.id);
+    const payload = { ...this.currentSupplier };
+    const request$ = isEdit
+      ? this.supplierService.updateSupplier(this.currentSupplier.id!, payload)
+      : this.supplierService.createSupplier(payload);
+
+    request$
+      .pipe(finalize(() => { this.saving = false; }))
+      .subscribe({
+        next: (saved) => {
+          if (isEdit) {
+            this.suppliers = this.suppliers.map(s => s.id === saved.id ? { ...s, ...saved } : s);
+          } else {
+            this.suppliers = [saved, ...this.suppliers];
+          }
+          this.applyFilter();
+          this.showModal = false;
+          this.refreshService.triggerRefresh();
+          this.toastService.show(isEdit ? 'Fournisseur modifié avec succès.' : 'Fournisseur créé avec succès.', 'success');
         },
-        error: (err) => this.toastService.show('Erreur: ' + err.error?.error || err.message, 'error')
+        error: (err) => this.toastService.show(this.errorMessage(err), 'error')
       });
-    } else {
-      this.supplierService.createSupplier(this.currentSupplier).subscribe({
-        next: () => {
-          this.loadSuppliers(() => {
-            this.showModal = false;
-            this.refreshService.triggerRefresh();
-            this.toastService.show('Fournisseur créé', 'success');
-          });
-        },
-        error: (err) => this.toastService.show('Erreur: ' + err.error?.error || err.message, 'error')
-      });
-    }
   }
 
   deleteSupplier(id: string): void {
-    if (confirm('Supprimer ce fournisseur ?')) {
-      this.supplierService.deleteSupplier(id).subscribe({
+    if (this.deletingId || !confirm('Supprimer ce fournisseur ?')) return;
+    this.deletingId = id;
+    this.supplierService.deleteSupplier(id)
+      .pipe(finalize(() => { this.deletingId = null; }))
+      .subscribe({
         next: () => {
-          this.loadSuppliers(() => {
-            this.refreshService.triggerRefresh();
-            this.toastService.show('Fournisseur supprimé', 'success');
-          });
+          this.suppliers = this.suppliers.filter(s => s.id !== id);
+          this.applyFilter();
+          this.refreshService.triggerRefresh();
+          this.toastService.show('Fournisseur supprimé avec succès.', 'success');
         },
-        error: (err) => this.toastService.show('Erreur: ' + err.error?.error || err.message, 'error')
+        error: (err) => this.toastService.show(this.errorMessage(err), 'error')
       });
+  }
+
+  private errorMessage(err: any): string {
+    if (err?.error?.error) return 'Erreur: ' + String(err.error.error);
+    if (err?.error?.message) return 'Erreur: ' + String(err.error.message);
+    if (typeof err?.error === 'string') return 'Erreur: ' + err.error;
+    const msg = err?.error instanceof ErrorEvent ? err.error.message : err?.message;
+    const status = err?.status;
+    if (!status) return msg || 'Erreur réseau. Réessayez.';
+    switch (status) {
+      case 400: return 'Erreur: le serveur a refusé la demande.';
+      case 401: return 'Erreur: session expirée. Veuillez vous reconnecter.';
+      case 403: return 'Erreur: accès refusé.';
+      case 404: return 'Erreur: élément introuvable.';
+      case 409: return 'Erreur: ce fournisseur existe déjà avec ces informations.';
+      case 500: return 'Erreur: problème serveur. Réessayez plus tard.';
+      default: return msg || `Erreur (${status}).`;
     }
   }
 

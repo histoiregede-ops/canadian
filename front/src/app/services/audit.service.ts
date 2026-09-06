@@ -1,5 +1,6 @@
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable } from '@angular/core';
+import { firstValueFrom } from 'rxjs';
 
 @Injectable({ providedIn: 'root' })
 export class AuditService {
@@ -11,6 +12,10 @@ export class AuditService {
       const v = filters[k];
       if (v !== undefined && v !== null && String(v) !== '') params = params.set(k, String(v));
     });
-    return this.http.get('/api/audit', { params }).toPromise();
+    return firstValueFrom(this.http.get('/api/audit', { params }));
+  }
+
+  options() {
+    return firstValueFrom(this.http.get('/api/audit/options'));
   }
 }

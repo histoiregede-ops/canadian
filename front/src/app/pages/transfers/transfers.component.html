@@ -213,7 +213,7 @@
                     <button class="btn-action btn-action-edit" (click)="openEdit(t)" title="Modifier" [disabled]="submitting || confirmingId === t.id || failingId === t.id">
                       <span>✏️</span>
                     </button>
-                    <button class="btn-action btn-action-danger" (click)="deleteTransfer(t.id)" title="Supprimer" [disabled]="submitting || confirmingId === t.id || failingId === t.id">
+                    <button class="btn-action btn-action-danger" (click)="deleteTransfer(t.id)" title="Supprimer" [disabled]="submitting || confirmingId === t.id || failingId === t.id || deletingId === t.id">
                       <span>🗑️</span>
                     </button>
                     <button class="btn-action btn-action-success" *ngIf="t.status === 'pending'" (click)="confirm(t.id)" title="Confirmer" [disabled]="confirmingId === t.id || failingId === t.id">

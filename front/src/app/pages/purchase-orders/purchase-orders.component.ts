@@ -6,6 +6,7 @@ import { PurchaseOrderService, PurchaseOrder, PurchaseOrderItem } from '../../se
 import { SupplierService, Supplier } from '../../services/supplier';
 import { PurchaseOrdersResolved } from '../../resolvers/purchase-orders.resolver';
 import { ToastService } from '../../services/toast.service';
+import { finalize } from 'rxjs/operators';
 
 @Component({
   selector: 'app-purchase-orders',
@@ -97,12 +98,12 @@ import { ToastService } from '../../services/toast.service';
                 <button class="btn btn-success btn-sm" (click)="openReceiveModal(order)">
                   📥 Réceptionner
                 </button>
-                <button class="btn btn-warning btn-sm" (click)="sendReminder(order)" *ngIf="isOverdue(order)">
-                  💬 Relancer
-                </button>
-              </ng-container>
-              <button class="btn btn-outline btn-sm" (click)="openEditModal(order)">✏️</button>
-              <button class="btn btn-danger btn-sm" (click)="deleteOrder(order)">🗑️</button>
+                <button class="btn btn-warning btn-sm" (click)="sendReminder(order)" *ngIf="isOverdue(order)" [disabled]="remindingId === order.id">
+                   💬 Relancer
+                 </button>
+               </ng-container>
+               <button class="btn btn-outline btn-sm" (click)="openEditModal(order)">✏️</button>
+               <button class="btn btn-danger btn-sm" (click)="deleteOrder(order)" [disabled]="deletingId === order.id">🗑️</button>
             </div>
           </div>
         </div>
@@ -153,7 +154,7 @@ import { ToastService } from '../../services/toast.service';
 
             <div class="modal-footer">
               <button type="button" class="btn btn-secondary" (click)="showModal = false">Annuler</button>
-              <button type="submit" class="btn btn-primary">{{ isEditing ? 'Mettre à jour' : 'Créer la commande' }}</button>
+              <button type="submit" class="btn btn-primary" [disabled]="saving">{{ isEditing ? 'Mettre à jour' : 'Créer la commande' }}</button>
             </div>
           </form>
         </div>
@@ -178,8 +179,8 @@ import { ToastService } from '../../services/toast.service';
               class="form-input receive-input" min="0" [max]="item.quantity" />
           </div>
           <div class="modal-footer">
-            <button class="btn btn-secondary" (click)="showReceiveModal = false">Annuler</button>
-            <button class="btn btn-success" (click)="confirmReceive()">✅ Confirmer la réception</button>
+               <button type="button" class="btn btn-secondary" (click)="showReceiveModal = false">Annuler</button>
+               <button type="button" class="btn btn-success" (click)="confirmReceive()" [disabled]="receivingId === receiveOrder?.id">✅ Confirmer la réception</button>
           </div>
         </div>
       </div>
@@ -258,6 +259,10 @@ export class PurchaseOrdersComponent implements OnInit {
   suppliers: Supplier[] = [];
   loading = true;
   tab: 'all' | 'overdue' | 'received' = 'all';
+  saving = false;
+  deletingId: string | null = null;
+  receivingId: string | null = null;
+  remindingId: string | null = null;
 
   showModal = false;
   isEditing = false;
@@ -326,6 +331,7 @@ export class PurchaseOrdersComponent implements OnInit {
         console.error('Failed to load purchase orders:', err); 
         this.allOrders = []; 
         this.loading = false; 
+        this.toastService.show('Impossible de charger les commandes fournisseurs.', 'error');
         callback?.();
       }
     });
@@ -343,6 +349,7 @@ export class PurchaseOrdersComponent implements OnInit {
         console.error('Failed to load overdue orders:', err); 
         this.overdueOrders = []; 
         this.loading = false; 
+        this.toastService.show('Impossible de charger les commandes en retard.', 'error');
       }
     });
   }
@@ -394,6 +401,8 @@ export class PurchaseOrdersComponent implements OnInit {
 
   saveOrder(event?: Event): void {
     event?.preventDefault();
+    if (this.saving) return;
+    this.saving = true;
     const payload = {
       supplierId: this.form.supplierId ?? undefined,
       expectedDate: this.form.expectedDate || undefined,
@@ -406,23 +415,29 @@ export class PurchaseOrdersComponent implements OnInit {
       ? this.poService.updateOrder(this.editingId, payload)
       : this.poService.createOrder(payload);
 
-    action.subscribe({
-      next: () => {
-        this.showModal = false;
-        this.loadAll(() => this.toastService.show('Commande enregistrée', 'success'));
-      },
-      error: (err) => this.toastService.show(err.error?.error || 'Erreur lors de la sauvegarde', 'error')
-    });
+    action
+      .pipe(finalize(() => { this.saving = false; }))
+      .subscribe({
+        next: () => {
+          this.showModal = false;
+          this.loadAll(() => this.toastService.show('Commande enregistrée', 'success'));
+        },
+        error: (err) => this.toastService.show(err.error?.error || 'Erreur lors de la sauvegarde', 'error')
+      });
   }
 
   deleteOrder(o: PurchaseOrder): void {
     if (!confirm(`Supprimer la commande ${o.orderNumber} ?`)) return;
-    this.poService.deleteOrder(o.id!).subscribe({
-      next: () => {
-        this.loadAll(() => this.toastService.show('Commande supprimée', 'success'));
-      },
-      error: (err) => this.toastService.show(err.error?.error || 'Erreur', 'error')
-    });
+    if (this.deletingId) return;
+    this.deletingId = o.id!;
+    this.poService.deleteOrder(o.id!)
+      .pipe(finalize(() => { this.deletingId = null; }))
+      .subscribe({
+        next: () => {
+          this.loadAll(() => this.toastService.show('Commande supprimée', 'success'));
+        },
+        error: (err) => this.toastService.show(err.error?.error || 'Erreur', 'error')
+      });
   }
 
   openReceiveModal(o: PurchaseOrder): void {
@@ -433,24 +448,32 @@ export class PurchaseOrdersComponent implements OnInit {
 
   confirmReceive(): void {
     if (!this.receiveOrder) return;
-    this.poService.receiveOrder(this.receiveOrder.id!, this.receiveItems).subscribe({
-      next: () => {
-        this.showReceiveModal = false;
-        this.loadAll(() => this.toastService.show('Commande reçue', 'success'));
-      },
-      error: (err) => this.toastService.show(err.error?.error || 'Erreur lors de la réception', 'error')
-    });
+    if (this.receivingId) return;
+    this.receivingId = this.receiveOrder.id!;
+    this.poService.receiveOrder(this.receiveOrder.id!, this.receiveItems)
+      .pipe(finalize(() => { this.receivingId = null; }))
+      .subscribe({
+        next: () => {
+          this.showReceiveModal = false;
+          this.loadAll(() => this.toastService.show('Commande reçue', 'success'));
+        },
+        error: (err) => this.toastService.show(err.error?.error || 'Erreur lors de la réception', 'error')
+      });
   }
 
   sendReminder(o: PurchaseOrder): void {
-    this.poService.sendReminder(o.id!).subscribe({
-      next: (res) => {
-        if (res.whatsappLink) {
-          window.open(res.whatsappLink, '_blank');
-        }
-        this.loadAll(() => this.toastService.show('Relance envoyée', 'success'));
-      },
-      error: (err) => this.toastService.show(err.error?.error || 'Erreur lors de la relance', 'error')
-    });
+    if (this.remindingId) return;
+    this.remindingId = o.id!;
+    this.poService.sendReminder(o.id!)
+      .pipe(finalize(() => { this.remindingId = null; }))
+      .subscribe({
+        next: (res) => {
+          if (res.whatsappLink) {
+            window.open(res.whatsappLink, '_blank');
+          }
+          this.loadAll(() => this.toastService.show('Relance envoyée', 'success'));
+        },
+        error: (err) => this.toastService.show(err.error?.error || 'Erreur lors de la relance', 'error')
+      });
   }
 }

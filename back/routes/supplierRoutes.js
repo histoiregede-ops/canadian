@@ -1,5 +1,6 @@
 const express = require('express');
 const router = express.Router();
+const { Op } = require('sequelize');
 const Supplier = require('../models/Supplier');
 const { authenticate, authorize } = require('../utils/auth');
 const { logAudit } = require('../utils/audit');
@@ -37,7 +38,16 @@ router.post('/', authenticate, authorize('admin'), async (req, res) => {
     const data = {};
     allowedFields.forEach(f => { if (req.body[f] !== undefined) data[f] = req.body[f]; });
     if (!data.contactName && req.body.contactPerson) data.contactName = req.body.contactPerson;
-    const supplier = await Supplier.create(data);
+
+    const email = data.email ? String(data.email).trim().toLowerCase() : null;
+    if (email) {
+      const existing = await Supplier.findOne({ where: { email } });
+      if (existing) {
+        return res.status(409).json({ error: 'Un fournisseur avec cet email existe déjà.' });
+      }
+    }
+
+    const supplier = await Supplier.create({ ...data, email });
     await logAudit(req, 'Supplier', supplier.id, 'create', { supplier: supplier.name });
     res.status(201).json(supplier);
   } catch (error) {
@@ -53,7 +63,16 @@ router.put('/:id', authenticate, authorize('admin'), async (req, res) => {
     const data = {};
     allowedFields.forEach(f => { if (req.body[f] !== undefined) data[f] = req.body[f]; });
     if (!data.contactName && req.body.contactPerson) data.contactName = req.body.contactPerson;
-    await supplier.update(data);
+
+    const email = data.email ? String(data.email).trim().toLowerCase() : null;
+    if (email) {
+      const existing = await Supplier.findOne({ where: { email, id: { [Op.ne]: supplier.id } } });
+      if (existing) {
+        return res.status(409).json({ error: 'Un fournisseur avec cet email existe déjà.' });
+      }
+    }
+
+    await supplier.update({ ...data, email });
     await logAudit(req, 'Supplier', supplier.id, 'update', data);
     res.json(supplier);
   } catch (error) {

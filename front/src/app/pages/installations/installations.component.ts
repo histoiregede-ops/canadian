@@ -1,5 +1,6 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { Subscription } from 'rxjs';
+import { finalize } from 'rxjs/operators';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
@@ -24,7 +25,9 @@ export class InstallationsComponent implements OnInit, OnDestroy {
   orders: any[] = [];
   loading = true;
   showModal = false;
-  isEditing = false;
+   isEditing = false;
+  saving = false;
+  deletingId: string | null = null;
 
   currentInstallation: Installation = this.initInstallation();
   private refreshSub: Subscription | null = null;
@@ -103,19 +106,34 @@ export class InstallationsComponent implements OnInit, OnDestroy {
   }
 
   loadCustomers(): void {
-    this.customerService.getCustomers().subscribe((data: Customer[]) => this.customers = data);
+    this.customerService.getCustomers().subscribe({
+      next: (data: Customer[]) => this.customers = data,
+      error: (err) => {
+        console.error('Error loading customers:', err);
+        this.toastService.show('Impossible de charger les clients.', 'error');
+      }
+    });
   }
 
   loadTechnicians(): void {
-    this.userService.getUsers().subscribe((users: any[]) => {
-      this.technicians = users.filter((u: any) => u.role === 'technician');
+    this.userService.getUsers().subscribe({
+      next: (users: any[]) => {
+        this.technicians = users.filter((u: any) => u.role === 'technician');
+      },
+      error: (err) => {
+        console.error('Error loading technicians:', err);
+        this.toastService.show('Impossible de charger les techniciens.', 'error');
+      }
     });
   }
 
   loadOrders(): void {
     this.orderService.getOrders().subscribe({
       next: (data: any[]) => this.orders = data,
-      error: (err: any) => console.error('Error loading orders:', err)
+      error: (err: any) => {
+        console.error('Error loading orders:', err);
+        this.toastService.show('Impossible de charger les commandes.', 'error');
+      }
     });
   }
 
@@ -129,6 +147,7 @@ export class InstallationsComponent implements OnInit, OnDestroy {
       error: (err) => {
         console.error('Error loading installations:', err);
         this.loading = false;
+        this.toastService.show('Impossible de charger les installations.', 'error');
       },
       complete: () => callback?.()
     });
@@ -147,53 +166,44 @@ export class InstallationsComponent implements OnInit, OnDestroy {
   }
 
   saveInstallation(event?: Event): void {
+    if (this.saving) return;
     event?.preventDefault();
-    if (this.isEditing && this.currentInstallation.id) {
-      this.installationService.updateInstallation(this.currentInstallation.id, this.currentInstallation).subscribe({
-        next: () => {
-          this.loadInstallations(() => {
-            this.showModal = false;
-            this.refreshService.triggerRefresh();
-            this.toastService.show('Installation mise à jour', 'success');
-          });
-        },
-        error: (err) => {
-          console.error('Error updating installation:', err);
-          this.toastService.show(err.error?.error || 'Impossible de mettre à jour l\'installation.', 'error');
-        }
-      });
-    } else {
-      this.installationService.createInstallation(this.currentInstallation).subscribe({
-        next: () => {
-          this.loadInstallations(() => {
-            this.showModal = false;
-            this.refreshService.triggerRefresh();
-            this.toastService.show('Installation créée', 'success');
-          });
-        },
-        error: (err) => {
-          console.error('Error creating installation:', err);
-          this.toastService.show(err.error?.error || 'Impossible de créer l\'installation.', 'error');
-        }
-      });
-    }
+    this.saving = true;
+    const isEdit = !!(this.isEditing && this.currentInstallation.id);
+    const request$ = isEdit
+      ? this.installationService.updateInstallation(this.currentInstallation.id!, this.currentInstallation)
+      : this.installationService.createInstallation(this.currentInstallation);
+
+    request$.pipe(finalize(() => { this.saving = false; })).subscribe({
+      next: () => {
+        this.loadInstallations(() => {
+          this.showModal = false;
+          this.refreshService.triggerRefresh();
+          this.toastService.show(isEdit ? 'Installation mise à jour' : 'Installation créée', 'success');
+        });
+      },
+      error: (err) => {
+        console.error(isEdit ? 'Error updating installation:' : 'Error creating installation:', err);
+        this.toastService.show(err.error?.error || (isEdit ? 'Impossible de mettre à jour l\'installation.' : 'Impossible de créer l\'installation.'), 'error');
+      }
+    });
   }
 
   deleteInstallation(id: string): void {
-    if (confirm('Supprimer ce dossier d\'installation ?')) {
-      this.installationService.deleteInstallation(id).subscribe({
-        next: () => {
-          this.loadInstallations(() => {
-            this.refreshService.triggerRefresh();
-            this.toastService.show('Installation supprimée', 'success');
-          });
-        },
-        error: (err) => {
-          console.error('Error deleting installation:', err);
-          this.toastService.show(err.error?.error || 'Impossible de supprimer l\'installation.', 'error');
-        }
-      });
-    }
+    if (this.deletingId || !confirm('Supprimer ce dossier d\'installation ?')) return;
+    this.deletingId = id;
+    this.installationService.deleteInstallation(id).pipe(finalize(() => { this.deletingId = null; })).subscribe({
+      next: () => {
+        this.loadInstallations(() => {
+          this.refreshService.triggerRefresh();
+          this.toastService.show('Installation supprimée', 'success');
+        });
+      },
+      error: (err) => {
+        console.error('Error deleting installation:', err);
+        this.toastService.show(err.error?.error || 'Impossible de supprimer l\'installation.', 'error');
+      }
+    });
   }
 
   getStatusClass(status: string): string {

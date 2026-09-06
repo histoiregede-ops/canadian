@@ -1,5 +1,6 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { Subscription } from 'rxjs';
+import { finalize } from 'rxjs/operators';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
@@ -21,9 +22,11 @@ export class RepairsComponent implements OnInit, OnDestroy {
   loading = true;
   showModal = false;
   isEditing = false;
-  searchQuery = '';
+   searchQuery = '';
   selectedStatus = '';
   selectedPriority = '';
+  saving = false;
+  deletingId: string | null = null;
 
   currentRepair: Repair = this.initRepair();
   private refreshSub: Subscription | null = null;
@@ -126,8 +129,14 @@ export class RepairsComponent implements OnInit, OnDestroy {
   }
 
   loadCustomers(): void {
-    this.customerService.getCustomers().subscribe((data: Customer[]) => {
-      this.customers = data;
+    this.customerService.getCustomers().subscribe({
+      next: (data: Customer[]) => {
+        this.customers = data;
+      },
+      error: (err) => {
+        console.error('Error loading customers:', err);
+        this.toastService.show('Impossible de charger les clients.', 'error');
+      }
     });
   }
 
@@ -142,6 +151,7 @@ export class RepairsComponent implements OnInit, OnDestroy {
       error: (err) => {
         console.error('Error loading repairs:', err);
         this.loading = false;
+        this.toastService.show('Impossible de charger les réparations.', 'error');
         callback?.();
       }
     });
@@ -160,53 +170,44 @@ export class RepairsComponent implements OnInit, OnDestroy {
   }
 
   saveRepair(event?: Event): void {
+    if (this.saving) return;
     event?.preventDefault();
-    if (this.isEditing && this.currentRepair.id) {
-      this.repairService.updateRepair(this.currentRepair.id, this.currentRepair).subscribe({
-        next: () => {
-          this.loadRepairs(() => {
-            this.showModal = false;
-            this.refreshService.triggerRefresh();
-            this.toastService.show('Réparation mise à jour', 'success');
-          });
-        },
-        error: (err) => {
-          console.error('Error updating repair:', err);
-          this.toastService.show(err.error?.error || 'Impossible de mettre à jour la réparation.', 'error');
-        }
-      });
-    } else {
-      this.repairService.createRepair(this.currentRepair).subscribe({
-        next: () => {
-          this.loadRepairs(() => {
-            this.showModal = false;
-            this.refreshService.triggerRefresh();
-            this.toastService.show('Réparation ajoutée', 'success');
-          });
-        },
-        error: (err) => {
-          console.error('Error creating repair:', err);
-          this.toastService.show(err.error?.error || 'Impossible de créer la réparation.', 'error');
-        }
-      });
-    }
+    this.saving = true;
+    const isEdit = !!(this.isEditing && this.currentRepair.id);
+    const request$ = isEdit
+      ? this.repairService.updateRepair(this.currentRepair.id!, this.currentRepair)
+      : this.repairService.createRepair(this.currentRepair);
+
+    request$.pipe(finalize(() => { this.saving = false; })).subscribe({
+      next: () => {
+        this.loadRepairs(() => {
+          this.showModal = false;
+          this.refreshService.triggerRefresh();
+          this.toastService.show(isEdit ? 'Réparation mise à jour' : 'Réparation ajoutée', 'success');
+        });
+      },
+      error: (err) => {
+        console.error(isEdit ? 'Error updating repair:' : 'Error creating repair:', err);
+        this.toastService.show(err.error?.error || (isEdit ? 'Impossible de mettre à jour la réparation.' : 'Impossible de créer la réparation.'), 'error');
+      }
+    });
   }
 
   deleteRepair(id: string): void {
-    if (confirm('Êtes-vous sûr de vouloir supprimer ce dossier de réparation ?')) {
-      this.repairService.deleteRepair(id).subscribe({
-        next: () => {
-          this.loadRepairs(() => {
-            this.refreshService.triggerRefresh();
-            this.toastService.show('Réparation supprimée', 'success');
-          });
-        },
-        error: (err) => {
-          console.error('Error deleting repair:', err);
-          this.toastService.show(err.error?.error || 'Impossible de supprimer la réparation.', 'error');
-        }
-      });
-    }
+    if (this.deletingId || !confirm('Êtes-vous sûr de vouloir supprimer ce dossier de réparation ?')) return;
+    this.deletingId = id;
+    this.repairService.deleteRepair(id).pipe(finalize(() => { this.deletingId = null; })).subscribe({
+      next: () => {
+        this.loadRepairs(() => {
+          this.refreshService.triggerRefresh();
+          this.toastService.show('Réparation supprimée', 'success');
+        });
+      },
+      error: (err) => {
+        console.error('Error deleting repair:', err);
+        this.toastService.show(err.error?.error || 'Impossible de supprimer la réparation.', 'error');
+      }
+    });
   }
 
   getStatusClass(status: string): string {

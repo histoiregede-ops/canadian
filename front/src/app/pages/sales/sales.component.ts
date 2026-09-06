@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
 import { Subscription, interval, Subject } from 'rxjs';
-import { timeout, switchMap, takeUntil, takeWhile } from 'rxjs/operators';
+import { timeout, switchMap, takeUntil, takeWhile, finalize } from 'rxjs/operators';
 import { ProductService, Product } from '../../services/product';
 import { OrderService, OrderData } from '../../services/order';
 import { PdfService } from '../../services/pdf';
@@ -102,18 +102,21 @@ export class SalesComponent implements OnInit, OnDestroy {
       localStorage.removeItem('scanCart');
       try {
         const items = JSON.parse(scanCart);
-        this.productService.getProducts().subscribe(products => {
-          for (const item of items) {
-            const product = products.find(p => p.id === item.productId);
-            if (product) {
-              const existing = this.cart.find(c => c.product.id === product.id);
-              if (existing) {
-                existing.quantity += item.quantity;
-              } else {
-                this.cart.push({ product, quantity: item.quantity });
+        this.productService.getProducts().subscribe({
+          next: (products) => {
+            for (const item of items) {
+              const product = products.find(p => p.id === item.productId);
+              if (product) {
+                const existing = this.cart.find(c => c.product.id === product.id);
+                if (existing) {
+                  existing.quantity += item.quantity;
+                } else {
+                  this.cart.push({ product, quantity: item.quantity });
+                }
               }
             }
-          }
+          },
+          error: (err) => console.error('Error loading scan cart products:', err)
         });
       } catch (e) {
         console.error('Failed to parse scan cart', e);
@@ -136,22 +139,34 @@ export class SalesComponent implements OnInit, OnDestroy {
   }
 
   private loadConfig() {
-    this.configService.getPaymentMethods().subscribe(config => {
-      this.paymentMethodsList = config.methods;
-      this.whatsappNumber = config.whatsapp;
-      this.mobileMoneyMethods = config.methods.filter(m => m.isMobileMoney).map(m => m.key);
-      config.methods.forEach(m => {
-        this.paymentLabels[m.key] = { name: m.name, icon: '', operator: m.operator };
-      });
-      if (this.paymentMethodsList.length > 0) {
-        this.paymentMethod = this.paymentMethodsList[0].key;
+    this.configService.getPaymentMethods().subscribe({
+      next: (config) => {
+        this.paymentMethodsList = config.methods;
+        this.whatsappNumber = config.whatsapp;
+        this.mobileMoneyMethods = config.methods.filter(m => m.isMobileMoney).map(m => m.key);
+        config.methods.forEach(m => {
+          this.paymentLabels[m.key] = { name: m.name, icon: '', operator: m.operator };
+        });
+        if (this.paymentMethodsList.length > 0) {
+          this.paymentMethod = this.paymentMethodsList[0].key;
+        }
+      },
+      error: (err) => {
+        console.error('Error loading config:', err);
+        this.toastService.show('Impossible de charger les moyens de paiement.', 'error');
       }
     });
   }
 
   loadProducts(): void {
-    this.productService.getProducts().subscribe(data => {
-      this.products = data;
+    this.productService.getProducts().subscribe({
+      next: (data) => {
+        this.products = data;
+      },
+      error: (err) => {
+        console.error('Error loading products:', err);
+        this.toastService.show('Impossible de charger les produits.', 'error');
+      }
     });
   }
 
@@ -193,9 +208,11 @@ export class SalesComponent implements OnInit, OnDestroy {
         this.customerSearchResults = results;
         this.showCustomerDropdown = results.length > 0;
       },
-      error: () => {
+      error: (err) => {
+        console.error('Error searching customers:', err);
         this.customerSearchResults = [];
         this.showCustomerDropdown = false;
+        this.toastService.show('Recherche client indisponible.', 'error');
       }
     });
   }
@@ -235,7 +252,10 @@ export class SalesComponent implements OnInit, OnDestroy {
           this.loyaltyDiscountRate = 0;
         }
       },
-      error: () => {}
+      error: (err) => {
+        console.error('Error loading customer loyalty:', err);
+        this.toastService.show('Informations fidélité indisponibles.', 'warning');
+      }
     });
   }
 
@@ -305,6 +325,7 @@ export class SalesComponent implements OnInit, OnDestroy {
   }
 
   checkout(): void {
+    if (this.paymentProcessing) return;
     console.debug('[CHECKOUT] Début checkout, panier:', this.cart.length, 'articles');
     if (this.cart.length === 0) {
       console.warn('[CHECKOUT] Panier vide');
@@ -354,7 +375,8 @@ export class SalesComponent implements OnInit, OnDestroy {
     console.debug('[CHECKOUT] Envoi createOrder:', orderJson.substring(0, 500));
 
     this.orderService.createOrder(orderData).pipe(
-      timeout(30000)
+      timeout(30000),
+      finalize(() => { this.paymentProcessing = false; })
     ).subscribe({
       next: (res) => {
         console.debug('[CHECKOUT] createOrder succès:', JSON.stringify(res).substring(0, 300));

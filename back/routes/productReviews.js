@@ -71,13 +71,18 @@ router.get('/product/:productId', async (req, res) => {
     const { productId } = req.params;
     const { page = 1, limit = 10, sort = 'createdAt', order = 'DESC' } = req.query;
 
+    // Whitelist sort/order to prevent ORDER BY injection
+    const allowedSorts = ['createdAt', 'updatedAt', 'rating'];
+    const sortColumn = allowedSorts.includes(sort) ? sort : 'createdAt';
+    const sortOrder = ['ASC', 'DESC'].includes(String(order).toUpperCase()) ? order.toUpperCase() : 'DESC';
+
     const offset = (page - 1) * limit;
 
     const reviews = await ProductReview.findAndCountAll({
       where: { productId },
       limit: parseInt(limit),
       offset: parseInt(offset),
-      order: [[sort, order.toUpperCase()]],
+      order: [[sortColumn, sortOrder]],
       include: [{
         model: Customer,
         attributes: ['name']

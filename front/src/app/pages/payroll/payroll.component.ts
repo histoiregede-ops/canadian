@@ -49,7 +49,10 @@ export class PayrollComponent implements OnInit {
   loadStaff(): void {
     this.userService.getUsers().subscribe({
       next: (users) => this.staff = users.filter(u => ['technician', 'cashier'].includes(u.role)),
-      error: (err) => console.error('Erreur chargement staff:', err)
+      error: (err) => {
+        console.error('Erreur chargement staff:', err);
+        this.toastService.show('Impossible de charger le personnel.', 'error');
+      }
     });
   }
 
@@ -71,10 +74,10 @@ export class PayrollComponent implements OnInit {
     };
     const existingIndex = this.entries.findIndex(e => e.id === entry.id);
     if (existingIndex >= 0) {
-      this.entries[existingIndex] = entry;
+      this.entries = this.entries.map(e => e.id === entry.id ? entry : e);
       this.toastService.show('Fiche de paie mise à jour', 'success');
     } else {
-      this.entries.unshift(entry);
+      this.entries = [entry, ...this.entries];
       this.toastService.show('Fiche de paie ajoutée', 'success');
     }
     this.resetForm();

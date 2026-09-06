@@ -1,7 +1,9 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { firstValueFrom } from 'rxjs';
 import { AuditService } from '../../services/audit.service';
+import { UserService, User } from '../../services/user.service';
 
 @Component({
   selector: 'app-audit',
@@ -22,11 +24,31 @@ export class AuditComponent implements OnInit {
   action = '';
   startDate = '';
   endDate = '';
+  // dropdown options
+  users: User[] = [];
+  entityTypes: string[] = [];
+  actions: string[] = [];
 
-  constructor(private audit: AuditService) {}
+  constructor(private audit: AuditService, private userService: UserService) {}
 
   ngOnInit(): void {
+    this.loadOptions();
     this.load();
+  }
+
+  async loadOptions() {
+    try {
+      const res: any = await this.audit.options();
+      this.entityTypes = res?.entityTypes || [];
+      this.actions = res?.actions || [];
+    } catch (err) {
+      console.error('Failed to load audit options', err);
+    }
+    try {
+      this.users = (await firstValueFrom(this.userService.getUsers())) || [];
+    } catch (err) {
+      console.error('Failed to load users', err);
+    }
   }
 
   async load(page = 1) {

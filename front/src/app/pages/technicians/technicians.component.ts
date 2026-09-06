@@ -3,6 +3,7 @@ import { Subscription } from 'rxjs';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
+import { finalize } from 'rxjs/operators';
 import { UserService, CreateUserRequest, User } from '../../services/user.service';
 import { RefreshService } from '../../services/refresh.service';
 import { ToastService } from '../../services/toast.service';
@@ -19,6 +20,8 @@ export class TechniciansComponent implements OnInit, OnDestroy {
   loading = true;
   showModal = false;
   isEditing = false;
+  saving = false;
+  deletingId: string | null = null;
 
   currentTechnician: CreateUserRequest = {
     username: '',
@@ -76,6 +79,7 @@ export class TechniciansComponent implements OnInit, OnDestroy {
       error: (err) => {
         console.error('Error loading technicians:', err);
         this.loading = false;
+        this.toastService.show('Impossible de charger les techniciens.', 'error');
         callback?.();
       }
     });
@@ -104,57 +108,62 @@ export class TechniciansComponent implements OnInit, OnDestroy {
   saveTechnician(event?: Event): void {
     event?.preventDefault();
     if (!this.currentTechnician.fullName || !this.currentTechnician.email) return;
+    if (this.saving) return;
+    this.saving = true;
 
     if (this.isEditing && this.editingId) {
       this.userService.updateUser(this.editingId, {
         fullName: this.currentTechnician.fullName,
         email: this.currentTechnician.email
-      }).subscribe({
-        next: () => {
-          this.loadTechnicians(() => {
+      })
+        .pipe(finalize(() => { this.saving = false; }))
+        .subscribe({
+          next: (saved) => {
+            this.technicians = this.technicians.map(t => t.id === saved.id ? { ...t, ...saved } : t);
             this.showModal = false;
             this.refreshService.triggerRefresh();
             this.toastService.show('Technicien mis à jour', 'success');
-          });
-        },
-        error: (err) => {
-          console.error('Error updating technician:', err);
-          this.toastService.show(err.error?.error || 'Erreur mise à jour technicien', 'error');
-        }
-      });
+          },
+          error: (err) => {
+            console.error('Error updating technician:', err);
+            this.toastService.show(err.error?.error || 'Erreur mise à jour technicien', 'error');
+          }
+        });
     } else {
       if (!this.currentTechnician.username || !this.currentTechnician.password) return;
-      this.userService.createUser(this.currentTechnician).subscribe({
-        next: () => {
-          this.loadTechnicians(() => {
+      this.userService.createUser(this.currentTechnician)
+        .pipe(finalize(() => { this.saving = false; }))
+        .subscribe({
+          next: (saved) => {
+            this.technicians = [saved, ...this.technicians];
             this.showModal = false;
             this.refreshService.triggerRefresh();
             this.toastService.show('Technicien créé', 'success');
-          });
-        },
-        error: (err) => {
-          console.error('Error saving technician:', err);
-          this.toastService.show(err.error?.error || 'Erreur création technicien', 'error');
-        }
-      });
+          },
+          error: (err) => {
+            console.error('Error saving technician:', err);
+            this.toastService.show(err.error?.error || 'Erreur création technicien', 'error');
+          }
+        });
     }
   }
 
   deleteTechnician(id: string): void {
-    if (confirm('Supprimer ce technicien ?')) {
-      this.userService.deleteUser(id).subscribe({
+    if (this.deletingId || !confirm('Supprimer ce technicien ?')) return;
+    this.deletingId = id;
+    this.userService.deleteUser(id)
+      .pipe(finalize(() => { this.deletingId = null; }))
+      .subscribe({
         next: () => {
-          this.loadTechnicians(() => {
-            this.refreshService.triggerRefresh();
-            this.toastService.show('Technicien supprimé', 'success');
-          });
+          this.technicians = this.technicians.filter(t => t.id !== id);
+          this.refreshService.triggerRefresh();
+          this.toastService.show('Technicien supprimé', 'success');
         },
         error: (err) => {
           console.error('Error deleting technician:', err);
           this.toastService.show(err.error?.error || 'Erreur suppression technicien', 'error');
         }
       });
-    }
   }
 
   getWithEmail(): number {

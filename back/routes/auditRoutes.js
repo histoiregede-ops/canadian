@@ -4,6 +4,24 @@ const { AuditLog } = require('../models');
 const { authenticate, authorize } = require('../utils/auth');
 const { Op } = require('sequelize');
 
+// Distinct entity types & actions for filter dropdowns
+router.get('/options', authenticate, authorize('admin'), async (req, res) => {
+  try {
+    const [types] = await AuditLog.sequelize.query(
+      `SELECT DISTINCT entityType FROM AuditLogs WHERE entityType IS NOT NULL AND entityType != '' ORDER BY entityType`
+    );
+    const [acts] = await AuditLog.sequelize.query(
+      `SELECT DISTINCT action FROM AuditLogs WHERE action IS NOT NULL AND action != '' ORDER BY action`
+    );
+    res.json({
+      entityTypes: types.map(r => r.entityType),
+      actions: acts.map(r => r.action)
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 router.get('/', authenticate, authorize('admin'), async (req, res) => {
   try {
     const page = Math.max(1, Number(req.query.page) || 1);

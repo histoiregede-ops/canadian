@@ -2,9 +2,18 @@
   <h2>Audit Logs</h2>
 
   <div class="filters">
-    <input placeholder="Utilisateur (id)" [(ngModel)]="userId" />
-    <input placeholder="Entity type (ex: Order, Product)" [(ngModel)]="entityType" />
-    <input placeholder="Action (create, update, delete)" [(ngModel)]="action" />
+    <select [(ngModel)]="userId">
+      <option value="">Tous les utilisateurs</option>
+      <option *ngFor="let u of users" [value]="u.id">{{ u.username }}{{ u.fullName ? ' — ' + u.fullName : '' }}</option>
+    </select>
+    <select [(ngModel)]="entityType">
+      <option value="">Tous les types d'entité</option>
+      <option *ngFor="let t of entityTypes" [value]="t">{{ t }}</option>
+    </select>
+    <select [(ngModel)]="action">
+      <option value="">Toutes les actions</option>
+      <option *ngFor="let a of actions" [value]="a">{{ a }}</option>
+    </select>
     <input type="date" [(ngModel)]="startDate" />
     <input type="date" [(ngModel)]="endDate" />
     <button (click)="applyFilters()">Filtrer</button>

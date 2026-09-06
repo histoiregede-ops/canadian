@@ -115,7 +115,9 @@
 
         <div class="card-actions">
           <button class="btn btn-outline btn-sm" (click)="openEditModal(customer)">✏️ Modifier</button>
-          <button class="btn btn-danger btn-sm" (click)="deleteCustomer(customer.id!)">🗑️ Supprimer</button>
+          <button class="btn btn-danger btn-sm" (click)="deleteCustomer(customer.id!)" [disabled]="deletingId === customer.id">
+            {{ deletingId === customer.id ? 'Suppression...' : '🗑️ Supprimer' }}
+          </button>
         </div>
       </div>
     </div>
@@ -160,7 +162,9 @@
           </div>
           <div class="modal-footer">
             <button type="button" class="btn btn-secondary" (click)="showModal = false">Annuler</button>
-            <button type="submit" class="btn btn-primary">{{ isEditing ? 'Mettre à jour' : 'Enregistrer' }}</button>
+            <button type="submit" class="btn btn-primary" [disabled]="saving || !currentCustomer.fullName">
+              {{ saving ? (isEditing ? 'Mise à jour...' : 'Enregistrement...') : (isEditing ? 'Mettre à jour' : 'Enregistrer') }}
+            </button>
           </div>
         </form>
       </div>

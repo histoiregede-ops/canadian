@@ -1,5 +1,6 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { Subscription } from 'rxjs';
+import { finalize } from 'rxjs/operators';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
@@ -22,6 +23,8 @@ export class CategoriesComponent implements OnInit, OnDestroy {
   loading = true;
   showModal = false;
   isEditing = false;
+  saving = false;
+  deletingId: string | null = null;
 
   currentCategory: Category = this.initCategory();
   errorMessage = '';
@@ -116,6 +119,7 @@ export class CategoriesComponent implements OnInit, OnDestroy {
   }
 
   saveCategory(): void {
+    if (this.saving) return;
     this.errorMessage = '';
 
     const name = (this.currentCategory.name || '').trim();
@@ -128,58 +132,58 @@ export class CategoriesComponent implements OnInit, OnDestroy {
       name,
       type: this.currentCategory.type
     };
+    const isEdit = !!(this.isEditing && this.currentCategory.id);
+    const request$ = isEdit
+      ? this.categoryService.updateCategory(this.currentCategory.id!, payload)
+      : this.categoryService.createCategory(payload);
 
-    if (this.isEditing && this.currentCategory.id) {
-      this.categoryService.updateCategory(this.currentCategory.id, payload).subscribe({
-        next: () => {
-          this.loadCategories(() => {
-            this.showModal = false;
-            this.refreshService.triggerRefresh();
-            this.toastService.show('Catégorie mise à jour', 'success');
-          });
-        },
-        error: (err) => {
-          console.error('Error updating category:', err);
-          this.errorMessage = 'Impossible de mettre à jour la catégorie.';
-          this.toastService.show('Impossible de mettre à jour la catégorie.', 'error');
+    this.saving = true;
+    request$.pipe(finalize(() => { this.saving = false; })).subscribe({
+      next: (saved) => {
+        if (isEdit) {
+          this.categories = this.categories.map(c => c.id === saved.id ? { ...c, ...saved } : c);
+        } else {
+          this.categories = [saved, ...this.categories];
         }
-      });
-    } else {
-      this.categoryService.createCategory(payload).subscribe({
-        next: () => {
-          this.loadCategories(() => {
-            this.showModal = false;
-            this.refreshService.triggerRefresh();
-            this.toastService.show('Catégorie créée', 'success');
-          });
-        },
-        error: (err) => {
-          console.error('Error creating category:', err);
-          this.errorMessage = 'Impossible de créer la catégorie.';
-          this.toastService.show('Impossible de créer la catégorie.', 'error');
-        }
-      });
-    }
+        this.updateProductCountsFor(saved);
+        this.showModal = false;
+        this.refreshService.triggerRefresh();
+        this.toastService.show(isEdit ? 'Catégorie modifiée avec succès.' : 'Catégorie créée avec succès.', 'success');
+      },
+      error: (err) => {
+        console.error('Error saving category:', err);
+        this.errorMessage = 'Impossible d\'enregistrer la catégorie.';
+        this.toastService.show('Impossible d\'enregistrer la catégorie.', 'error');
+      }
+    });
   }
 
   deleteCategory(category: Category): void {
-    if (!category.id) return;
+    if (!category.id || this.deletingId) return;
 
     if (confirm('Êtes-vous sûr de vouloir supprimer cette catégorie ?')) {
-      this.categoryService.deleteCategory(category.id).subscribe({
-        next: () => {
-          this.loadCategories(() => {
+      this.deletingId = category.id;
+      this.categoryService.deleteCategory(category.id)
+        .pipe(finalize(() => { this.deletingId = null; }))
+        .subscribe({
+          next: () => {
+            this.categories = this.categories.filter(c => c.id !== category.id);
             this.refreshService.triggerRefresh();
-            this.toastService.show('Catégorie supprimée', 'success');
-          });
-        },
-        error: (err) => {
-          console.error('Error deleting category:', err);
-          this.errorMessage = 'Impossible de supprimer la catégorie.';
-          this.toastService.show('Impossible de supprimer la catégorie.', 'error');
-        }
-      });
+            this.toastService.show('Catégorie supprimée avec succès.', 'success');
+          },
+          error: (err) => {
+            console.error('Error deleting category:', err);
+            this.errorMessage = 'Impossible de supprimer la catégorie.';
+            this.toastService.show('Impossible de supprimer la catégorie.', 'error');
+          }
+        });
     }
+  }
+
+  private updateProductCountsFor(category: Category): void {
+    if (!category.id) return;
+    const existing = this.productCounts.get(category.id) || 0;
+    this.productCounts.set(category.id, existing);
   }
 
   // Helper methods for the template

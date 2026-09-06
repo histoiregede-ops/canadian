@@ -1,11 +1,10 @@
 import { Component, OnInit, OnDestroy, ViewChild, ElementRef, AfterViewInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { RouterModule } from '@angular/router';
+import { RouterModule, Router, ActivatedRoute } from '@angular/router';
 import { Product, ProductService } from '../../services/product';
 import { ToastService } from '../../services/toast.service';
 import { environment } from '../../../environments/environment';
-import { ActivatedRoute } from '@angular/router';
 
 @Component({
   selector: 'app-scan',
@@ -25,8 +24,9 @@ export class ScanComponent implements OnInit, OnDestroy, AfterViewInit {
   cart: { product: Product; quantity: number }[] = [];
   showCart = false;
   resolvedProducts: Product[] = [];
+  checkingOut = false;
 
-  constructor(private route: ActivatedRoute, private productService: ProductService, private toastService: ToastService) {}
+  constructor(private route: ActivatedRoute, private router: Router, private productService: ProductService, private toastService: ToastService) {}
 
   ngOnInit(): void {
     this.route.data.subscribe(({ data }) => {
@@ -80,8 +80,10 @@ export class ScanComponent implements OnInit, OnDestroy, AfterViewInit {
             this.barcodeInput?.nativeElement?.focus();
           }, 100);
         },
-        error: () => {
+        error: (err) => {
+          console.error('Error searching barcode:', err);
           this.searching = false;
+          this.toastService.show('Recherche du produit indisponible.', 'error');
           setTimeout(() => {
             this.barcode = '';
             this.barcodeInput?.nativeElement?.focus();
@@ -122,7 +124,9 @@ export class ScanComponent implements OnInit, OnDestroy, AfterViewInit {
   }
 
   checkout(): void {
+    if (this.checkingOut) return;
     if (this.cart.length === 0) return;
+    this.checkingOut = true;
     const items = this.cart.map(item => ({
       productId: item.product.id,
       productName: item.product.name,
@@ -130,7 +134,9 @@ export class ScanComponent implements OnInit, OnDestroy, AfterViewInit {
       unitPrice: item.product.price
     }));
     localStorage.setItem('scanCart', JSON.stringify(items));
-    window.location.href = '/sales';
+    this.router.navigate(['/sales']);
+    this.toastService.show('Commande finalisée', 'success');
+    this.checkingOut = false;
   }
 
   clearCart(): void {

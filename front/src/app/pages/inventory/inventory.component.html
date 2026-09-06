@@ -90,7 +90,7 @@
         <button class="btn btn-ghost btn-sm" (click)="openHistory(product)" title="Historique">📋</button>
         <button class="btn btn-ghost btn-sm" (click)="openEditModal(product)" title="Modifier">✏️</button>
         <button class="btn btn-ghost btn-sm" (click)="downloadBarcode(product)" title="Télécharger code-barres">📎</button>
-        <button class="btn btn-ghost btn-sm" (click)="deleteProduct(product.id!)" title="Supprimer" style="color:var(--danger)">🗑️</button>
+        <button class="btn btn-ghost btn-sm" (click)="deleteProduct(product.id!)" [disabled]="deletingId === product.id" title="Supprimer" style="color:var(--danger)">{{ deletingId === product.id ? '...' : '🗑️' }}</button>
       </div>
     </div>
   </div>

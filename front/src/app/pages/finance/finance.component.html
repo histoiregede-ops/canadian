@@ -134,7 +134,7 @@
           </div>
           <div class="modal-footer">
             <button type="button" class="btn btn-secondary" (click)="closeModal()">Annuler</button>
-            <button type="submit" class="btn btn-primary">Enregistrer</button>
+            <button type="submit" class="btn btn-primary" [disabled]="saving">Enregistrer</button>
           </div>
         </form>
       </div>

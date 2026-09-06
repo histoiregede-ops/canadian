@@ -12,4 +12,12 @@ describe('Root and Health', () => {
       expect(res.body).toHaveProperty('documentation');
     });
   });
+
+  describe('GET /api/monitoring/metrics', () => {
+    it('should require authentication', async () => {
+      await request(app)
+        .get('/api/monitoring/metrics')
+        .expect(403);
+    });
+  });
 });

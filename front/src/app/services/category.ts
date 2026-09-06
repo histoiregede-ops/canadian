@@ -26,14 +26,14 @@ export class CategoryService {
   }
 
   createCategory(category: Category): Observable<Category> {
-    return this.http.post<Category>(this.apiUrl, category);
+    return this.http.post<Category>(this.apiUrl, category).pipe(timeout(20000));
   }
 
   updateCategory(id: string, category: Category): Observable<Category> {
-    return this.http.put<Category>(`${this.apiUrl}/${id}`, category);
+    return this.http.put<Category>(`${this.apiUrl}/${id}`, category).pipe(timeout(20000));
   }
 
   deleteCategory(id: string): Observable<any> {
-    return this.http.delete(`${this.apiUrl}/${id}`);
+    return this.http.delete(`${this.apiUrl}/${id}`).pipe(timeout(15000));
   }
 }

@@ -5,20 +5,26 @@ const cors = require('cors');
 const bodyParser = require('body-parser');
 const morgan = require('morgan');
 const WebSocket = require('ws');
+const jwt = require('jsonwebtoken');
 const rateLimit = require('express-rate-limit');
 const sequelize = require('./config/database');
 const Product = require('./models/Product');
 const models = require('./models');
+const { createApiMetrics } = require('./utils/apiMetrics');
+const { authenticate, adminOnly } = require('./utils/auth');
 require('dotenv').config();
 
 const app = express();
+const apiMetrics = createApiMetrics();
 const PORT = process.env.PORT || 3000;
 
 // Security & middleware
 app.disable('x-powered-by');
 const allowedOrigins = [
   'http://localhost:4200',
+  'http://127.0.0.1:4200',
   'http://localhost:3000',
+  'http://127.0.0.1:3000',
   'https://canada-erp.vercel.app',
   'https://canada-erp-frontend.onrender.com',
   'https://canadian-shop.onrender.com',
@@ -30,10 +36,9 @@ const corsOrigin = function (origin, callback) {
   if (!origin) {
     return callback(null, true);
   }
-  if (allowedOrigins.some(o => origin.startsWith(o))) {
+  if (allowedOrigins.some(o => o && origin === o)) {
     return callback(null, true);
   }
-  if (/^https?:\/\/localhost(:\d+)?$/.test(origin)) return callback(null, true);
   return callback(new Error('Origin non autorisée par CORS'), false);
 };
 app.use(cors({ origin: corsOrigin, methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'], credentials: true }));
@@ -47,22 +52,6 @@ app.use((req, res, next) => {
   next();
 });
 
-function sanitize(value) {
-  if (typeof value === 'string') {
-    return value.replace(/[<>"'`;()]/g, '');
-  }
-  if (Array.isArray(value)) {
-    return value.map(sanitize);
-  }
-  if (typeof value === 'object' && value !== null) {
-    return Object.keys(value).reduce((clean, key) => {
-      clean[key] = sanitize(value[key]);
-      return clean;
-    }, {});
-  }
-  return value;
-}
-
 if (process.env.NODE_ENV === 'production') {
   app.use(morgan('combined'));
 } else {
@@ -70,12 +59,7 @@ if (process.env.NODE_ENV === 'production') {
 }
 app.use(bodyParser.json({ limit: '1mb' }));
 app.use(bodyParser.urlencoded({ limit: '1mb', extended: true }));
-app.use((req, res, next) => {
-  if (req.body) {
-    req.body = sanitize(req.body);
-  }
-  next();
-});
+app.use(apiMetrics.middleware);
 
 // Routes
 const productRoutes = require('./routes/productRoutes');
@@ -118,7 +102,7 @@ const customerLimiter = rateLimit({
 
 const apiLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 200,
+  max: 1000,
   message: { error: 'Trop de requêtes, réessayez plus tard' }
 });
 app.use('/api/', apiLimiter);
@@ -149,6 +133,17 @@ app.use('/api/audit', auditRoutes);
 app.use('/api/notifications', notificationRoutes);
 
 app.use('/api/movements', movementRoutes);
+
+app.get('/api/monitoring/metrics', authenticate, adminOnly, (req, res) => {
+  const metrics = apiMetrics.snapshot();
+  const system = apiMetrics.systemSnapshot();
+  const slowEndpoints = metrics.filter(metric => metric.averageDurationMs >= 500 || metric.maxDurationMs >= 2000);
+  const errorEndpoints = metrics.filter(metric => metric.errors > 0);
+  const alerts = [...system.alerts];
+  if (slowEndpoints.length) alerts.push({ level: 'warning', code: 'api-slow', message: `${slowEndpoints.length} endpoint(s) dépassent le seuil de latence. Analysez leur base de données et leurs appels externes.` });
+  if (errorEndpoints.length) alerts.push({ level: 'warning', code: 'api-errors', message: `${errorEndpoints.length} endpoint(s) renvoient des erreurs. Consultez le détail par route ci-dessous.` });
+  res.json({ generatedAt: new Date().toISOString(), metrics, system, alerts });
+});
 
 app.use('/api', seedRoutes);
 
@@ -449,9 +444,6 @@ app.use((err, req, res, next) => {
 // Ensure Suppliers table uses InnoDB engine BEFORE sync (fix existing MyISAM tables)
 sequelize.query(`ALTER TABLE Suppliers ENGINE=InnoDB`).catch(() => {});
 
-// Drop PurchaseOrders table if it exists to avoid foreign key conflicts on re-sync
-sequelize.query(`DROP TABLE IF EXISTS PurchaseOrders`).catch(() => {});
-
 // Database Sync and Server Start
 sequelize.sync()
   .then(async () => {
@@ -611,13 +603,26 @@ sequelize.sync()
 
           switch (message.type) {
             case 'auth':
-              if (!message.customerId) {
-                ws.send(JSON.stringify({ type: 'error', message: 'customerId manquant pour l\'authentification WebSocket' }));
-                break;
+              if (message.token) {
+                try {
+                  const verified = jwt.verify(message.token, process.env.JWT_SECRET);
+                  if (!verified || !verified.id) throw new Error('Invalid token payload');
+                  customerId = String(verified.id);
+                  clients.set(customerId, ws);
+                  console.log(`Customer ${customerId} authenticated via WebSocket`);
+                } catch (error) {
+                  console.error('Invalid WebSocket token:', error.message);
+                  ws.send(JSON.stringify({ type: 'error', message: 'Authentification WebSocket invalide' }));
+                }
+              } else {
+                // Connexion anonyme (messagerie guest) : aucun customerId ne peut être revendiqué sans token
+                if (message.customerId && message.customerId !== 'guest_user') {
+                  ws.send(JSON.stringify({ type: 'error', message: "Authentification requise pour s'associer à un compte" }));
+                  break;
+                }
+                customerId = message.customerId || null;
+                console.log('Guest WebSocket connection established');
               }
-              customerId = message.customerId;
-              clients.set(customerId, ws);
-              console.log(`Customer ${customerId} authenticated via WebSocket`);
               break;
 
             case 'send_message':
@@ -730,21 +735,16 @@ sequelize.sync()
 
     // Broadcast a notification to all WebSocket clients
     global.broadcastNotification = async (notification) => {
-      // Persist to database for all staff users
+      // Persist in a single batch INSERT for all staff users
       try {
-        const [staffUsers] = await sequelize.query(
-          "SELECT id FROM Users WHERE role IN ('admin', 'cashier', 'technician')"
+        await sequelize.query(
+          "INSERT INTO app_notifications (userId, title, body, type, createdAt) SELECT id, ?, ?, ?, CURRENT_TIMESTAMP FROM Users WHERE role IN ('admin', 'cashier', 'technician')",
+          { replacements: [notification.title, notification.body, notification.type || 'info'] }
         );
-        for (const user of staffUsers) {
-          await sequelize.query(
-            'INSERT INTO app_notifications (userId, title, body, type, createdAt) VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP)',
-            { replacements: [user.id, notification.title, notification.body, notification.type || 'info'] }
-          );
-        }
       } catch (err) {
         console.error('Error persisting notification:', err.message);
       }
-      // Broadcast to all connected WebSocket clients (existing logic)
+      // Broadcast to all connected WebSocket clients
       wss.clients.forEach((client) => {
         if (client.readyState === WebSocket.OPEN) {
           client.send(JSON.stringify({

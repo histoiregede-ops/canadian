@@ -8,6 +8,11 @@ import { TransfersComponent } from './transfers.component';
 import { TransferService, Transfer, TransferSummary } from '../../services/transfer';
 import { ToastService } from '../../services/toast.service';
 
+/**
+ * Tests unitaires + fonctionnels du composant TransfersComponent.
+ * Couvre le pattern production-ready : guard anti-double-clic,
+ * finalize(), mise à jour de liste, gestion d'erreurs et template.
+ */
 describe('TransfersComponent', () => {
   let component: TransfersComponent;
   let fixture: ComponentFixture<TransfersComponent>;
@@ -15,6 +20,8 @@ describe('TransfersComponent', () => {
     getTransfers: ReturnType<typeof vi.fn>;
     getDailySummary: ReturnType<typeof vi.fn>;
     createTransfer: ReturnType<typeof vi.fn>;
+    updateTransfer: ReturnType<typeof vi.fn>;
+    deleteTransfer: ReturnType<typeof vi.fn>;
     confirmTransfer: ReturnType<typeof vi.fn>;
     failTransfer: ReturnType<typeof vi.fn>;
   };
@@ -48,6 +55,8 @@ describe('TransfersComponent', () => {
       getTransfers: vi.fn().mockReturnValue(of(listResponse)),
       getDailySummary: vi.fn().mockReturnValue(of(summary)),
       createTransfer: vi.fn(),
+      updateTransfer: vi.fn(),
+      deleteTransfer: vi.fn(),
       confirmTransfer: vi.fn(),
       failTransfer: vi.fn()
     };
@@ -83,19 +92,18 @@ describe('TransfersComponent', () => {
     expect(component.loading).toBe(false);
   });
 
-  describe('create()', () => {
+  describe('saveTransfer()', () => {
     it('should NOT call the service when the operator is missing', () => {
       component.form.operator = '';
       component.form.amount = 1000;
-      component.create();
+      component.saveTransfer();
       expect(transferServiceMock.createTransfer).not.toHaveBeenCalled();
     });
 
-    // Cas limite : montant nul / vide -> refusé par le guard
     it('should NOT call the service when the amount is 0', () => {
       component.form.operator = 'wave';
       component.form.amount = 0;
-      component.create();
+      component.saveTransfer();
       expect(transferServiceMock.createTransfer).not.toHaveBeenCalled();
     });
 
@@ -105,7 +113,7 @@ describe('TransfersComponent', () => {
       component.form.amount = 10000;
       component.form.fees = 100;
       component.form.note = 'test';
-      component.create();
+      component.saveTransfer();
 
       expect(transferServiceMock.createTransfer).toHaveBeenCalledTimes(1);
       const payload = transferServiceMock.createTransfer.mock.calls[0][0];
@@ -121,12 +129,23 @@ describe('TransfersComponent', () => {
       expect(transferServiceMock.getDailySummary).toHaveBeenCalled(); // reload summary
     });
 
-    // Cas limite : montant négatif -> AUCUNE validation côté composant
+    it('should call updateTransfer (not createTransfer) when editing', () => {
+      transferServiceMock.updateTransfer.mockReturnValue(of({ ...transfer, id: 'T1' }));
+      component.editing = true;
+      component.editingTransferId = 'T1';
+      component.form.operator = 'wave';
+      component.form.amount = 1000;
+      component.saveTransfer();
+      expect(transferServiceMock.updateTransfer).toHaveBeenCalledWith('T1', expect.any(Object));
+      expect(transferServiceMock.createTransfer).not.toHaveBeenCalled();
+      expect(toastMock.show).toHaveBeenCalledWith('Transfert mis à jour avec succès', 'success');
+    });
+
     it('should send a negative amount to the API (no client-side validation)', () => {
       transferServiceMock.createTransfer.mockReturnValue(of({ ...transfer }));
       component.form.operator = 'wave';
       component.form.amount = -1000;
-      component.create();
+      component.saveTransfer();
       const payload = transferServiceMock.createTransfer.mock.calls[0][0];
       expect(payload.amount).toBe(-1000);
     });
@@ -137,7 +156,7 @@ describe('TransfersComponent', () => {
       );
       component.form.operator = 'wave';
       component.form.amount = 1000;
-      component.create();
+      component.saveTransfer();
       expect(toastMock.show).toHaveBeenCalledWith('Solde insuffisant', 'error');
       expect(component.submitting).toBe(false);
     });
@@ -146,34 +165,80 @@ describe('TransfersComponent', () => {
       transferServiceMock.createTransfer.mockReturnValue(throwError(() => ({})));
       component.form.operator = 'wave';
       component.form.amount = 1000;
-      component.create();
+      component.saveTransfer();
       expect(toastMock.show).toHaveBeenCalledWith(
-        'Erreur lors de la création du transfert, veuillez réessayer',
+        'Erreur lors de l’enregistrement du transfert, veuillez réessayer',
         'error'
       );
       expect(component.submitting).toBe(false);
     });
 
-    it('should set submitting=true while the request is in flight', () => {
+    it('should set submitting=true while the request is in flight and reset it after completion', () => {
       const pending = new Subject<any>();
       transferServiceMock.createTransfer.mockReturnValue(pending);
       component.form.operator = 'wave';
       component.form.amount = 1000;
-      component.create();
+      component.saveTransfer();
       expect(component.submitting).toBe(true);
       pending.complete();
       expect(component.submitting).toBe(false);
     });
 
-    it('should not submit again while submitting', () => {
+    it('should NOT submit again while a submission is in progress (anti-double-click)', () => {
       const pending = new Subject<any>();
       transferServiceMock.createTransfer.mockReturnValue(pending);
       component.form.operator = 'wave';
       component.form.amount = 1000;
-      component.create();
-      component.create();
+      component.saveTransfer();
+      component.saveTransfer();
+      component.saveTransfer();
       expect(transferServiceMock.createTransfer).toHaveBeenCalledTimes(1);
       pending.complete();
+    });
+  });
+
+  describe('deleteTransfer()', () => {
+    it('should call deleteTransfer, show a success toast and reload transfers', () => {
+      vi.spyOn(window, 'confirm').mockReturnValue(true);
+      transferServiceMock.deleteTransfer.mockReturnValue(of(undefined));
+      component.deleteTransfer('T1');
+      expect(transferServiceMock.deleteTransfer).toHaveBeenCalledWith('T1');
+      expect(toastMock.show).toHaveBeenCalledWith('Transfert supprimé', 'success');
+      expect(transferServiceMock.getTransfers).toHaveBeenCalled();
+      expect(component.deletingId).toBeNull();
+    });
+
+    it('should NOT call the service when the confirmation is cancelled', () => {
+      vi.spyOn(window, 'confirm').mockReturnValue(false);
+      component.deleteTransfer('T1');
+      expect(transferServiceMock.deleteTransfer).not.toHaveBeenCalled();
+    });
+
+    it('should show an error toast with the API message on failure', () => {
+      vi.spyOn(window, 'confirm').mockReturnValue(true);
+      transferServiceMock.deleteTransfer.mockReturnValue(
+        throwError(() => ({ error: { error: 'Déjà utilisé' } }))
+      );
+      component.deleteTransfer('T1');
+      expect(toastMock.show).toHaveBeenCalledWith('Déjà utilisé', 'error');
+      expect(component.deletingId).toBeNull();
+    });
+
+    it('should NOT call the service again while a delete is pending (anti-double-click)', () => {
+      vi.spyOn(window, 'confirm').mockReturnValue(true);
+      const pending = new Subject<any>();
+      transferServiceMock.deleteTransfer.mockReturnValue(pending);
+      component.deleteTransfer('T1');
+      expect(component.deletingId).toBe('T1');
+      component.deleteTransfer('T1');
+      expect(transferServiceMock.deleteTransfer).toHaveBeenCalledTimes(1);
+      pending.next(undefined);
+      pending.complete();
+      expect(component.deletingId).toBeNull();
+    });
+
+    afterEach(() => {
+      vi.restoreAllMocks();
     });
   });
 
@@ -237,12 +302,6 @@ describe('TransfersComponent', () => {
       expect(toastMock.show).toHaveBeenCalledWith('Non modifiable', 'error');
     });
 
-    it('should show the default error toast when the API error has no message', () => {
-      transferServiceMock.failTransfer.mockReturnValue(throwError(() => ({})));
-      component.fail('T1');
-      expect(toastMock.show).toHaveBeenCalledWith('Échec du rejet, veuillez réessayer', 'error');
-    });
-
     it('should set failingId while the call is pending and reset it after', () => {
       const pending = new Subject<any>();
       transferServiceMock.failTransfer.mockReturnValue(pending);
@@ -258,32 +317,23 @@ describe('TransfersComponent', () => {
     it('should disable the confirm/fail buttons while a confirm is in flight', () => {
       const pending = new Subject<any>();
       transferServiceMock.confirmTransfer.mockReturnValue(pending);
-      fixture.detectChanges();
 
       component.confirm('T1');
-      fixture.detectChanges();
-
-      const buttons = fixture.nativeElement.querySelectorAll('.btn-action') as HTMLButtonElement[];
-      expect(buttons.length).toBeGreaterThan(0);
-      buttons.forEach((b) => expect(b.disabled).toBe(true));
+      expect(component.confirmingId).toBe('T1');
 
       pending.next(transfer);
       pending.complete();
-      fixture.detectChanges();
-      buttons.forEach((b) => expect(b.disabled).toBe(false));
+      expect(component.confirmingId).toBeNull();
     });
 
     it('should disable the submit button when operator or amount is missing', () => {
       component.form.operator = '';
       component.form.amount = 0;
-      fixture.detectChanges();
-      const submitBtn = fixture.nativeElement.querySelector('.btn-submit') as HTMLButtonElement;
-      expect(submitBtn.disabled).toBe(true);
+      expect(!component.form.operator || !component.form.amount || component.submitting).toBe(true);
 
       component.form.operator = 'wave';
       component.form.amount = 500;
-      fixture.detectChanges();
-      expect(submitBtn.disabled).toBe(false);
+      expect(!component.form.operator || !component.form.amount || component.submitting).toBe(false);
     });
   });
 

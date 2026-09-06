@@ -153,10 +153,11 @@
                   <button class="btn-action btn-action-edit" (click)="openUserModal(u)" title="Modifier">✏️</button>
                   <button class="btn-action" [class.btn-action-warning]="u.isActive !== false" [class.btn-action-success]="u.isActive === false"
                     (click)="u.isActive === false ? unblockUser(u) : blockUser(u)"
-                    [title]="u.isActive === false ? 'Débloquer' : 'Bloquer'">
+                    [title]="u.isActive === false ? 'Débloquer' : 'Bloquer'"
+                    [disabled]="blockingUserId === u.id || unblockingUserId === u.id">
                     {{ u.isActive === false ? '🔓' : '🔒' }}
                   </button>
-                  <button class="btn-action btn-action-danger" (click)="deleteUser(u)" title="Supprimer">🗑️</button>
+                  <button class="btn-action btn-action-danger" (click)="deleteUser(u)" title="Supprimer" [disabled]="deletingUserId === u.id">🗑️</button>
                 </div>
               </td>
             </tr>
@@ -203,7 +204,7 @@
             </div>
             <div class="modal-footer">
               <button type="button" class="btn btn-secondary" (click)="showUserModal = false">Annuler</button>
-              <button type="submit" class="btn btn-primary">{{ editingUser ? '💾 Enregistrer' : '➕ Créer' }}</button>
+              <button type="submit" class="btn btn-primary" [disabled]="savingUser">{{ editingUser ? '💾 Enregistrer' : '➕ Créer' }}</button>
             </div>
           </form>
         </div>
@@ -220,7 +221,7 @@
         <h3 class="card-title">🔐 Matrice des permissions</h3>
         <div class="card-actions">
           <button class="btn btn-secondary btn-sm" (click)="resetPermissions()">↺ Réinitialiser</button>
-          <button class="btn btn-primary btn-sm" (click)="savePermissions()">💾 Sauvegarder</button>
+          <button class="btn btn-primary btn-sm" (click)="savePermissions()" [disabled]="savingPermissions">💾 Sauvegarder</button>
         </div>
       </div>
       <div class="loading-state" *ngIf="permissionsLoading">
@@ -281,7 +282,7 @@
             <span class="feature-desc">{{ f.description }}</span>
           </div>
           <label class="switch">
-            <input type="checkbox" [checked]="f.enabled" (change)="toggleFeature(f)" />
+            <input type="checkbox" [checked]="f.enabled" (change)="toggleFeature(f)" [disabled]="updatingFeatureKey === f.key" />
             <span class="switch-slider"></span>
           </label>
         </div>

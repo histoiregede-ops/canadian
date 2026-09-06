@@ -2,6 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
+import { finalize } from 'rxjs/operators';
 import { UserService, User } from '../../services/user.service';
 import { AuthService } from '../../services/auth';
 import { ToastService } from '../../services/toast.service';
@@ -20,6 +21,8 @@ export class UserManagementComponent implements OnInit {
   editingUser: User | null = null;
   form = { username: '', password: '', fullName: '', email: '', role: 'cashier' };
   roles = ['admin', 'seller', 'cashier', 'technician', 'delivery'];
+  saving = false;
+  deletingUserId: string | null = null;
 
   trackByRole(index: number, item: any): string {
     return item ?? index;
@@ -45,9 +48,6 @@ export class UserManagementComponent implements OnInit {
         this.loading = false;
       }
     });
-    setTimeout(() => {
-      if (this.loading) this.loading = false;
-    }, 3000);
   }
 
   get filteredUsers(): User[] {
@@ -79,7 +79,12 @@ export class UserManagementComponent implements OnInit {
     this.loading = true;
     this.userService.getUsers().subscribe({
       next: (users) => { this.users = users; this.loading = false; callback?.(); },
-      error: () => { this.loading = false; callback?.(); }
+      error: (err) => {
+        console.error('Error loading users:', err);
+        this.loading = false;
+        this.toastService.show('Impossible de charger les utilisateurs.', 'error');
+        callback?.();
+      }
     });
   }
 
@@ -104,6 +109,8 @@ export class UserManagementComponent implements OnInit {
   save(event?: Event): void {
     event?.preventDefault();
     if (!this.form.username) return;
+    if (this.saving) return;
+    this.saving = true;
     const payload = {
       username: this.form.username,
       fullName: this.form.fullName || undefined,
@@ -113,39 +120,44 @@ export class UserManagementComponent implements OnInit {
     if (this.editingUser) {
       const updateData: any = { ...payload };
       if (this.form.password) updateData.password = this.form.password;
-      this.userService.updateUser(this.editingUser.id, updateData).subscribe({
-        next: () => {
-          this.loadUsers(() => {
+      this.userService.updateUser(this.editingUser.id, updateData)
+        .pipe(finalize(() => { this.saving = false; }))
+        .subscribe({
+          next: (saved) => {
+            this.users = this.users.map(u => u.id === saved.id ? saved : u);
             this.showModal = false;
             this.toastService.show('Utilisateur mis à jour', 'success');
-          });
-        },
-        error: (err) => this.toastService.show(err.error?.error || 'Erreur lors de la mise à jour', 'error')
-      });
+          },
+          error: (err) => this.toastService.show(err.error?.error || 'Erreur lors de la mise à jour', 'error')
+        });
     } else {
-      if (!this.form.password) { this.toastService.show('Mot de passe requis', 'warning'); return; }
-      this.userService.createUser({ ...payload, password: this.form.password }).subscribe({
-        next: () => {
-          this.loadUsers(() => {
+      if (!this.form.password) { this.toastService.show('Mot de passe requis', 'warning'); this.saving = false; return; }
+      this.userService.createUser({ ...payload, password: this.form.password })
+        .pipe(finalize(() => { this.saving = false; }))
+        .subscribe({
+          next: (saved) => {
+            this.users = [saved, ...this.users];
             this.showModal = false;
             this.toastService.show('Utilisateur créé', 'success');
-          });
-        },
-        error: (err) => this.toastService.show(err.error?.error || 'Erreur lors de la création', 'error')
-      });
+          },
+          error: (err) => this.toastService.show(err.error?.error || 'Erreur lors de la création', 'error')
+        });
     }
   }
 
   deleteUser(user: User): void {
     if (!confirm(`Supprimer l'utilisateur "${user.username}" ?`)) return;
-    this.userService.deleteUser(user.id).subscribe({
-      next: () => {
-        this.loadUsers(() => {
+    if (this.deletingUserId) return;
+    this.deletingUserId = user.id;
+    this.userService.deleteUser(user.id)
+      .pipe(finalize(() => { this.deletingUserId = null; }))
+      .subscribe({
+        next: () => {
+          this.users = this.users.filter(u => u.id !== user.id);
           this.toastService.show('Utilisateur supprimé', 'success');
-        });
-      },
-      error: () => this.toastService.show('Erreur lors de la suppression', 'error')
-    });
+        },
+        error: () => this.toastService.show('Erreur lors de la suppression', 'error')
+      });
   }
 
   getRoleLabel(role: string): string {

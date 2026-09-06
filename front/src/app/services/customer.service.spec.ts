@@ -6,6 +6,7 @@ describe('CustomerService', () => {
   let service: CustomerService;
 
   beforeEach(() => {
+    TestBed.resetTestingModule();
     TestBed.configureTestingModule({
       providers: [CustomerService, provideHttpClient()]
     });

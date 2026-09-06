@@ -35,6 +35,7 @@ export class InventoryComponent implements OnInit, OnDestroy, AfterViewInit {
   selectedSupplierId = '';
   selectedStatus: string = '';
   saving = false;
+  deletingId: string | null = null;
   imgErrors = new Set<string>();
   selectedFile: File | null = null;
   photoPreview: string = '';
@@ -215,12 +216,68 @@ export class InventoryComponent implements OnInit, OnDestroy, AfterViewInit {
     return `ELEC-${part1}-${part2}-${part3}`;
   }
 
-  onFileSelected(event: any): void {
+  async onFileSelected(event: any): Promise<void> {
     const file = event.target.files[0];
-    if (file) {
+    if (!file) {
+      this.selectedFile = null;
+      this.photoPreview = '';
+      return;
+    }
+    this.selectedFile = null;
+    this.photoPreview = '';
+    try {
+      const compressed = await this.compressImage(file);
+      const before = Math.round(file.size / 1024);
+      const after = Math.round(compressed.size / 1024);
+      const gain = before > 0 ? Math.round((1 - after / before) * 100) : 0;
+      console.log(`[Image] ${before} KB -> ${after} KB (gain ${gain} %)`);
+      this.selectedFile = compressed;
+      this.photoPreview = URL.createObjectURL(compressed);
+    } catch (err) {
+      console.error('[Image] Compression impossible, utilisation de l\'originale:', err);
       this.selectedFile = file;
       this.photoPreview = URL.createObjectURL(file);
+      this.toastService.show('Compression impossible, image originale utilisée', 'warning');
     }
+  }
+
+  private compressImage(file: File, maxDim = 800, quality = 0.8): Promise<File> {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      const url = URL.createObjectURL(file);
+      img.onload = () => {
+        try {
+          const scale = Math.min(1, maxDim / Math.max(img.width, img.height));
+          const w = Math.max(1, Math.round(img.width * scale));
+          const h = Math.max(1, Math.round(img.height * scale));
+          const canvas = document.createElement('canvas');
+          canvas.width = w;
+          canvas.height = h;
+          const ctx = canvas.getContext('2d');
+          if (!ctx) throw new Error('Canvas 2D non supporté');
+          ctx.fillStyle = '#fff';
+          ctx.fillRect(0, 0, w, h);
+          ctx.drawImage(img, 0, 0, w, h);
+          canvas.toBlob((blob) => {
+            if (!blob) {
+              reject(new Error('toBlob a échoué'));
+              return;
+            }
+            const base = file.name.replace(/\.[^.]+$/, '') || 'photo';
+            resolve(new File([blob], `${base}.jpg`, { type: 'image/jpeg' }));
+          }, 'image/jpeg', quality);
+        } catch (e) {
+          reject(e);
+        } finally {
+          URL.revokeObjectURL(url);
+        }
+      };
+      img.onerror = () => {
+        URL.revokeObjectURL(url);
+        reject(new Error('Image invalide'));
+      };
+      img.src = url;
+    });
   }
 
   loadCategories(): void {
@@ -379,33 +436,39 @@ export class InventoryComponent implements OnInit, OnDestroy, AfterViewInit {
     event?.preventDefault();
     if (this.saving) return;
     this.saving = true;
+    const startTime = performance.now();
+    const label = this.isEditing ? 'Mise à jour produit' : 'Création produit';
 
-    if (!this.isEditing && !this.selectedFile) {
-      this.toastService.show("L'insertion d'une image est obligatoire pour enregistrer un produit !", 'warning');
-      this.saving = false;
-      return;
-    }
-
-    const finish = () => {
-      this.saving = false;
-      this.selectedFile = null;
-      this.photoPreview = '';
-    };
-
-    const fd = this.buildFormData();
-    const request$ = this.isEditing && this.currentProduct.id
-      ? this.productService.updateProduct(this.currentProduct.id, fd)
-      : this.productService.createProduct(fd);
-
-    request$.pipe(
-      finalize(() => {
+    try {
+      if (!this.isEditing && !this.selectedFile) {
+        this.toastService.show("L'insertion d'une image est obligatoire pour enregistrer un produit !", 'warning');
         this.saving = false;
-        this.selectedFile = null;
-        this.photoPreview = '';
-      })
-    ).subscribe({
-      next: () => {
-        this.loadProducts(() => {
+        return;
+      }
+
+      const fd = this.buildFormData();
+      const request$ = this.isEditing && this.currentProduct.id
+        ? this.productService.updateProduct(this.currentProduct.id, fd)
+        : this.productService.createProduct(fd);
+
+      request$.pipe(
+        finalize(() => {
+          this.saving = false;
+          this.selectedFile = null;
+          this.photoPreview = '';
+        })
+      ).subscribe({
+        next: (saved) => {
+          const apiTime = performance.now() - startTime;
+          console.log(`[Produit] ${label} — API répond en ${this.formatDuration(apiTime)}`);
+          if (this.isEditing && saved.id) {
+            this.products = this.products.map(p => p.id === saved.id ? { ...p, ...saved } : p);
+          } else {
+            this.products = [saved, ...this.products];
+          }
+          this.updateCharts();
+          const totalTime = performance.now() - startTime;
+          console.log(`[Produit] ${label} — TERMINÉ en ${this.formatDuration(totalTime)}`);
           this.showModal = false;
           if (this.isEditing) {
             this.refreshService.triggerRefresh();
@@ -413,31 +476,51 @@ export class InventoryComponent implements OnInit, OnDestroy, AfterViewInit {
           } else {
             this.toastService.show('Produit créé', 'success');
           }
-        });
-      },
-      error: (err) => {
-        console.error('Erreur lors de la création:', err);
-        const msg = err.error?.error || err.message || 'Erreur lors de la création du produit.';
-        this.toastService.show(msg, 'error');
-      }
-    });
+        },
+        error: (err) => {
+          const elapsed = performance.now() - startTime;
+          console.error(`[Produit] ${label} — ÉCHEC après ${this.formatDuration(elapsed)} :`, err);
+          const isTimeout = err?.name === 'TimeoutError' || String(err?.message || '').includes('Timeout');
+          const msg = isTimeout
+            ? `Le serveur n'a pas répondu après ${this.formatDuration(elapsed)}. Vérifie ta connexion (et le throttling réseau des DevTools).`
+            : (err?.error?.error || err?.error?.message || err?.message || 'Erreur lors de la création du produit.');
+          this.toastService.show(String(msg), 'error');
+        }
+      });
+    } catch (err: any) {
+      const elapsed = performance.now() - startTime;
+      console.error(`[Produit] ${label} — EXCEPTION après ${this.formatDuration(elapsed)} :`, err);
+      this.toastService.show(err?.message || 'Erreur lors de la création du produit.', 'error');
+      this.saving = false;
+    }
+  }
+
+  private formatDuration(ms: number): string {
+    if (!isFinite(ms) || ms < 0) return 'durée invalide';
+    const seconds = ms / 1000;
+    if (seconds < 1) return `${Math.round(ms)} ms`;
+    const min = Math.floor(seconds / 60);
+    const sec = (seconds % 60).toFixed(1);
+    return min > 0 ? `${min} min ${sec} s` : `${sec} s`;
   }
 
   deleteProduct(id: string): void {
-    if (confirm('Êtes-vous sûr de vouloir supprimer ce produit ?')) {
-      this.productService.deleteProduct(id).subscribe({
+    if (this.deletingId || !confirm('Êtes-vous sûr de vouloir supprimer ce produit ?')) return;
+    this.deletingId = id;
+    this.productService.deleteProduct(id)
+      .pipe(finalize(() => { this.deletingId = null; }))
+      .subscribe({
         next: () => {
-          this.loadProducts(() => {
-            this.refreshService.triggerRefresh();
-            this.toastService.show('Produit supprimé', 'success');
-          });
+          this.products = this.products.filter(p => p.id !== id);
+          this.updateCharts();
+          this.refreshService.triggerRefresh();
+          this.toastService.show('Produit supprimé', 'success');
         },
         error: (err) => {
           console.error('Erreur lors de la suppression:', err);
           this.toastService.show('Impossible de supprimer ce produit. Il est peut-être lié à une commande.', 'error');
         }
       });
-    }
   }
 
   downloadBarcode(product: Product): void {

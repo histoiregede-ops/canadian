@@ -21,6 +21,7 @@
   box-shadow: var(--shadow-sm);
 }
 .filters input,
+.filters select,
 .filters button {
   width: 100%;
   min-width: 0;

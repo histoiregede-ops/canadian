@@ -1,5 +1,6 @@
 import { Component, AfterViewInit, ViewChild, ElementRef, OnInit, OnDestroy } from '@angular/core';
 import { Subscription } from 'rxjs';
+import { finalize } from 'rxjs/operators';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Chart, registerables } from 'chart.js';
@@ -51,6 +52,8 @@ export class FinanceComponent implements OnInit, OnDestroy, AfterViewInit {
   showCommentPopup = false;
   editingTransaction: Transaction | null = null;
   editingComment = '';
+  saving = false;
+  savingComment = false;
   private refreshSub: Subscription | null = null;
 
   trackByTransactionId(index: number, item: any): string {
@@ -90,14 +93,20 @@ export class FinanceComponent implements OnInit, OnDestroy, AfterViewInit {
   loadCustomers(): void {
     this.customerService.getCustomers().subscribe({
       next: (data) => this.customers = data,
-      error: (err) => console.error('Error loading customers:', err)
+      error: (err) => {
+        console.error('Error loading customers:', err);
+        this.toastService.show('Impossible de charger les clients.', 'error');
+      }
     });
   }
 
   loadExpenseCategories(): void {
     this.configService.getExpenseCategories().subscribe({
       next: (data) => this.expenseCategories = data,
-      error: (err) => console.error('Error loading expense categories:', err)
+      error: (err) => {
+        console.error('Error loading expense categories:', err);
+        this.toastService.show('Impossible de charger les catégories de dépenses.', 'error');
+      }
     });
   }
 
@@ -122,6 +131,7 @@ export class FinanceComponent implements OnInit, OnDestroy, AfterViewInit {
       },
       error: (err) => {
         console.error('Finance loading error:', err);
+        this.toastService.show('Impossible de charger les données financières.', 'error');
         callback?.();
       }
     });
@@ -139,13 +149,18 @@ export class FinanceComponent implements OnInit, OnDestroy, AfterViewInit {
   }
 
   saveTransaction(event?: Event): void {
+    if (this.saving) return;
     event?.preventDefault();
     if (!this.newTransaction.description || this.newTransaction.amount <= 0) {
       this.toastService.show('Veuillez remplir tous les champs obligatoires.', 'warning');
       return;
     }
-    this.financeService.createTransaction(this.newTransaction).subscribe({
-      next: () => {
+    this.saving = true;
+    this.financeService.createTransaction(this.newTransaction).pipe(
+      finalize(() => { this.saving = false; })
+    ).subscribe({
+      next: (saved) => {
+        this.transactions = [saved, ...this.transactions];
         this.showModal = false;
         this.loadFinanceData(() => this.toastService.show('Transaction enregistrée', 'success'));
       },
@@ -182,6 +197,7 @@ export class FinanceComponent implements OnInit, OnDestroy, AfterViewInit {
       next: (data) => { this.fluxData = data; callback?.(); },
       error: (err) => {
         console.error('Error loading flux journalier:', err);
+        this.toastService.show('Impossible de charger le flux journalier.', 'error');
         callback?.();
       }
     });
@@ -199,15 +215,18 @@ export class FinanceComponent implements OnInit, OnDestroy, AfterViewInit {
   }
 
   saveComment(): void {
-    if (!this.editingTransaction?.id) return;
-    this.financeService.updateComment(this.editingTransaction.id, this.editingComment).subscribe({
+    if (this.savingComment || !this.editingTransaction?.id) return;
+    this.savingComment = true;
+    const id = this.editingTransaction.id;
+    this.financeService.updateComment(this.editingTransaction.id, this.editingComment).pipe(
+      finalize(() => { this.savingComment = false; })
+    ).subscribe({
       next: () => {
-        if (this.editingTransaction) {
-          this.editingTransaction.comment = this.editingComment;
-        }
+        this.transactions = this.transactions.map(t => t.id === id ? { ...t, comment: this.editingComment } : t);
         this.showCommentPopup = false;
         this.editingTransaction = null;
         this.editingComment = '';
+        this.toastService.show('Commentaire enregistré', 'success');
       },
       error: (err) => {
         console.error('Error saving comment:', err);

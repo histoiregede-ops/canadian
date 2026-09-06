@@ -41,8 +41,8 @@
           <button class="btn btn-outline btn-sm" (click)="openEditModal(category)" title="Modifier">
             ✏️ Modifier
           </button>
-          <button class="btn btn-danger btn-sm" (click)="deleteCategory(category)" title="Supprimer">
-            🗑️ Supprimer
+          <button class="btn btn-danger btn-sm" (click)="deleteCategory(category)" [disabled]="deletingId === category.id" title="Supprimer">
+            {{ deletingId === category.id ? 'Suppression...' : '🗑️ Supprimer' }}
           </button>
         </div>
       </div>
@@ -87,7 +87,9 @@
 
           <div class="modal-footer">
             <button type="button" class="btn btn-secondary" (click)="closeModal()">Annuler</button>
-            <button type="submit" class="btn btn-primary">{{ isEditing ? 'Enregistrer' : 'Créer' }}</button>
+            <button type="submit" class="btn btn-primary" [disabled]="saving || !currentCategory.name">
+              {{ saving ? (isEditing ? 'Enregistrement...' : 'Création...') : (isEditing ? 'Enregistrer' : 'Créer') }}
+            </button>
           </div>
         </form>
       </div>

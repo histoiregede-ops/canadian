@@ -120,7 +120,7 @@
           </div>
           <div class="card-actions">
             <button class="btn btn-outline btn-sm" (click)="openEditModal(repair)">✏️ Modifier</button>
-            <button class="btn btn-danger btn-sm" (click)="deleteRepair(repair.id!)">🗑️ Supprimer</button>
+            <button class="btn btn-danger btn-sm" (click)="deleteRepair(repair.id!)" [disabled]="deletingId === repair.id">🗑️ Supprimer</button>
           </div>
         </div>
       </div>
@@ -178,7 +178,7 @@
           </div>
           <div class="modal-footer">
             <button type="button" class="btn btn-secondary" (click)="showModal = false">Annuler</button>
-            <button type="submit" class="btn btn-primary">{{ isEditing ? 'Mettre à jour' : 'Enregistrer' }}</button>
+            <button type="submit" class="btn btn-primary" [disabled]="saving">{{ isEditing ? 'Mettre à jour' : 'Enregistrer' }}</button>
           </div>
         </form>
       </div>
