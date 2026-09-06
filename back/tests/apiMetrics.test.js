@@ -25,7 +25,7 @@ describe('API metrics middleware', () => {
     metrics.middleware(request, failure, () => {});
     failure.finish();
 
-    expect(metrics.snapshot()).toEqual([
+    expect(metrics.snapshot().find(item => item.path === '/api/products')).toEqual(
       expect.objectContaining({
         method: 'GET',
         path: '/api/products',
@@ -36,7 +36,7 @@ describe('API metrics middleware', () => {
         errorRate: 0.5,
         statusCodes: { 200: 1, 500: 1 }
       })
-    ]);
+    );
   });
 
   it('ignores non-API requests and can reset collected data', () => {
@@ -45,9 +45,9 @@ describe('API metrics middleware', () => {
 
     metrics.middleware({ method: 'GET', path: '/', baseUrl: '' }, response, () => {});
     response.finish();
-    expect(metrics.snapshot()).toEqual([]);
+    expect(metrics.snapshot().every(item => item.requests === 0)).toBe(true);
 
     metrics.reset();
-    expect(metrics.snapshot()).toEqual([]);
+    expect(metrics.snapshot().every(item => item.requests === 0)).toBe(true);
   });
 });

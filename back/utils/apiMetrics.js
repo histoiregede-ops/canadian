@@ -1,9 +1,12 @@
 'use strict';
 
 const os = require('os');
+const fs = require('fs');
+const path = require('path');
 
 function createApiMetrics() {
   const metrics = new Map();
+  const knownEndpoints = discoverEndpoints();
   let previousCpu = process.cpuUsage();
   let previousCpuAt = process.hrtime.bigint();
 
@@ -50,12 +53,24 @@ function createApiMetrics() {
   }
 
   function snapshot() {
-    return Array.from(metrics.values()).map(item => ({
+    return knownEndpoints.map(endpoint => {
+      const item = metrics.get(`${endpoint.method} ${endpoint.path}`) || {
+        ...endpoint,
+        requests: 0,
+        successes: 0,
+        errors: 0,
+        totalDurationMs: 0,
+        maxDurationMs: 0,
+        lastDurationMs: 0,
+        statusCodes: {}
+      };
+      return {
       ...item,
       averageDurationMs: item.requests === 0 ? 0 : item.totalDurationMs / item.requests,
       successRate: item.requests === 0 ? 0 : item.successes / item.requests,
       errorRate: item.requests === 0 ? 0 : item.errors / item.requests
-    }));
+      };
+    });
   }
 
   function reset() {
@@ -99,6 +114,35 @@ function createApiMetrics() {
   }
 
   return { middleware, snapshot, reset, systemSnapshot };
+}
+
+function discoverEndpoints() {
+  const routesDir = path.join(__dirname, '..', 'routes');
+  const indexPath = path.join(__dirname, '..', 'index.js');
+  if (!fs.existsSync(routesDir) || !fs.existsSync(indexPath)) return [{ method: 'GET', path: '/api/monitoring/metrics' }];
+
+  const indexSource = fs.readFileSync(indexPath, 'utf8');
+  const variables = {};
+  for (const match of indexSource.matchAll(/const (\w+) = require\('\.\/routes\/([^']+)'\);/g)) {
+    variables[match[1]] = match[2];
+  }
+  const mounts = {};
+  for (const match of indexSource.matchAll(/app\.use\('(\/api[^']*)', (\w+)\);/g)) {
+    if (variables[match[2]]) mounts[variables[match[2]]] = match[1];
+  }
+
+  const endpoints = [];
+  for (const file of fs.readdirSync(routesDir).filter(name => name.endsWith('.js'))) {
+    const mount = mounts[file.replace(/\.js$/, '')];
+    if (!mount) continue;
+    const source = fs.readFileSync(path.join(routesDir, file), 'utf8');
+    for (const match of source.matchAll(/router\.(get|post|put|patch|delete)\(['"]([^'"]*)['"]/gi)) {
+      const suffix = match[2] === '/' ? '' : match[2];
+      endpoints.push({ method: match[1].toUpperCase(), path: `${mount}${suffix}` });
+    }
+  }
+  endpoints.push({ method: 'GET', path: '/api/monitoring/metrics' });
+  return Array.from(new Map(endpoints.map(endpoint => [`${endpoint.method} ${endpoint.path}`, endpoint])).values());
 }
 
 module.exports = { createApiMetrics };
