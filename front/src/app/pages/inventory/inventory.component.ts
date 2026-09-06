@@ -461,15 +461,20 @@ export class InventoryComponent implements OnInit, OnDestroy, AfterViewInit {
         next: (saved) => {
           const apiTime = performance.now() - startTime;
           console.log(`[Produit] ${label} — API répond en ${this.formatDuration(apiTime)}`);
+          this.saving = false;
+          this.showModal = false;
           if (this.isEditing && saved.id) {
             this.products = this.products.map(p => p.id === saved.id ? { ...p, ...saved } : p);
           } else {
             this.products = [saved, ...this.products];
           }
-          this.updateCharts();
+          try {
+            this.updateCharts();
+          } catch (chartError) {
+            console.error('[Produit] Graphiques non actualisés après sauvegarde:', chartError);
+          }
           const totalTime = performance.now() - startTime;
           console.log(`[Produit] ${label} — TERMINÉ en ${this.formatDuration(totalTime)}`);
-          this.showModal = false;
           if (this.isEditing) {
             this.refreshService.triggerRefresh();
             this.toastService.show('Produit mis à jour', 'success');
