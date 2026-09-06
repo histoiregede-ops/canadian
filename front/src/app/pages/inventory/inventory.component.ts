@@ -35,6 +35,7 @@ export class InventoryComponent implements OnInit, OnDestroy, AfterViewInit {
   selectedSupplierId = '';
   selectedStatus: string = '';
   saving = false;
+  private saveWatchdog: ReturnType<typeof setTimeout> | null = null;
   deletingId: string | null = null;
   imgErrors = new Set<string>();
   selectedFile: File | null = null;
@@ -450,15 +451,30 @@ export class InventoryComponent implements OnInit, OnDestroy, AfterViewInit {
       const request$ = this.isEditing && this.currentProduct.id
         ? this.productService.updateProduct(this.currentProduct.id, fd)
         : this.productService.createProduct(fd);
+      let saveTimedOut = false;
+      this.saveWatchdog = setTimeout(() => {
+        if (!this.saving) return;
+        saveTimedOut = true;
+        this.saving = false;
+        this.showModal = false;
+        this.loadProducts(() => {
+          this.toastService.show('Le serveur a tardé à répondre. La liste a été rechargée pour vérifier le produit.', 'warning');
+        });
+      }, 12000);
 
       request$.pipe(
         finalize(() => {
+          if (this.saveWatchdog) {
+            clearTimeout(this.saveWatchdog);
+            this.saveWatchdog = null;
+          }
           this.saving = false;
           this.selectedFile = null;
           this.photoPreview = '';
         })
       ).subscribe({
         next: (saved) => {
+          if (saveTimedOut) return;
           const apiTime = performance.now() - startTime;
           console.log(`[Produit] ${label} — API répond en ${this.formatDuration(apiTime)}`);
           this.saving = false;
@@ -487,6 +503,7 @@ export class InventoryComponent implements OnInit, OnDestroy, AfterViewInit {
           console.error(`[Produit] ${label} — ÉCHEC après ${this.formatDuration(elapsed)} :`, err);
           const isTimeout = err?.name === 'TimeoutError' || String(err?.message || '').includes('Timeout');
           if (isTimeout) {
+            saveTimedOut = true;
             this.showModal = false;
             this.loadProducts(() => {
               this.toastService.show('Le serveur a tardé à répondre. La liste a été rechargée pour vérifier le produit.', 'warning');
