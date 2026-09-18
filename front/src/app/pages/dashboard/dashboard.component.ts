@@ -6,6 +6,15 @@ import { StatsService, DashboardStats, RecentOrder, UrgentRepair } from '../../s
 import { RefreshService } from '../../services/refresh.service';
 import { TransferService, TransferSummary } from '../../services/transfer';
 
+const DEFAULT_STATS: DashboardStats = {
+  dailyIncome: 0,
+  dailyExpense: 0,
+  dailyOrders: 0,
+  activeRepairs: 0,
+  plannedInstallations: 0,
+  lowStockProducts: 0
+};
+
 @Component({
   selector: 'app-dashboard',
   standalone: true,
@@ -14,14 +23,7 @@ import { TransferService, TransferSummary } from '../../services/transfer';
   styleUrls: ['./dashboard.component.css']
 })
 export class DashboardComponent implements OnInit, OnDestroy {
-  stats: DashboardStats = {
-    dailyIncome: 0,
-    dailyExpense: 0,
-    dailyOrders: 0,
-    activeRepairs: 0,
-    plannedInstallations: 0,
-    lowStockProducts: 0
-  };
+  stats: DashboardStats = { ...DEFAULT_STATS };
 
   recentOrders: RecentOrder[] = [];
   urgentRepairs: UrgentRepair[] = [];
@@ -42,9 +44,9 @@ export class DashboardComponent implements OnInit, OnDestroy {
   ngOnInit(): void {
     this.route.data.subscribe(({ data }) => {
       if (data) {
-        this.stats = data.stats;
-        this.recentOrders = data.recentOrders;
-        this.urgentRepairs = data.urgentRepairs;
+        this.stats = data.stats || { ...DEFAULT_STATS };
+        this.recentOrders = data.recentOrders || [];
+        this.urgentRepairs = data.urgentRepairs || [];
         this.loading = false;
         this.ordersLoading = false;
         this.repairsLoading = false;
@@ -67,11 +69,12 @@ export class DashboardComponent implements OnInit, OnDestroy {
     this.loading = true;
     this.statsService.getDashboardStats().subscribe({
       next: (data) => {
-        this.stats = data;
+        this.stats = data || DEFAULT_STATS;
         this.loading = false;
       },
       error: (err) => {
         console.error('Error loading stats:', err);
+        this.stats = DEFAULT_STATS;
         this.loading = false;
       }
     });

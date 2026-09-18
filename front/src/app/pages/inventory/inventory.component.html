@@ -59,10 +59,17 @@
     <p>Chargement des produits...</p>
   </div>
 
-  <div class="empty-state" *ngIf="!loading && products.length === 0">
+  <div class="empty-state" *ngIf="!loading && products.length === 0 && !rateLimitError">
     <span class="empty-icon">📦</span>
     <h3 class="empty-title">Aucun produit trouvé</h3>
     <p class="empty-text">Commencez par ajouter un produit à votre catalogue.</p>
+  </div>
+
+  <div class="empty-state" *ngIf="!loading && rateLimitError">
+    <span class="empty-icon">⏳</span>
+    <h3 class="empty-title">Trop de requêtes, réessayez</h3>
+    <p class="empty-text">Le serveur est temporairement saturé. Veuillez rafraîchir la page dans quelques instants.</p>
+    <button class="btn btn-primary" (click)="loadProducts()">Réessayer</button>
   </div>
 
   <div class="product-grid" *ngIf="!loading && products.length > 0">

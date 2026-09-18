@@ -89,6 +89,7 @@ export class InventoryComponent implements OnInit, OnDestroy, AfterViewInit {
   showMoveModal = false;
   showHistoryModal = false;
   isEditing = false;
+  rateLimitError = false;
 
   historyProductName = '';
   movements: StockMovement[] = [];
@@ -123,7 +124,8 @@ export class InventoryComponent implements OnInit, OnDestroy, AfterViewInit {
   ngOnInit(): void {
     this.route.data.subscribe(({ data }) => {
       if (data) {
-        this.products = data.products;
+        this.products = data.products || [];
+        this.rateLimitError = this.products.length === 0;
         this.loading = false;
         this.updateCharts();
       }
@@ -298,11 +300,13 @@ export class InventoryComponent implements OnInit, OnDestroy, AfterViewInit {
   loadProducts(callback?: () => void): void {
     const requestId = ++this.productsLoadRequest;
     this.loading = true;
+    this.rateLimitError = false;
     this.productService.getProducts().subscribe({
       next: (data) => {
         if (requestId !== this.productsLoadRequest) return;
         this.products = data;
         this.loading = false;
+        this.rateLimitError = data.length === 0;
         this.updateCharts();
         callback?.();
       },
@@ -310,6 +314,7 @@ export class InventoryComponent implements OnInit, OnDestroy, AfterViewInit {
         if (requestId !== this.productsLoadRequest) return;
         console.error('Error loading products:', err);
         this.loading = false;
+        this.rateLimitError = err?.status === 429;
         callback?.();
       },
     });

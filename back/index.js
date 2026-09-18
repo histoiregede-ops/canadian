@@ -128,12 +128,25 @@ const customerLimiter = rateLimit({
   message: { error: 'Trop de tentatives, réessayez dans 15 minutes' }
 });
 
-const apiLimiter = rateLimit({
+// Limiter permissif pour les requêtes GET (inventory, shop, dashboard)
+// pour éviter les 429 en usage normal (~10 requêtes au chargement)
+const apiLimiterGet = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 1000,
+  max: 10000,
   message: { error: 'Trop de requêtes, réessayez plus tard' }
 });
-app.use('/api/', apiLimiter);
+const apiLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 5000,
+  message: { error: 'Trop de requêtes, réessayez plus tard' }
+});
+// Usage mixte : GET plus permissif, POST/PUT/DELETE plus strict
+app.use('/api/', (req, res, next) => {
+  if (req.method === 'GET') {
+    return apiLimiterGet(req, res, next);
+  }
+  return apiLimiter(req, res, next);
+});
 
 app.use('/api/auth', authRoutes);
 app.use('/api/products', productRoutes);
