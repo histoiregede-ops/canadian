@@ -3,7 +3,7 @@ const router = express.Router();
 const { Category } = require('../models');
 const { authenticate, authorize } = require('../utils/auth');
 
-router.get('/', authenticate, authorize('admin', 'cashier'), async (req, res) => {
+router.get('/', async (req, res) => {
   try {
     const categories = await Category.findAll();
     res.json(categories);
