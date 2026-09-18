@@ -520,6 +520,17 @@ sequelize.query(`ALTER TABLE Suppliers ENGINE=InnoDB`).catch(() => {});
 sequelize.sync()
   .then(async () => {
     console.log('Database synced successfully.');
+
+    // Idempotent migration: fix lowStockThreshold to 1 for all existing products
+    try {
+      await sequelize.query(
+        `UPDATE Products SET lowStockThreshold = 1 WHERE lowStockThreshold != 1 OR lowStockThreshold IS NULL`
+      );
+      console.log('lowStockThreshold migration applied: all Products set to 1.');
+    } catch (err) {
+      console.error('Error migrating lowStockThreshold:', err.message);
+    }
+
     const count = await models.User.count();
     if (count === 0) {
       const seed = require('./seeders/202605200001-default-data');
