@@ -130,18 +130,48 @@ const customerLimiter = rateLimit({
 
 // Limiter permissif pour les requêtes GET (inventory, shop, dashboard)
 // pour éviter les 429 en usage normal (~10 requêtes au chargement)
+// skip OPTIONS pour ne pas bloquer les preflight CORS
+// skipFailedRequests pour permettre les retries après un 429
 const apiLimiterGet = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 10000,
-  message: { error: 'Trop de requêtes, réessayez plus tard' }
+  standardHeaders: true,
+  legacyHeaders: false,
+  skip: (req) => req.method === 'OPTIONS',
+  skipFailedRequests: true,
+  message: { error: 'Trop de requêtes, réessayez plus tard' },
+  handler: (req, res, next, options) => {
+    const origin = req.get('Origin');
+    if (origin && allowedOrigins.some(o => o && origin === o)) {
+      res.setHeader('Access-Control-Allow-Origin', origin);
+      res.setHeader('Access-Control-Allow-Credentials', 'true');
+    }
+    res.status(429).json(options.message);
+  }
 });
 const apiLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 5000,
-  message: { error: 'Trop de requêtes, réessayez plus tard' }
+  standardHeaders: true,
+  legacyHeaders: false,
+  skip: (req) => req.method === 'OPTIONS',
+  skipFailedRequests: true,
+  message: { error: 'Trop de requêtes, réessayez plus tard' },
+  handler: (req, res, next, options) => {
+    const origin = req.get('Origin');
+    if (origin && allowedOrigins.some(o => o && origin === o)) {
+      res.setHeader('Access-Control-Allow-Origin', origin);
+      res.setHeader('Access-Control-Allow-Credentials', 'true');
+    }
+    res.status(429).json(options.message);
+  }
 });
 // Usage mixte : GET plus permissif, POST/PUT/DELETE plus strict
+// Le skip OPTIONS garantit que les preflight CORS ne sont jamais rate-limited
 app.use('/api/', (req, res, next) => {
+  if (req.method === 'OPTIONS') {
+    return next();
+  }
   if (req.method === 'GET') {
     return apiLimiterGet(req, res, next);
   }
