@@ -73,7 +73,7 @@ async function seedImageProducts({ initializeDatabase = false, resetProducts = f
       status: item.stock > 0 ? 'available' : 'out_of_stock',
       photo,
       categoryId: categoryIds.get(item.category),
-      lowStockThreshold: 5
+      lowStockThreshold: 1
     };
     const [product, wasCreated] = await Product.findOrCreate({
       where: { name: item.name },

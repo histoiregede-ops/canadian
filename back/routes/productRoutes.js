@@ -270,7 +270,7 @@ async function logStockMovement(productId, previousQuantity, newQuantity, reason
   );
   const [p] = await sequelize.query('SELECT name, lowStockThreshold FROM Products WHERE id = ?', { replacements: [productId] });
   const name = p[0]?.name || 'Produit';
-  const threshold = p[0]?.lowStockThreshold || 15;
+  const threshold = p[0]?.lowStockThreshold || 1;
   if (newQuantity <= threshold && newQuantity > 0 && global.broadcastNotification) {
     global.broadcastNotification({ title: 'Stock faible', body: `${name}: ${newQuantity} unité(s) restante(s)`, type: 'low_stock' });
   } else if (newQuantity === 0 && global.broadcastNotification) {

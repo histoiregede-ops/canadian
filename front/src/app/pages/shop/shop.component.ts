@@ -34,6 +34,8 @@ export class ShopComponent implements OnInit, OnDestroy {
   products: ProductWithReviews[] = [];
   categories: Category[] = [];
   featuredProducts: ProductWithReviews[] = [];
+  totalProducts: number = 0;
+  totalPages: number = 0;
   
   searchQuery = '';
   selectedCategoryId = '';
@@ -142,7 +144,7 @@ export class ShopComponent implements OnInit, OnDestroy {
           .filter((p: any) => p.status === 'available')
           .map((p: any) => ({ ...p, showReviews: false }));
         this.featuredProducts = this.products
-          .filter((p: any) => p.stockQuantity > 5)
+          .filter((p: any) => p.stockQuantity > 1)
           .slice(0, 6);
         this.categories = data.categories || [];
         this.applySorting();
@@ -268,17 +270,20 @@ export class ShopComponent implements OnInit, OnDestroy {
   loadProducts(): void {
     this.loading = true;
     this.productService.getProducts().pipe(
-      timeout(10000)
+      timeout(30000)
     ).subscribe({
       next: (data) => {
         this.products = data
           .filter((p) => p.status === 'available')
           .map((p) => ({ ...p, showReviews: false }));
 
-        // Extract featured products: those with stock > 5
+        // Extract featured products: those with stock > 1
         this.featuredProducts = this.products
-          .filter(p => p.stockQuantity > 5)
+          .filter(p => p.stockQuantity > 1)
           .slice(0, 6);
+
+        this.totalProducts = data.length;
+        this.totalPages = Math.ceil(this.totalProducts / 100) || 1;
 
         this.applySorting();
         this.loading = false;

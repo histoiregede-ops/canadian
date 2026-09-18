@@ -1,5 +1,6 @@
 import { Injectable } from '@angular/core';
 import { BehaviorSubject } from 'rxjs';
+import { distinctUntilChanged } from 'rxjs/operators';
 import { Message } from './messaging';
 import { environment } from '../../environments/environment';
 import { CustomerAuthService } from './customer-auth';
@@ -25,24 +26,34 @@ export class WebSocketService {
   private notificationSubject = new BehaviorSubject<{title: string, body: string, type: string} | null>(null);
   public notification$ = this.notificationSubject.asObservable();
 
+  private authSyncInProgress = false;
+
   constructor(private customerAuth: CustomerAuthService) {
     this.requestNotificationPermission();
     this.connect();
     // Re-send auth whenever customer logs in/out
-    this.customerAuth.currentCustomer$.subscribe(customer => {
-      if (this.isConnected()) {
-        this.sendAuth();
-      }
+    this.customerAuth.currentCustomer$.pipe(distinctUntilChanged()).subscribe(customer => {
+      queueMicrotask(() => {
+        if (this.isConnected()) {
+          this.sendAuth();
+        }
+      });
     });
   }
 
   private sendAuth(): void {
-    const customer = this.customerAuth.getCurrentCustomer();
-    const token = this.customerAuth.getCustomerToken();
-    if (customer?.id && token) {
-      this.send('auth', { customerId: customer.id, token });
-    } else {
-      this.send('auth', { customerId: null, token: null });
+    if (this.authSyncInProgress) return;
+    this.authSyncInProgress = true;
+    try {
+      const token = this.customerAuth.getCustomerToken();
+      const customer = token ? this.customerAuth.getCurrentCustomer() : null;
+      if (customer?.id && token) {
+        this.send('auth', { customerId: customer.id, token });
+      } else {
+        this.send('auth', { customerId: null, token: null });
+      }
+    } finally {
+      this.authSyncInProgress = false;
     }
   }
 
@@ -116,6 +127,9 @@ this.ws.onopen = () => {
         break;
       case 'notification':
         this.showNotification(data.notification);
+        break;
+      case 'error':
+        console.warn('Server error:', data.message);
         break;
       default:
         console.log('Unknown message type:', data.type);

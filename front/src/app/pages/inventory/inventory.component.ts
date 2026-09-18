@@ -70,14 +70,14 @@ export class InventoryComponent implements OnInit, OnDestroy, AfterViewInit {
   }
 
   get finishedProducts(): Product[] {
-    const threshold = this.selectedCategoryId ? 0 : 15;
+    const threshold = this.selectedCategoryId ? 0 : 1;
     return this.products
       .filter((p) => p.stockQuantity <= (p.lowStockThreshold || threshold))
       .sort((a, b) => a.stockQuantity - b.stockQuantity);
   }
 
   get lowStockCount(): number {
-    return this.products.filter(p => p.stockQuantity > 0 && p.stockQuantity <= (p.lowStockThreshold || 15)).length;
+    return this.products.filter(p => p.stockQuantity > 0 && p.stockQuantity <= (p.lowStockThreshold || 1)).length;
   }
 
   get outOfStockCount(): number {
@@ -683,7 +683,7 @@ export class InventoryComponent implements OnInit, OnDestroy, AfterViewInit {
     };
 
     this.products.forEach(p => {
-      const threshold = p.lowStockThreshold || 15;
+      const threshold = p.lowStockThreshold || 1;
       if (p.stockQuantity === 0) statusCounts.out++;
       else if (p.stockQuantity <= threshold) statusCounts.low++;
       else statusCounts.available++;

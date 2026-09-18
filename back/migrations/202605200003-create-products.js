@@ -33,7 +33,7 @@ module.exports = {
       },
       lowStockThreshold: {
         type: Sequelize.INTEGER,
-        defaultValue: 5
+        defaultValue: 1
       },
       photo: {
         type: Sequelize.STRING

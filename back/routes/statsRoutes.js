@@ -44,7 +44,7 @@ router.get('/dashboard', authenticate, authorize('admin', 'cashier'), async (req
 
     const lowStockProducts = await Product.count({
       where: {
-        stockQuantity: { [Op.lte]: 5 }
+        stockQuantity: { [Op.lte]: 1 }
       }
     });
 

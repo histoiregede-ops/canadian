@@ -120,7 +120,10 @@ export class CustomerAuthService {
 
   // Get current customer
   getCurrentCustomer(): Customer | null {
-    if (!this.getCustomerToken()) return null;
+    if (!this.getCustomerToken()) {
+      this.clearCustomerAuth();
+      return null;
+    }
     return this.currentCustomerSubject.value;
   }
 
@@ -144,7 +147,6 @@ export class CustomerAuthService {
   // Get customer token
   getCustomerToken(): string | null {
     if (this.isCustomerTokenExpired()) {
-      this.clearCustomerAuth();
       return null;
     }
     return localStorage.getItem(CUSTOMER_TOKEN_KEY);

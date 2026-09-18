@@ -38,7 +38,7 @@ const Product = sequelize.define('Product', {
   },
   lowStockThreshold: {
     type: DataTypes.INTEGER,
-    defaultValue: 5
+    defaultValue: 1
   },
   barcode: {
     type: DataTypes.STRING,

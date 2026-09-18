@@ -104,7 +104,7 @@ router.post('/', authenticate, async (req, res) => {
       product.stockQuantity -= item.quantity;
       if (product.stockQuantity < 0) product.stockQuantity = 0;
       await product.save({ transaction: t });
-      const threshold = product.lowStockThreshold || 15;
+      const threshold = product.lowStockThreshold || 1;
       await sequelize.query(
         'INSERT INTO stock_movements (productId, previousQuantity, newQuantity, changeAmount, reason, reference, createdBy, createdByRole, userId, referenceType, createdAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)',
         { replacements: [item.productId, prev, product.stockQuantity, product.stockQuantity - prev, 'sale', order.orderNumber, req.user?.username || 'system', req.user?.role || null, req.user?.id || null, 'order_sale'] }
