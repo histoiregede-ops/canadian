@@ -21,6 +21,7 @@ export interface ProductWithReviews extends Product {
   // Ajout d'informations attendues par le template
   reviews?: ProductReviewsResponse;
   showReviews?: boolean;
+  reviewsLoading?: boolean;
 }
 
 @Component({
