@@ -267,14 +267,10 @@ export class ShopComponent implements OnInit, OnDestroy {
     return whatsappLink(message);
   }
 
-  // SHOP public : 20 produits/page = app légère (67KB -> 13KB) + pagination
-  currentPage = 1;
-  pageSize = 20;
-  loadProducts(page: number = 1): void {
+  loadProducts(): void {
     this.loading = true;
-    this.currentPage = page;
-    this.productService.getProductsPaginated(page, this.pageSize).pipe(
-      timeout(15000)
+    this.productService.getProductsPaginated(1, 100).pipe(
+      timeout(30000)
     ).subscribe({
       next: (result) => {
         this.products = result.data

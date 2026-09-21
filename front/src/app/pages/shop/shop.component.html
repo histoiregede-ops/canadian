@@ -224,14 +224,9 @@
       </div>
     </div>
 
-    <!-- Results count + Pagination légère -->
+    <!-- Results count -->
     <div *ngIf="!loading && filteredProducts.length > 0" class="results-info">
-      {{ filteredProducts.length }} produit(s) sur cette page / {{ totalProducts }} au total
-    </div>
-    <div *ngIf="!loading && totalPages > 1" class="pagination">
-      <button class="btn btn-secondary btn-sm" (click)="loadProducts(currentPage-1)" [disabled]="currentPage <= 1">‹ Précédent</button>
-      <span class="page-indicator">Page {{ currentPage }} / {{ totalPages }}</span>
-      <button class="btn btn-primary btn-sm" (click)="loadProducts(currentPage+1)" [disabled]="currentPage >= totalPages">Suivant ›</button>
+      {{ filteredProducts.length }} produit(s) trouvé(s) / {{ totalProducts }} au total
     </div>
   </section>
 </div>

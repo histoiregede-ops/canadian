@@ -62,7 +62,7 @@ export class ProductService {
       return this.productsCache$;
     }
     this.productsCacheExpiry = now + this.PRODUCTS_TTL;
-    this.productsCache$ = this.getProductsPaginated(100, 1).pipe(
+    this.productsCache$ = this.getProductsPaginated(1, 100).pipe(
       timeout(15000),
       map(response => response.data || []),
       shareReplay(1),
