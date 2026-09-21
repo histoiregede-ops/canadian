@@ -269,22 +269,16 @@ export class ShopComponent implements OnInit, OnDestroy {
 
   loadProducts(): void {
     this.loading = true;
-    this.productService.getProductsPaginated(1, 100).pipe(
-      timeout(30000)
+    // Charge TOUS les produits (400+) via loadAll paginé côté service
+    this.productService.getProducts().pipe(
+      timeout(60000)
     ).subscribe({
-      next: (result) => {
-        this.products = result.data
-          .filter((p) => p.status === 'available')
-          .map((p) => ({ ...p, showReviews: false, reviewsLoading: false }));
-
-        // Extract featured products: those with stock > 1
-        this.featuredProducts = this.products
-          .filter(p => p.stockQuantity > 1)
-          .slice(0, 6);
-
-        this.totalProducts = result.total;
-        this.totalPages = result.pages || 1;
-
+      next: (allProducts) => {
+        const available = allProducts.filter((p) => p.status === 'available');
+        this.products = available.map((p) => ({ ...p, showReviews: false, reviewsLoading: false }));
+        this.featuredProducts = this.products.filter(p => p.stockQuantity > 1).slice(0, 6);
+        this.totalProducts = allProducts.length;
+        this.totalPages = 1;
         this.applySorting();
         this.loading = false;
       },

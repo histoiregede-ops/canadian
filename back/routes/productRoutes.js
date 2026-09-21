@@ -94,8 +94,8 @@ router.get('/', async (req, res) => {
     const t0 = Date.now();
     const page = Math.max(1, parseInt(req.query.page) || 1);
     const limit = Math.min(20, Math.max(1, parseInt(req.query.limit) || 20)); // limite 20 par défaut en prod pour réduire payload 67KB-> ~13KB
-    // si client demande 100, on respecte mais on cache plus agressivement
-    const requestedLimit = Math.min(100, Math.max(1, parseInt(req.query.limit) || 20));
+    // supporte jusqu'à 500 pour les 400+ produits (paginé si besoin)
+    const requestedLimit = Math.min(500, Math.max(1, parseInt(req.query.limit) || 20));
     const effectiveLimit = requestedLimit;
     const offset = (page - 1) * effectiveLimit;
     const cacheKey = `${page}:${effectiveLimit}`;

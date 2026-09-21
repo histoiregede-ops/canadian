@@ -57,22 +57,22 @@ export class ProductService {
   }
 
   getProducts(): Observable<Product[]> {
+    // Charge TOUS les produits (400+) en paginant automatiquement (limit 100/page, séquentiel anti-burst)
+    // Utilisé par inventory/admin pour voir tout le catalogue malgré la limite 100
     const now = Date.now();
     if (this.productsCache$ && now < this.productsCacheExpiry) {
       return this.productsCache$;
     }
     this.productsCacheExpiry = now + this.PRODUCTS_TTL;
-    this.productsCache$ = this.getProductsPaginated(1, 100).pipe(
-      timeout(15000),
-      map(response => response.data || []),
+    this.productsCache$ = this.loadAllProducts().pipe(
+      timeout(60000),
       shareReplay(1),
       catchError(err => {
         this.invalidateProductsCache();
-        console.error('[ProductService] getProducts failed', err);
+        console.error('[ProductService] getProducts (loadAll) failed', err);
         return of([]);
       })
     );
-    // auto-invalidation après TTL
     timer(this.PRODUCTS_TTL).subscribe(() => this.invalidateProductsCache());
     return this.productsCache$;
   }
