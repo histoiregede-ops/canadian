@@ -5,18 +5,30 @@ const Supplier = require('../models/Supplier');
 const { authenticate, authorize } = require('../utils/auth');
 const { logAudit } = require('../utils/audit');
 
+// Cache 30s pour éviter le 1590ms vu dans kilo.txt
+const supplierCache = new Map();
+const SUP_TTL = 30000;
+const supGet = (k) => { const e = supplierCache.get(k); if (e && e.expiry > Date.now()) return e.data; if (e) supplierCache.delete(k); return null; };
+const supSet = (k, d) => { if (supplierCache.size > 50) supplierCache.delete(supplierCache.keys().next().value); supplierCache.set(k, { data: d, expiry: Date.now() + SUP_TTL }); };
+const supClear = () => supplierCache.clear();
+
 router.get('/', authenticate, authorize('admin', 'cashier'), async (req, res) => {
   try {
     const page = Math.max(1, parseInt(req.query.page) || 1);
     const limit = Math.min(100, Math.max(1, parseInt(req.query.limit) || 20));
+    const cacheKey = `sup:${page}:${limit}`;
+    const cached = supGet(cacheKey);
+    if (cached) { res.set('X-Cache','HIT'); res.set('Cache-Control','public, max-age=30'); return res.json(cached); }
     const offset = (page - 1) * limit;
-
     const { count, rows } = await Supplier.findAndCountAll({ 
       order: [['name', 'ASC']],
       limit,
       offset
     });
-    res.json({ data: rows, total: count, page, pages: Math.ceil(count / limit) });
+    const payload = { data: rows, total: count, page, pages: Math.ceil(count / limit) };
+    supSet(cacheKey, payload);
+    res.set('X-Cache','MISS'); res.set('Cache-Control','public, max-age=30');
+    res.json(payload);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -48,6 +60,7 @@ router.post('/', authenticate, authorize('admin'), async (req, res) => {
     }
 
     const supplier = await Supplier.create({ ...data, email });
+    supClear();
     await logAudit(req, 'Supplier', supplier.id, 'create', { supplier: supplier.name });
     res.status(201).json(supplier);
   } catch (error) {
@@ -73,6 +86,7 @@ router.put('/:id', authenticate, authorize('admin'), async (req, res) => {
     }
 
     await supplier.update({ ...data, email });
+    supClear();
     await logAudit(req, 'Supplier', supplier.id, 'update', data);
     res.json(supplier);
   } catch (error) {
@@ -85,6 +99,7 @@ router.delete('/:id', authenticate, authorize('admin'), async (req, res) => {
     const supplier = await Supplier.findByPk(req.params.id);
     if (!supplier) return res.status(404).json({ error: 'Fournisseur non trouvé' });
     await supplier.destroy();
+    supClear();
     await logAudit(req, 'Supplier', req.params.id, 'delete', { supplier: supplier.name });
     res.status(204).send();
   } catch (error) {
