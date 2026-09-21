@@ -142,13 +142,12 @@ export class ShopComponent implements OnInit, OnDestroy {
       if (data && (data.products || data.categories)) {
         this.products = (data.products || [])
           .filter((p: any) => p.status === 'available')
-          .map((p: any) => ({ ...p, showReviews: false }));
+          .map((p: any) => ({ ...p, showReviews: false, reviewsLoading: false }));
         this.featuredProducts = this.products
           .filter((p: any) => p.stockQuantity > 1)
           .slice(0, 6);
         this.categories = data.categories || [];
         this.applySorting();
-        this.loadProductReviews();
         this.loading = false;
       } else {
         this.loadProducts();
@@ -267,28 +266,30 @@ export class ShopComponent implements OnInit, OnDestroy {
     return whatsappLink(message);
   }
 
-  loadProducts(): void {
+  // SHOP public : 20 produits/page = app légère (67KB -> 13KB) + pagination
+  currentPage = 1;
+  pageSize = 20;
+  loadProducts(page: number = 1): void {
     this.loading = true;
-    this.productService.getProducts().pipe(
-      timeout(30000)
+    this.currentPage = page;
+    this.productService.getProductsPaginated(page, this.pageSize).pipe(
+      timeout(15000)
     ).subscribe({
-      next: (data) => {
-        this.products = data
+      next: (result) => {
+        this.products = result.data
           .filter((p) => p.status === 'available')
-          .map((p) => ({ ...p, showReviews: false }));
+          .map((p) => ({ ...p, showReviews: false, reviewsLoading: false }));
 
         // Extract featured products: those with stock > 1
         this.featuredProducts = this.products
           .filter(p => p.stockQuantity > 1)
           .slice(0, 6);
 
-        this.totalProducts = data.length;
-        this.totalPages = Math.ceil(this.totalProducts / 100) || 1;
+        this.totalProducts = result.total;
+        this.totalPages = result.pages || 1;
 
         this.applySorting();
         this.loading = false;
-
-        this.loadProductReviews();
       },
       error: (err) => {
         console.error('Error loading products:', err);
@@ -374,12 +375,40 @@ export class ShopComponent implements OnInit, OnDestroy {
     }
   }
 
+  loadProductReviewsForProduct(product: ProductWithReviews): void {
+    if (product.reviews || product.reviewsLoading) return;
+    const productId = product.id;
+    if (!productId) return;
+    product.reviewsLoading = true;
+    this.reviewService.getProductReviews(productId, 1, 3).pipe(
+      timeout(10000)
+    ).subscribe({
+      next: (data) => {
+        product.reviews = {
+          reviews: data.reviews,
+          pagination: data.pagination,
+          stats: data.stats,
+        };
+        product.reviewsLoading = false;
+      },
+      error: (err) => {
+        console.error('Error loading product reviews:', err);
+        product.reviewsLoading = false;
+      },
+    });
+  }
+
   addToCart(product: Product): void {
     this.cartService.addItem(product, 1);
   }
 
   toggleReviews(product: ProductWithReviews): void {
-    product.showReviews = !product.showReviews;
+    if (!product.reviews && !product.reviewsLoading) {
+      product.reviewsLoading = true;
+      this.loadProductReviewsForProduct(product);
+    } else if (product.reviews) {
+      product.showReviews = !product.showReviews;
+    }
   }
 
   getProductImage(photo?: string): string {

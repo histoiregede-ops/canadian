@@ -53,6 +53,15 @@ const Product = sequelize.define('Product', {
     type: DataTypes.INTEGER,
     allowNull: true
   }
+}, {
+  indexes: [
+    { fields: ['createdAt'] },
+    { fields: ['categoryId'] },
+    { fields: ['supplierId'] },
+    { fields: ['stockQuantity'] },
+    { fields: ['status'] },
+    { fields: ['price'] }
+  ]
 });
 
 // Associations

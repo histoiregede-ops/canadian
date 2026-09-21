@@ -60,7 +60,7 @@ type FilterStatus = 'all' | 'paid' | 'pending' | 'cancelled';
         <button class="filter-btn" [class.active]="filter === 'cancelled'" (click)="filter = 'cancelled'">
           ❌ Annulées ({{ counts.cancelled }})
         </button>
-        <input type="text" [(ngModel)]="searchQuery" placeholder="🔍 N° commande, client..." class="form-input search-input" />
+        <input type="text" [(ngModel)]="searchQuery" placeholder="🔍 N° commande, client ou produit..." class="form-input search-input" />
       </div>
 
       <!-- Loading -->
@@ -106,6 +106,14 @@ type FilterStatus = 'all' | 'paid' | 'pending' | 'cancelled';
               <div class="detail-row" *ngIf="order.products">
                 <span class="detail-label">Articles</span>
                 <span class="detail-value">{{ order.products.length }} produit(s)</span>
+              </div>
+              <!-- Liste des noms de produits du reçu -->
+              <div class="product-list" *ngIf="order.products?.length">
+                <div class="product-list-title">🛒 Détail des produits</div>
+                <div class="product-row" *ngFor="let item of order.products; trackBy: trackByProductItemId">
+                  <span class="product-name">{{ item.Product?.name || 'Produit ' + item.productId.substring(0,8) }}</span>
+                  <span class="product-qty">×{{ item.quantity }} — {{ item.unitPrice | number }} FCFA</span>
+                </div>
               </div>
               <div class="divider"></div>
               <div class="detail-row total">
@@ -163,6 +171,13 @@ type FilterStatus = 'all' | 'paid' | 'pending' | 'cancelled';
     .badge-cancelled { background: #f8d7da; color: #721c24; }
     .badge-shipped { background: #d1ecf1; color: #0c5460; }
 
+    .product-list { margin-top: 12px; padding: 10px 12px; background: #f8fafc; border-radius: 8px; border: 1px solid var(--border-light); }
+    .product-list-title { font-size: 12px; font-weight: 700; color: var(--text-muted); margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.03em; }
+    .product-row { display: flex; justify-content: space-between; gap: 12px; padding: 6px 0; border-bottom: 1px dashed #e2e8f0; font-size: 13px; }
+    .product-row:last-child { border-bottom: none; }
+    .product-name { font-weight: 600; color: var(--text-primary); flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .product-qty { color: var(--text-muted); font-weight: 500; white-space: nowrap; }
+
     .loading-state, .empty-state { text-align: center; padding: 60px; }
     .empty-icon { font-size: 48px; display: block; margin-bottom: 12px; }
 
@@ -181,6 +196,9 @@ export class ReceiptsComponent implements OnInit {
 
   trackByOrderId(index: number, item: any): string {
     return item?.id ?? index;
+  }
+  trackByProductItemId(index: number, item: any): string {
+    return item?.id ?? item?.productId ?? index;
   }
 
   constructor(private http: HttpClient, private pdfService: PdfService, private route: ActivatedRoute) {}
@@ -213,7 +231,8 @@ export class ReceiptsComponent implements OnInit {
       const q = this.searchQuery.toLowerCase();
       result = result.filter(o =>
         (o.orderNumber || '').toLowerCase().includes(q) ||
-        (o.Customer?.name || '').toLowerCase().includes(q)
+        (o.Customer?.name || '').toLowerCase().includes(q) ||
+        (o.products || []).some(item => (item.Product?.name || '').toLowerCase().includes(q))
       );
     }
     return result;

@@ -47,6 +47,10 @@ function createApiMetrics() {
       current.lastDurationMs = durationMs;
       current.statusCodes[res.statusCode] = (current.statusCodes[res.statusCode] || 0) + 1;
       metrics.set(key, current);
+
+      // Log every request duration
+      const level = durationMs >= 2000 ? 'error' : durationMs >= 500 ? 'warn' : 'log';
+      console[level](`[PERF] ${req.method} ${req.originalUrl.split('?')[0]} — ${durationMs.toFixed(1)}ms (${res.statusCode})`);
     });
 
     next();

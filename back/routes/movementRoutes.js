@@ -79,6 +79,7 @@ router.get('/summary', authenticate, authorize('admin', 'cashier'), async (req, 
       replacements.push(endDate + ' 23:59:59');
     }
 
+    query += ' ORDER BY createdAt DESC LIMIT 1000'; // garde-fou: kilo.txt montrait full table scan sans limite -> lent
     const [movements] = await sequelize.query(query, { replacements });
 
     const byReason = {};

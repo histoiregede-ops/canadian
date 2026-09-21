@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable, of, timer } from 'rxjs';
-import { map, timeout, mergeMap, catchError, concatMap } from 'rxjs/operators';
+import { map, timeout, mergeMap, catchError, concatMap, shareReplay, tap } from 'rxjs/operators';
 import { environment } from '../../environments/environment';
 
 export interface PaginatedResult<T> {
@@ -44,14 +44,37 @@ export interface Product {
 })
 export class ProductService {
   private apiUrl = `${environment.apiUrl}/api/products`;
+  // Cache front 30s + déduplication via shareReplay => divise par ~10 le nb de requêtes (vu kilo.txt: 38 appels en 75s)
+  private productsCache$ : Observable<Product[]> | null = null;
+  private productsCacheExpiry = 0;
+  private readonly PRODUCTS_TTL = 30000;
 
   constructor(private http: HttpClient) { }
 
+  private invalidateProductsCache(): void {
+    this.productsCache$ = null;
+    this.productsCacheExpiry = 0;
+  }
+
   getProducts(): Observable<Product[]> {
-    return this.loadAllProducts().pipe(
-      timeout(30000),
-      map(products => products || [])
+    const now = Date.now();
+    if (this.productsCache$ && now < this.productsCacheExpiry) {
+      return this.productsCache$;
+    }
+    this.productsCacheExpiry = now + this.PRODUCTS_TTL;
+    this.productsCache$ = this.getProductsPaginated(100, 1).pipe(
+      timeout(15000),
+      map(response => response.data || []),
+      shareReplay(1),
+      catchError(err => {
+        this.invalidateProductsCache();
+        console.error('[ProductService] getProducts failed', err);
+        return of([]);
+      })
     );
+    // auto-invalidation après TTL
+    timer(this.PRODUCTS_TTL).subscribe(() => this.invalidateProductsCache());
+    return this.productsCache$;
   }
 
   getProductsPaginated(page: number = 1, limit: number = 20): Observable<PaginatedResult<Product>> {
@@ -147,22 +170,31 @@ export class ProductService {
   }
 
   createProduct(formData: FormData): Observable<Product> {
-    return this.http.post<Product>(this.apiUrl, formData).pipe(timeout(10000));
+    return this.http.post<Product>(this.apiUrl, formData).pipe(
+      timeout(15000),
+      tap(() => this.invalidateProductsCache())
+    );
   }
 
   updateProduct(id: string, formData: FormData): Observable<Product> {
     return this.http.put<any>(`${this.apiUrl}/${id}`, formData).pipe(
-      timeout(10000),
-      map(response => response.data || response)
+      timeout(15000),
+      map(response => response.data || response),
+      tap(() => this.invalidateProductsCache())
     );
   }
 
   deleteProduct(id: string): Observable<void> {
-    return this.http.delete<void>(`${this.apiUrl}/${id}`).pipe(timeout(10000));
+    return this.http.delete<void>(`${this.apiUrl}/${id}`).pipe(
+      timeout(10000),
+      tap(() => this.invalidateProductsCache())
+    );
   }
 
   restockProduct(id: string, quantity: number): Observable<Product> {
-    return this.http.post<Product>(`${this.apiUrl}/${id}/restock`, { quantity });
+    return this.http.post<Product>(`${this.apiUrl}/${id}/restock`, { quantity }).pipe(
+      tap(() => this.invalidateProductsCache())
+    );
   }
 
   getMovements(id: string): Observable<StockMovement[]> {
@@ -170,6 +202,8 @@ export class ProductService {
   }
 
   adjustStock(id: string, quantity: number, reason?: string): Observable<Product> {
-    return this.http.post<Product>(`${this.apiUrl}/${id}/adjust-stock`, { quantity, reason });
+    return this.http.post<Product>(`${this.apiUrl}/${id}/adjust-stock`, { quantity, reason }).pipe(
+      tap(() => this.invalidateProductsCache())
+    );
   }
 }

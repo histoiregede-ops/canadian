@@ -2,7 +2,8 @@ import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { environment } from '../../environments/environment';
 
-import { Observable } from 'rxjs';
+import { Observable, of, forkJoin } from 'rxjs';
+import { catchError, map } from 'rxjs/operators';
 
 export interface ProductReview {
   id?: string;
@@ -68,10 +69,33 @@ export class ProductReviewService {
     return this.http.get<ProductReviewsResponse>(`${this.apiUrl}/product/${productId}`, { params });
   }
 
-  // Get reviews for multiple products in a single call (batch)
+  // Get reviews for multiple products in a single call (batch) — POST chunké pour éviter 431
   getBatchReviews(productIds: string[]): Observable<BatchReviewsResponse> {
-    const params = new HttpParams().set('productIds', productIds.join(','));
-    return this.http.get<BatchReviewsResponse>(`${this.apiUrl}/batch`, { params });
+    if (!productIds || productIds.length === 0) return of({});
+    const unique = [...new Set(productIds.filter(Boolean))];
+    const CHUNK = 50; // 50 IDs ~ 1800 chars en POST body, sans risque header overflow
+    if (unique.length <= CHUNK) {
+      return this.http.post<BatchReviewsResponse>(`${this.apiUrl}/batch`, { productIds: unique }).pipe(
+        catchError(err => {
+          // Fallback GET si POST échoue (compat vieux backend)
+          if (err?.status === 404) {
+            const params = new HttpParams().set('productIds', unique.join(','));
+            return this.http.get<BatchReviewsResponse>(`${this.apiUrl}/batch`, { params });
+          }
+          return of({});
+        })
+      );
+    }
+    // Découpage en lots parallèles puis fusion
+    const chunks: string[][] = [];
+    for (let i = 0; i < unique.length; i += CHUNK) chunks.push(unique.slice(i, i + CHUNK));
+    const requests = chunks.map(chunk =>
+      this.http.post<BatchReviewsResponse>(`${this.apiUrl}/batch`, { productIds: chunk }).pipe(catchError(() => of({} as BatchReviewsResponse)))
+    );
+    return forkJoin(requests).pipe(
+      map(results => Object.assign({}, ...results) as BatchReviewsResponse),
+      catchError(() => of({}))
+    );
   }
 
   // Create a new review

@@ -180,27 +180,33 @@
           <p class="product-desc">{{ product.description | slice:0:80 }}{{ (product.description?.length || 0) > 80 ? '...' : '' }}</p>
 
           <!-- Reviews -->
-          <div class="product-reviews" *ngIf="product.reviews">
-            <div class="rating-summary">
-              <span *ngFor="let filled of getStarArray(getAverageRatingNumber(product.reviews.stats.averageRating)); trackBy: trackByIndex" class="star">{{ filled ? '⭐' : '☆' }}</span>
-              <span class="rating-text">{{ formatRating(product.reviews.stats.averageRating) }} ({{ product.reviews.stats.totalReviews }} avis)</span>
+          <div class="product-reviews" *ngIf="product.reviews || product.reviewsLoading">
+            <div *ngIf="!product.reviews" class="reviews-loading">
+              <span class="spinner-sm"></span>
+              <small>Chargement des avis...</small>
             </div>
-            <div class="reviews-preview" *ngIf="product.showReviews">
-              <div class="review-item" *ngFor="let review of product.reviews.reviews.slice(0, 2); trackBy: trackByReviewId">
-                <div class="review-header">
-                  <strong>{{ review.customerName }}</strong>
-                  <span *ngFor="let filled of getStarArray(review.rating); trackBy: trackByIndex">{{ filled ? '⭐' : '☆' }}</span>
-                </div>
-                <p class="review-comment">{{ review.comment | slice:0:100 }}{{ review.comment.length > 100 ? '...' : '' }}</p>
-                <div class="review-footer">
-                  <small>{{ review.createdAt | date:'dd/MM/yyyy' }}</small>
-                  <span class="badge badge-success" *ngIf="review.isVerified">✓ Achat vérifié</span>
+            <div *ngIf="product.reviews">
+              <div class="rating-summary">
+                <span *ngFor="let filled of getStarArray(getAverageRatingNumber(product.reviews.stats.averageRating)); trackBy: trackByIndex" class="star">{{ filled ? '⭐' : '☆' }}</span>
+                <span class="rating-text">{{ formatRating(product.reviews.stats.averageRating) }} ({{ product.reviews.stats.totalReviews }} avis)</span>
+              </div>
+              <div class="reviews-preview" *ngIf="product.showReviews">
+                <div class="review-item" *ngFor="let review of product.reviews.reviews.slice(0, 2); trackBy: trackByReviewId">
+                  <div class="review-header">
+                    <strong>{{ review.customerName }}</strong>
+                    <span *ngFor="let filled of getStarArray(review.rating); trackBy: trackByIndex">{{ filled ? '⭐' : '☆' }}</span>
+                  </div>
+                  <p class="review-comment">{{ review.comment | slice:0:100 }}{{ review.comment.length > 100 ? '...' : '' }}</p>
+                  <div class="review-footer">
+                    <small>{{ review.createdAt | date:'dd/MM/yyyy' }}</small>
+                    <span class="badge badge-success" *ngIf="review.isVerified">✓ Achat vérifié</span>
+                  </div>
                 </div>
               </div>
+              <button class="btn btn-ghost btn-sm" (click)="toggleReviews(product)" *ngIf="product.reviews.stats.totalReviews > 0">
+                {{ product.showReviews ? 'Masquer les avis' : 'Voir les avis (' + product.reviews.stats.totalReviews + ')' }}
+              </button>
             </div>
-            <button class="btn btn-ghost btn-sm" (click)="toggleReviews(product)" *ngIf="product.reviews.stats.totalReviews > 0">
-              {{ product.showReviews ? 'Masquer les avis' : 'Voir les avis (' + product.reviews.stats.totalReviews + ')' }}
-            </button>
           </div>
 
           <div class="product-footer">
@@ -218,9 +224,14 @@
       </div>
     </div>
 
-    <!-- Results count -->
+    <!-- Results count + Pagination légère -->
     <div *ngIf="!loading && filteredProducts.length > 0" class="results-info">
-      {{ filteredProducts.length }} produit(s) trouvé(s) / {{ totalProducts }} au total
+      {{ filteredProducts.length }} produit(s) sur cette page / {{ totalProducts }} au total
+    </div>
+    <div *ngIf="!loading && totalPages > 1" class="pagination">
+      <button class="btn btn-secondary btn-sm" (click)="loadProducts(currentPage-1)" [disabled]="currentPage <= 1">‹ Précédent</button>
+      <span class="page-indicator">Page {{ currentPage }} / {{ totalPages }}</span>
+      <button class="btn btn-primary btn-sm" (click)="loadProducts(currentPage+1)" [disabled]="currentPage >= totalPages">Suivant ›</button>
     </div>
   </section>
 </div>

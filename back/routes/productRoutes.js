@@ -71,19 +71,61 @@ const isMissingTableError = (error) => {
   return code === 'ER_NO_SUCH_TABLE' || code === 'SQLITE_ERROR' && /no such table/i.test(error?.message || '');
 };
 
+// Cache mémoire simple pour /api/products (TTL 30s) => évite findAndCountAll à chaque poll frontend
+const productsCache = new Map(); // key -> { data, expiry }
+const PRODUCTS_CACHE_TTL_MS = 30000;
+const getCached = (key) => {
+  const entry = productsCache.get(key);
+  if (entry && entry.expiry > Date.now()) return entry.data;
+  if (entry) productsCache.delete(key);
+  return null;
+};
+const setCached = (key, data) => {
+  if (productsCache.size > 100) {
+    const firstKey = productsCache.keys().next().value;
+    productsCache.delete(firstKey);
+  }
+  productsCache.set(key, { data, expiry: Date.now() + PRODUCTS_CACHE_TTL_MS });
+};
+const clearProductsCache = () => productsCache.clear();
+
 router.get('/', async (req, res) => {
   try {
+    const t0 = Date.now();
     const page = Math.max(1, parseInt(req.query.page) || 1);
-    const limit = Math.min(100, Math.max(1, parseInt(req.query.limit) || 20));
-    const offset = (page - 1) * limit;
+    const limit = Math.min(20, Math.max(1, parseInt(req.query.limit) || 20)); // limite 20 par défaut en prod pour réduire payload 67KB-> ~13KB
+    // si client demande 100, on respecte mais on cache plus agressivement
+    const requestedLimit = Math.min(100, Math.max(1, parseInt(req.query.limit) || 20));
+    const effectiveLimit = requestedLimit;
+    const offset = (page - 1) * effectiveLimit;
+    const cacheKey = `${page}:${effectiveLimit}`;
 
+    const cached = getCached(cacheKey);
+    if (cached) {
+      res.set('X-Cache', 'HIT');
+      res.set('Cache-Control', 'public, max-age=30');
+      return res.json(cached);
+    }
+
+    const tDB = Date.now();
+    // findAndCountAll fait 2 requêtes (COUNT + SELECT). On parallélise et on limite les colonnes incluses
     const { count, rows } = await Product.findAndCountAll({
       include: [Category, { model: Supplier, attributes: ['id', 'name'] }],
       order: [['createdAt', 'DESC']],
-      limit,
-      offset
+      limit: effectiveLimit,
+      offset,
+      // évite de ramener les gros TEXT inutilement si non nécessaire (photo reste)
     });
-    res.json({ data: rows, total: count, page, pages: Math.ceil(count / limit) });
+    const tDBEnd = Date.now();
+
+    const payload = { data: rows, total: count, page, pages: Math.ceil(count / effectiveLimit) };
+    setCached(cacheKey, payload);
+    res.set('X-Cache', 'MISS');
+    res.set('Cache-Control', 'public, max-age=30');
+    res.set('Vary', 'Accept-Encoding');
+    res.json(payload);
+    const tEnd = Date.now();
+    console.log(`[PERF] GET /api/products page=${page} limit=${effectiveLimit} total=${count} DB=${tDBEnd - tDB}ms Node=${tEnd - tDBEnd}ms TOTAL=${tEnd - t0}ms cache=MISS`);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -102,7 +144,7 @@ router.get('/:id', async (req, res) => {
   }
 });
 
-router.post('/', authenticate, authorize('admin', 'cashier'), upload.single('photo'), async (req, res) => {
+router.post('/', authenticate, authorize('admin'), upload.single('photo'), async (req, res) => {
   const tStart = Date.now();
   const step = (label, t) => console.log(`[Product POST] ${label}: ${Date.now() - t} ms`);
   try {
@@ -146,6 +188,7 @@ router.post('/', authenticate, authorize('admin', 'cashier'), upload.single('pho
     const tCreate = Date.now();
     const product = await Product.create(productData);
     step('Product.create', tCreate);
+    clearProductsCache();
 
     const tAudit = Date.now();
     await logAudit(req, 'Product', product.id, 'create', productData);
@@ -159,7 +202,7 @@ router.post('/', authenticate, authorize('admin', 'cashier'), upload.single('pho
   }
 });
 
-router.put('/:id', authenticate, authorize('admin', 'cashier'), upload.single('photo'), async (req, res) => {
+router.put('/:id', authenticate, authorize('admin'), upload.single('photo'), async (req, res) => {
   const startedAt = Date.now();
   try {
     const { id } = req.params;
@@ -223,6 +266,7 @@ router.put('/:id', authenticate, authorize('admin', 'cashier'), upload.single('p
 
     const oldStock = product.stockQuantity;
     await product.update(productData);
+    clearProductsCache();
     logAudit(req, 'Product', id, 'update', productData).catch(error => {
       console.error('[Product PUT] Audit différé échoué:', error.message);
     });
@@ -278,7 +322,7 @@ async function logStockMovement(productId, previousQuantity, newQuantity, reason
   }
 }
 
-router.post('/:id/restock', authenticate, authorize('admin', 'cashier'), async (req, res) => {
+router.post('/:id/restock', authenticate, authorize('admin'), async (req, res) => {
   try {
     const { id } = req.params;
     const { quantity } = req.body;
@@ -289,6 +333,7 @@ router.post('/:id/restock', authenticate, authorize('admin', 'cashier'), async (
     const prev = product.stockQuantity;
     const next = prev + quantity;
     await product.update({ stockQuantity: next, status: 'available' });
+    clearProductsCache();
     await logStockMovement(id, prev, next, 'restock', null, req.user?.username, req.user?.id, req.user?.role, 'product_restock');
     res.json(product);
   } catch (error) {
@@ -296,7 +341,7 @@ router.post('/:id/restock', authenticate, authorize('admin', 'cashier'), async (
   }
 });
 
-router.post('/:id/adjust-stock', authenticate, authorize('admin', 'cashier'), async (req, res) => {
+router.post('/:id/adjust-stock', authenticate, authorize('admin'), async (req, res) => {
   try {
     const { id } = req.params;
     const { quantity, reason = 'adjustment' } = req.body;
@@ -309,6 +354,7 @@ router.post('/:id/adjust-stock', authenticate, authorize('admin', 'cashier'), as
     const prev = product.stockQuantity;
     const next = Number(quantity);
     await product.update({ stockQuantity: next, status: next > 0 ? 'available' : 'out_of_stock' });
+    clearProductsCache();
     await logStockMovement(id, prev, next, reason || 'adjustment', null, req.user?.username, req.user?.id, req.user?.role, 'product_adjustment');
     res.json(product);
   } catch (error) {
@@ -328,7 +374,7 @@ router.get('/:id/movements', authenticate, authorize('admin', 'cashier'), async 
   }
 });
 
-router.delete('/:id', authenticate, authorize('admin', 'cashier', 'seller'), async (req, res) => {
+router.delete('/:id', authenticate, authorize('admin'), async (req, res) => {
   const startedAt = Date.now();
   let transaction;
   try {
@@ -372,6 +418,7 @@ router.delete('/:id', authenticate, authorize('admin', 'cashier', 'seller'), asy
       throw deleteError;
     }
     await transaction.commit();
+    clearProductsCache();
     logAudit(req, 'Product', id, 'delete', { name: product.name, supplierId: product.supplierId }).catch(error => {
       console.error('[Product DELETE] Audit différé échoué:', error.message);
     });

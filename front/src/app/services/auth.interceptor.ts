@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpInterceptor, HttpRequest, HttpHandler, HttpEvent } from '@angular/common/http';
 import { Observable, throwError } from 'rxjs';
-import { catchError } from 'rxjs/operators';
+import { catchError, tap } from 'rxjs/operators';
 import { Router } from '@angular/router';
 
 @Injectable()
@@ -18,6 +18,7 @@ export class AuthInterceptor implements HttpInterceptor {
     const request = token
       ? req.clone({ setHeaders: { Authorization: `Bearer ${token}` } })
       : req;
+    const startTime = Date.now();
     return next.handle(request).pipe(
       catchError(err => {
         const requestId = err.headers?.get('X-Request-ID') || err.error?.requestId;
@@ -28,7 +29,8 @@ export class AuthInterceptor implements HttpInterceptor {
           statusText: err.statusText,
           requestId,
           error: err.error,
-          message: err.message
+          message: err.message,
+          durationMs: Date.now() - startTime
         });
         if (requestId && err.error && typeof err.error === 'object') {
           err.error.requestId = requestId;
@@ -39,6 +41,10 @@ export class AuthInterceptor implements HttpInterceptor {
           this.router.navigate(['/login']);
         }
         return throwError(() => err);
+      }),
+      tap(() => {
+        // Log successful request duration
+        console.log(`[PERF-FRONTEND] ${req.method} ${req.urlWithParams} — ${(Date.now() - startTime)}ms`);
       })
     );
   }

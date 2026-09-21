@@ -3,6 +3,7 @@ const crypto = require('crypto');
 const path = require('path');
 const fs = require('fs');
 const cors = require('cors');
+const compression = require('compression');
 const bodyParser = require('body-parser');
 const morgan = require('morgan');
 const WebSocket = require('ws');
@@ -20,6 +21,8 @@ const app = express();
 const apiMetrics = createApiMetrics();
 const PORT = process.env.PORT || 3000;
 
+// Compression gzip/deflate pour réduire 67KB -> ~10KB par réponse produits
+app.use(compression({ level: 6, threshold: 1024 }));
 // Security & middleware
 app.disable('x-powered-by');
 app.use((req, res, next) => {
@@ -51,7 +54,13 @@ const corsOrigin = function (origin, callback) {
   }
   return callback(new Error('Origin non autorisée par CORS'), false);
 };
-app.use(cors({ origin: corsOrigin, methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'], credentials: true }));
+app.use(cors({
+  origin: corsOrigin,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  credentials: true,
+  maxAge: 86400, // cache preflight 24h => divise par 2 le nombre de requêtes (OPTIONS + GET -> GET seul au 2e appel)
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Request-ID']
+}));
 app.use((req, res, next) => {
   res.setHeader('X-Content-Type-Options', 'nosniff');
   res.setHeader('X-Frame-Options', 'DENY');

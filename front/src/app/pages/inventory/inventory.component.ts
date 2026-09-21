@@ -4,7 +4,6 @@ import { finalize } from 'rxjs/operators';
 
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { Chart, registerables } from 'chart.js';
 import { ActivatedRoute } from '@angular/router';
 
 import { environment } from '../../../environments/environment';
@@ -15,8 +14,7 @@ import { WebSocketService } from '../../services/websocket';
 import { RefreshService } from '../../services/refresh.service';
 import { ToastService } from '../../services/toast.service';
 import { BarcodeService } from '../../services/barcode.service';
-
-Chart.register(...registerables);
+import { AuthService } from '../../services/auth';
 
 @Component({
   selector: 'app-inventory',
@@ -118,8 +116,17 @@ export class InventoryComponent implements OnInit, OnDestroy, AfterViewInit {
     private refreshService: RefreshService,
     private toastService: ToastService,
     private barcodeService: BarcodeService,
-    private changeDetector: ChangeDetectorRef
+    private changeDetector: ChangeDetectorRef,
+    private authService: AuthService
   ) { }
+
+  get isAdmin(): boolean {
+    return this.authService.getUser()?.role === 'admin';
+  }
+
+  get canEditStock(): boolean {
+    return this.isAdmin;
+  }
 
   ngOnInit(): void {
     this.route.data.subscribe(({ data }) => {
@@ -330,6 +337,10 @@ export class InventoryComponent implements OnInit, OnDestroy, AfterViewInit {
   }
 
   openAddModal(): void {
+    if (!this.isAdmin) {
+      this.toastService.show('Action réservée à l\'administrateur', 'error');
+      return;
+    }
     this.isEditing = false;
     this.currentProduct = this.initProduct();
     this.selectedFile = null;
@@ -338,6 +349,10 @@ export class InventoryComponent implements OnInit, OnDestroy, AfterViewInit {
   }
 
   openEditModal(product: Product): void {
+    if (!this.isAdmin) {
+      this.toastService.show('Action réservée à l\'administrateur', 'error');
+      return;
+    }
     this.isEditing = true;
     this.currentProduct = { ...product };
     this.selectedFile = null;
@@ -345,8 +360,12 @@ export class InventoryComponent implements OnInit, OnDestroy, AfterViewInit {
     this.showModal = true;
   }
 
-  // Quick restock: add quantity and update local array instantly
+  // Quick restock: add quantity and update local array instantly - ADMIN SEULEMENT
   restockProduct(product: Product): void {
+    if (!this.isAdmin) {
+      this.toastService.show('Action réservée à l\'administrateur', 'error');
+      return;
+    }
     const qty = prompt(`Quantite a ajouter a "${product.name}" :`, '1');
     if (!qty) return;
     const num = parseInt(qty, 10);
@@ -639,17 +658,24 @@ export class InventoryComponent implements OnInit, OnDestroy, AfterViewInit {
     }
   }
 
-  private updateCharts(): void {
+  private async updateCharts(): Promise<void> {
     if (this.products.length === 0 || !this.categoryChartRef || !this.statusChartRef) return;
 
     if (this.categoryChart) this.categoryChart.destroy();
     if (this.statusChart) this.statusChart.destroy();
 
-    this.renderCategoryChart();
-    this.renderStatusChart();
+    // Lazy load chart.js uniquement sur cette page (~250KB) - ne pèse plus sur le bundle initial
+    try {
+      const { Chart, registerables } = await import('chart.js');
+      Chart.register(...registerables);
+      this.renderCategoryChart(Chart);
+      this.renderStatusChart(Chart);
+    } catch (e) {
+      console.error('[Inventory] Chart.js lazy load échoué', e);
+    }
   }
 
-  private renderCategoryChart(): void {
+  private renderCategoryChart(Chart: any): void {
     const categoryCounts: { [key: string]: number } = {};
     this.products.forEach(p => {
       const cat = this.categories.find(c => c.id === p.categoryId);
@@ -680,7 +706,7 @@ export class InventoryComponent implements OnInit, OnDestroy, AfterViewInit {
     });
   }
 
-  private renderStatusChart(): void {
+  private renderStatusChart(Chart: any): void {
     const statusCounts = {
       available: 0,
       low: 0,

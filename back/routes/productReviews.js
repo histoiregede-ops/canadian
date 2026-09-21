@@ -4,62 +4,84 @@ const { ProductReview, Product, Customer, Order } = require('../models');
 const sequelize = require('../config/database');
 const { authenticate, authorize } = require('../utils/auth');
 
-// Get reviews for multiple products (batch)
+// Helper partagé pour batch - évite duplication GET/POST
+async function handleBatch(productIds, res) {
+  const t0 = Date.now();
+  const ids = [...new Set(productIds.filter(Boolean))].slice(0, 100); // limite 100 pour éviter WHERE IN trop large + header overflow
+  if (ids.length === 0) return res.json({});
+
+  const tDB = Date.now();
+  const reviews = await ProductReview.findAll({
+    where: { productId: ids },
+    include: [{ model: Customer, attributes: ['name'] }],
+    order: [['createdAt', 'DESC']],
+    limit: 1000 // garde-fou: pas plus de 1000 reviews en RAM
+  });
+  const tDBEnd = Date.now();
+
+  const grouped = {};
+  for (const id of ids) {
+    grouped[id] = { reviews: [], stats: { averageRating: '0.0', totalReviews: 0, ratingDistribution: {} } };
+  }
+  for (const review of reviews) {
+    const pid = review.productId;
+    if (!grouped[pid]) continue;
+    grouped[pid].reviews.push(review);
+  }
+  for (const pid of ids) {
+    const productReviews = grouped[pid].reviews;
+    const total = productReviews.length;
+    if (total === 0) continue;
+    let sum = 0;
+    const dist = {};
+    for (const r of productReviews) {
+      sum += r.rating;
+      dist[r.rating] = (dist[r.rating] || 0) + 1;
+    }
+    grouped[pid].stats = {
+      averageRating: (sum / total).toFixed(1),
+      totalReviews: total,
+      ratingDistribution: dist
+    };
+  }
+  const tEnd = Date.now();
+  console.log(`[PERF] /api/reviews/batch products=${ids.length} reviews=${reviews.length} DB=${tDBEnd - tDB}ms Node=${tEnd - tDBEnd}ms TOTAL=${tEnd - t0}ms`);
+  res.set('Cache-Control', 'public, max-age=60');
+  res.json(grouped);
+}
+
+// Get reviews for multiple products (batch) - GET version gardée pour compat mais limitée à 100 IDs
 router.get('/batch', async (req, res) => {
   try {
     const { productIds } = req.query;
     if (!productIds) {
       return res.status(400).json({ error: 'productIds parameter is required' });
     }
-
+    if (productIds.length > 8000) {
+      // évite 431 Request Header Fields Too Large
+      return res.status(431).json({ error: 'productIds trop long, utilisez POST /api/reviews/batch avec body JSON { productIds: [...] } et limite 100 IDs' });
+    }
     const ids = productIds.split(',').filter(Boolean);
+    if (ids.length > 100) {
+      return res.status(400).json({ error: 'Trop de productIds (max 100). Découpez en lots.' });
+    }
+    return handleBatch(ids, res);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// POST version pour gros lots - évite 431 et permet 100+ via body JSON
+router.post('/batch', async (req, res) => {
+  try {
+    const ids = Array.isArray(req.body?.productIds) ? req.body.productIds : [];
     if (ids.length === 0) {
-      return res.json({});
+      return res.status(400).json({ error: 'productIds (array) requis dans le body' });
     }
-
-    // Get all reviews for these products
-    const reviews = await ProductReview.findAll({
-      where: { productId: ids },
-      include: [{
-        model: Customer,
-        attributes: ['name']
-      }],
-      order: [['createdAt', 'DESC']]
-    });
-
-    // Group reviews by productId
-    const grouped = {};
-    for (const id of ids) {
-      grouped[id] = { reviews: [], stats: { averageRating: '0.0', totalReviews: 0, ratingDistribution: {} } };
+    if (ids.length > 100) {
+      return res.status(400).json({ error: 'Trop de productIds (max 100 par requête POST)' });
     }
-
-    for (const review of reviews) {
-      const pid = review.productId;
-      if (!grouped[pid]) continue;
-      grouped[pid].reviews.push(review);
-    }
-
-    // Calculate stats per product
-    for (const pid of ids) {
-      const productReviews = grouped[pid].reviews;
-      const total = productReviews.length;
-      if (total === 0) continue;
-
-      let sum = 0;
-      const dist = {};
-      for (const r of productReviews) {
-        sum += r.rating;
-        dist[r.rating] = (dist[r.rating] || 0) + 1;
-      }
-
-      grouped[pid].stats = {
-        averageRating: (sum / total).toFixed(1),
-        totalReviews: total,
-        ratingDistribution: dist
-      };
-    }
-
-    res.json(grouped);
+    return handleBatch(ids, res);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
