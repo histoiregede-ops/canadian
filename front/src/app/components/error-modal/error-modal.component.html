@@ -1,0 +1,112 @@
+<!-- 
+  Global Error Modal — Redesign Canadian Pro
+  Base: Bootstrap modal-dialog-centered + modal-dialog-scrollable
+  Redesign: Premium, accessible, design-system compliant
+-->
+<div 
+  *ngIf="error" 
+  class="error-modal-backdrop" 
+  (click)="onBackdropClick($event)"
+  role="dialog" 
+  aria-modal="true"
+  [attr.aria-label]="title"
+>
+  <!-- Vertically centered modal -->
+  <div 
+    class="modal-dialog modal-dialog-centered"
+    [class.modal-dialog-scrollable]="isScrollable"
+    (click)="$event.stopPropagation()"
+  >
+    <div class="modal-content error-modal-content" [attr.data-severity]="iconClass">
+      
+      <!-- Accent bar -->
+      <div class="error-accent-bar" [class]="'error-accent-bar--' + iconClass"></div>
+
+      <!-- Header -->
+      <div class="modal-header error-modal-header">
+        <div class="error-icon-wrapper" [class]="'error-icon-wrapper--' + iconClass">
+          <span class="error-icon" aria-hidden="true">{{ icon }}</span>
+        </div>
+        <div class="error-header-text">
+          <h2 class="modal-title error-modal-title" id="error-modal-title">{{ title }}</h2>
+          <p class="error-modal-subtitle" *ngIf="error.code || error.requestId">
+            <span *ngIf="error.code" class="error-code">Code {{ error.code }}</span>
+            <span *ngIf="error.code && error.requestId" class="error-separator">•</span>
+            <span *ngIf="error.requestId" class="error-request-id" title="Cliquer pour copier" (click)="copyRequestId()">
+              ID: {{ error.requestId | slice:0:12 }}...
+            </span>
+          </p>
+        </div>
+        <button 
+          type="button" 
+          class="modal-close error-modal-close" 
+          (click)="dismiss()" 
+          aria-label="Fermer"
+        >
+          <span aria-hidden="true">×</span>
+        </button>
+      </div>
+
+      <!-- Body -->
+      <div class="modal-body error-modal-body">
+        <p class="error-message">{{ error.message }}</p>
+        
+        <!-- Details collapsible -->
+        <div class="error-details-section" *ngIf="error.details">
+          <button 
+            type="button" 
+            class="error-details-toggle" 
+            (click)="toggleDetails()"
+            [attr.aria-expanded]="showDetails"
+          >
+            <span class="error-details-toggle-icon" [class.open]="showDetails">›</span>
+            {{ showDetails ? 'Masquer les détails' : 'Voir les détails techniques' }}
+          </button>
+          
+          <div class="error-details-content" *ngIf="showDetails">
+            <div class="error-details-actions">
+              <button type="button" class="btn btn-ghost btn-sm" (click)="copyDetails()">📋 Copier</button>
+            </div>
+            <pre class="error-details-pre">{{ error.details }}</pre>
+            <p class="error-details-hint" *ngIf="error.requestId">
+              Communiquez cet ID au support pour un diagnostic rapide.
+            </p>
+          </div>
+        </div>
+
+        <!-- Timestamp -->
+        <p class="error-timestamp" *ngIf="error.timestamp">
+          {{ error.timestamp | date:'dd/MM/yyyy à HH:mm:ss' }}
+        </p>
+      </div>
+
+      <!-- Footer -->
+      <div class="modal-footer error-modal-footer">
+        <button 
+          type="button" 
+          class="btn btn-secondary" 
+          (click)="dismiss()"
+        >
+          Fermer
+        </button>
+        <button 
+          *ngIf="error.retryAction" 
+          type="button" 
+          class="btn btn-primary" 
+          (click)="retry()"
+        >
+          ↻ Réessayer
+        </button>
+        <button 
+          *ngIf="!error.retryAction && iconClass === 'critical'" 
+          type="button" 
+          class="btn btn-primary" 
+          (click)="dismiss()"
+        >
+          J'ai compris
+        </button>
+      </div>
+
+    </div>
+  </div>
+</div>

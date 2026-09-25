@@ -5,12 +5,13 @@ import { SidebarComponent } from './components/sidebar/sidebar.component';
 import { NavbarComponent } from './components/navbar/navbar.component';
 import { FooterComponent } from './components/footer/footer.component';
 import { ToastComponent } from './components/toast/toast.component';
+import { ErrorModalComponent } from './components/error-modal/error-modal.component';
 import { filter } from 'rxjs';
 
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [RouterOutlet, CommonModule, SidebarComponent, NavbarComponent, FooterComponent, ToastComponent],
+  imports: [RouterOutlet, CommonModule, SidebarComponent, NavbarComponent, FooterComponent, ToastComponent, ErrorModalComponent],
   templateUrl: './app.component.html',
   styleUrls: ['./app.component.css']
 })

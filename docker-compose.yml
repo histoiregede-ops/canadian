@@ -1,4 +1,18 @@
 services:
+  redis:
+    image: redis:7-alpine
+    command: redis-server --appendonly yes --appendfsync everysec
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
   db:
     image: mysql:8.0
     environment:
@@ -31,7 +45,13 @@ services:
       JWT_SECRET: ${JWT_SECRET:-secret}
       FRONTEND_URL: ${FRONTEND_URL:-http://localhost:4200}
       AUTO_SEED: ${AUTO_SEED:-false}
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_DB: 0
+      REDIS_KEY_PREFIX: canadian:
     depends_on:
+      redis:
+        condition: service_healthy
       db:
         condition: service_healthy
 
@@ -53,3 +73,4 @@ services:
 
 volumes:
   mysql_data:
+  redis_data:

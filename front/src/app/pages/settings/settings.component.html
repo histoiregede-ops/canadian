@@ -1,67 +1,151 @@
-<div class="page-container">
-  <div class="page-header">
-    <div>
-      <h1 class="page-title">⚙️ Paramètres</h1>
-      <p class="page-subtitle">Configurez votre système et vos préférences</p>
+<div class="settings-page">
+  <!-- ===== HERO ===== -->
+  <header class="settings-hero">
+    <div class="hero-glow"></div>
+    <div class="hero-content">
+      <div class="hero-left">
+        <div class="hero-eyebrow">
+          <span class="eyebrow-dot"></span>
+          <span>Préférences • Système</span>
+          <span class="eyebrow-separator">•</span>
+          <span class="live-indicator"><i></i> Synchro locale</span>
+        </div>
+        <h1 class="hero-title">Paramètres <span class="hero-title-accent">système</span></h1>
+        <p class="hero-subtitle">Entreprise, sécurité, notifications et apparence — tout est centralisé, sauvegardé et exportable en un clic.</p>
+      </div>
+      <div class="hero-actions">
+        <div class="hero-badge">
+          <span class="badge-dot"></span>
+          <span>{{ company.currency }} • TVA {{ company.taxRate }}%</span>
+        </div>
+        <button class="btn btn-primary btn-sm" (click)="activeTab='general'"><span>◈</span> Entreprise</button>
+      </div>
     </div>
-  </div>
+  </header>
 
+  <!-- ===== KPIs ===== -->
+  <section class="metrics">
+    <article class="metric-card metric-company">
+      <div class="metric-top">
+        <div class="metric-icon">🏢</div>
+        <span class="metric-trend positive">Actif</span>
+      </div>
+      <p class="metric-label">Organisation</p>
+      <p class="metric-value">{{ company.name || 'Electro Canadien' }}<span>{{ company.city }} • {{ company.country }}</span></p>
+      <div class="metric-bar"><i style="width: 80%"></i></div>
+      <p class="metric-foot"><span class="dot dot-success"></span> {{ company.email || 'Email non défini' }}</p>
+    </article>
+    <article class="metric-card metric-notif">
+      <div class="metric-top">
+        <div class="metric-icon">🔔</div>
+        <span class="metric-trend">{{ notificationItems.length }} canaux</span>
+      </div>
+      <p class="metric-label">Notifications</p>
+      <p class="metric-value">{{ notificationItems.length }}<span>préférences</span></p>
+      <div class="metric-bar"><i style="width: 62%"></i></div>
+      <p class="metric-foot"><span class="dot dot-accent"></span> Configurables à la volée</p>
+    </article>
+    <article class="metric-card metric-theme">
+      <div class="metric-top">
+        <div class="metric-icon">🎨</div>
+        <span class="metric-trend neutral">{{ appearance.theme }}</span>
+      </div>
+      <p class="metric-label">Apparence</p>
+      <p class="metric-value" style="text-transform: capitalize;">{{ appearance.theme }}<span>{{ appearance.fontSize }}</span></p>
+      <div class="metric-bar"><i style="width: 48%"></i></div>
+      <p class="metric-foot"><span class="dot dot-warning"></span> Thème & typographie</p>
+    </article>
+    <article class="metric-card metric-data">
+      <div class="metric-top">
+        <div class="metric-icon">💾</div>
+        <span class="metric-trend">Local</span>
+      </div>
+      <p class="metric-label">Données</p>
+      <p class="metric-value">Sauvegardé<span>JSON exportable</span></p>
+      <div class="metric-bar"><i style="width: 56%"></i></div>
+      <p class="metric-foot"><span class="dot dot-primary"></span> Export • Import • Reset</p>
+    </article>
+  </section>
+
+  <!-- ===== LAYOUT ===== -->
   <div class="settings-layout">
-    <div class="settings-sidebar">
-      <div class="sidebar-section">
-        <div class="sidebar-label">Configuration</div>
-        <button class="tab-btn" [class.active]="activeTab === 'general'" (click)="activeTab = 'general'">
-          <span class="tab-icon">🏢</span>
-          <span class="tab-label">Entreprise</span>
-        </button>
-        <button class="tab-btn" [class.active]="activeTab === 'security'" (click)="activeTab = 'security'">
-          <span class="tab-icon">🔒</span>
-          <span class="tab-label">Sécurité</span>
-        </button>
-        <button class="tab-btn" [class.active]="activeTab === 'notifications'" (click)="activeTab = 'notifications'">
-          <span class="tab-icon">🔔</span>
-          <span class="tab-label">Notifications</span>
-        </button>
-        <button class="tab-btn" [class.active]="activeTab === 'appearance'" (click)="activeTab = 'appearance'">
-          <span class="tab-icon">🎨</span>
-          <span class="tab-label">Apparence</span>
-        </button>
+    <!-- Sidebar -->
+    <aside class="settings-sidebar">
+      <div class="sidebar-card">
+        <div class="sidebar-section">
+          <div class="sidebar-label">Configuration</div>
+          <button class="tab-btn" [class.active]="activeTab === 'general'" (click)="activeTab = 'general'">
+            <span class="tab-icon">🏢</span>
+            <span class="tab-label">Entreprise</span>
+            <span class="tab-chevron">›</span>
+          </button>
+          <button class="tab-btn" [class.active]="activeTab === 'security'" (click)="activeTab = 'security'">
+            <span class="tab-icon">🔒</span>
+            <span class="tab-label">Sécurité</span>
+            <span class="tab-chevron">›</span>
+          </button>
+          <button class="tab-btn" [class.active]="activeTab === 'notifications'" (click)="activeTab = 'notifications'">
+            <span class="tab-icon">🔔</span>
+            <span class="tab-label">Notifications</span>
+            <span class="tab-chevron">›</span>
+          </button>
+          <button class="tab-btn" [class.active]="activeTab === 'appearance'" (click)="activeTab = 'appearance'">
+            <span class="tab-icon">🎨</span>
+            <span class="tab-label">Apparence</span>
+            <span class="tab-chevron">›</span>
+          </button>
+        </div>
+        <div class="sidebar-divider"></div>
+        <div class="sidebar-section">
+          <div class="sidebar-label">Données & Système</div>
+          <button class="tab-btn" [class.active]="activeTab === 'data'" (click)="activeTab = 'data'">
+            <span class="tab-icon">📊</span>
+            <span class="tab-label">Gestion Données</span>
+            <span class="tab-chevron">›</span>
+          </button>
+          <button class="tab-btn" [class.active]="activeTab === 'about'" (click)="activeTab = 'about'">
+            <span class="tab-icon">ℹ️</span>
+            <span class="tab-label">À propos</span>
+            <span class="tab-chevron">›</span>
+          </button>
+        </div>
+        <div class="sidebar-footer">
+          <div class="sidebar-user">
+            <div class="sidebar-avatar">{{ (user?.fullName || user?.username || 'U').substring(0, 2).toUpperCase() }}</div>
+            <div class="sidebar-user-text">
+              <strong>{{ user?.fullName || user?.username || 'Utilisateur' }}</strong>
+              <span>{{ user?.role || '—' }}</span>
+            </div>
+          </div>
+        </div>
       </div>
+    </aside>
 
-      <div class="sidebar-section">
-        <div class="sidebar-label">Données</div>
-        <button class="tab-btn" [class.active]="activeTab === 'data'" (click)="activeTab = 'data'">
-          <span class="tab-icon">📊</span>
-          <span class="tab-label">Gestion Données</span>
-        </button>
-      </div>
-
-      <div class="sidebar-section">
-        <div class="sidebar-label">Système</div>
-        <button class="tab-btn" [class.active]="activeTab === 'about'" (click)="activeTab = 'about'">
-          <span class="tab-icon">ℹ️</span>
-          <span class="tab-label">À propos</span>
-        </button>
-      </div>
-    </div>
-
+    <!-- Content -->
     <div class="settings-content">
+      <!-- GENERAL -->
       <div *ngIf="activeTab === 'general'" class="settings-section">
         <div class="section-header">
-          <h2 class="section-title">Informations Entreprise</h2>
-          <p class="section-desc">Détails généraux de votre organisation</p>
+          <div class="section-header-left">
+            <div class="section-icon">🏢</div>
+            <div>
+              <h2 class="section-title">Informations Entreprise</h2>
+              <p class="section-desc">Identité et fiscalité — utilisées sur factures, exports et reçus</p>
+            </div>
+          </div>
+          <span class="section-badge">Éditable</span>
         </div>
 
-        <div class="card">
-          <div class="card-body">
-            <div class="form-row">
-              <div class="form-group">
-                <label class="form-label">Nom de l'entreprise *</label>
-                <input class="form-input" [(ngModel)]="company.name" placeholder="Electro Canadien" />
+        <div class="panel-card">
+          <div class="panel-body">
+            <div class="form-grid-2">
+              <div class="field">
+                <label class="field-label">Nom de l'entreprise *</label>
+                <input class="field-input" [(ngModel)]="company.name" placeholder="Electro Canadien" />
               </div>
-              <div class="form-group">
-                <label class="form-label">Devise</label>
-                <select class="form-select" [(ngModel)]="company.currency">
+              <div class="field">
+                <label class="field-label">Devise</label>
+                <select class="field-input" [(ngModel)]="company.currency">
                   <option value="FCFA">FCFA (₣)</option>
                   <option value="EUR">EUR (€)</option>
                   <option value="USD">USD ($)</option>
@@ -70,108 +154,133 @@
               </div>
             </div>
 
-            <div class="form-row">
-              <div class="form-group">
-                <label class="form-label">Téléphone</label>
-                <input class="form-input" [(ngModel)]="company.phone" placeholder="+228 XX XX XX XX" />
+            <div class="form-grid-2">
+              <div class="field">
+                <label class="field-label">Téléphone</label>
+                <div class="phone-field">
+                  <span class="phone-prefix">☎</span>
+                  <input class="field-input--bare" [(ngModel)]="company.phone" placeholder="+228 XX XX XX XX" />
+                </div>
               </div>
-              <div class="form-group">
-                <label class="form-label">Email principal</label>
-                <input class="form-input" type="email" [(ngModel)]="company.email" placeholder="contact@entreprise.com" />
-              </div>
-            </div>
-
-            <div class="form-row">
-              <div class="form-group">
-                <label class="form-label">Ville</label>
-                <input class="form-input" [(ngModel)]="company.city" />
-              </div>
-              <div class="form-group">
-                <label class="form-label">Pays</label>
-                <input class="form-input" [(ngModel)]="company.country" />
+              <div class="field">
+                <label class="field-label">Email principal</label>
+                <input class="field-input" type="email" [(ngModel)]="company.email" placeholder="contact@entreprise.com" />
               </div>
             </div>
 
-            <div class="form-group">
-              <label class="form-label">Adresse</label>
-              <textarea class="form-textarea" [(ngModel)]="company.address" rows="3" placeholder="Adresse complète"></textarea>
+            <div class="form-grid-2">
+              <div class="field">
+                <label class="field-label">Ville</label>
+                <input class="field-input" [(ngModel)]="company.city" />
+              </div>
+              <div class="field">
+                <label class="field-label">Pays</label>
+                <input class="field-input" [(ngModel)]="company.country" />
+              </div>
             </div>
 
-            <div class="form-row">
-              <div class="form-group">
-                <label class="form-label">Taux de TVA (%)</label>
-                <input class="form-input" type="number" [(ngModel)]="company.taxRate" />
+            <div class="field">
+              <label class="field-label">Adresse</label>
+              <textarea class="field-textarea" [(ngModel)]="company.address" rows="3" placeholder="Adresse complète — rue, avenue, quartier"></textarea>
+            </div>
+
+            <div class="form-grid-2">
+              <div class="field">
+                <label class="field-label">Taux de TVA (%)</label>
+                <div class="amount-field">
+                  <input class="amount-input" type="number" [(ngModel)]="company.taxRate" placeholder="18" />
+                  <span class="amount-suffix">%</span>
+                </div>
               </div>
-              <div class="form-group">
-                <label class="form-label">WhatsApp</label>
-                <input class="form-input" [(ngModel)]="company.whatsapp" placeholder="+228..." />
+              <div class="field">
+                <label class="field-label">WhatsApp</label>
+                <div class="phone-field">
+                  <span class="phone-prefix">◈</span>
+                  <input class="field-input--bare" [(ngModel)]="company.whatsapp" placeholder="+228..." />
+                </div>
               </div>
             </div>
 
             <div class="form-actions">
-              <button class="btn btn-primary" (click)="saveGeneral()" [disabled]="saving">
-                {{ saving ? 'Enregistrement...' : '💾 Enregistrer' }}
+              <button class="btn btn-primary btn-lg" (click)="saveGeneral()" [disabled]="saving">
+                {{ saving ? 'Enregistrement…' : '💾 Enregistrer les informations' }}
               </button>
+              <span class="form-footnote">Sauvegardé localement · Instantané</span>
             </div>
           </div>
         </div>
       </div>
 
+      <!-- SECURITY -->
       <div *ngIf="activeTab === 'security'" class="settings-section">
         <div class="section-header">
-          <h2 class="section-title">Sécurité</h2>
-          <p class="section-desc">Gérez votre mot de passe et votre compte</p>
+          <div class="section-header-left">
+            <div class="section-icon">🔒</div>
+            <div>
+              <h2 class="section-title">Sécurité</h2>
+              <p class="section-desc">Gérez votre identité et votre mot de passe</p>
+            </div>
+          </div>
+          <span class="section-badge section-badge-success">Connecté</span>
         </div>
 
-        <div class="card mb-6">
-          <div class="card-body">
+        <div class="panel-card" style="margin-bottom:16px;">
+          <div class="panel-body">
             <div class="user-info-card">
               <div class="user-avatar-lg">{{ (user?.fullName || user?.username || 'U').substring(0, 2).toUpperCase() }}</div>
               <div class="user-details">
                 <div class="user-name">{{ user?.fullName || user?.username || 'Utilisateur' }}</div>
-                <div class="user-meta">{{ user?.email || '' }} · {{ user?.role || '' }}</div>
+                <div class="user-meta">{{ user?.email || '' }} · <span class="role-pill">{{ user?.role || '' }}</span></div>
               </div>
-              <span class="badge badge-success">Connecté</span>
+              <span class="status-pill status-ok"><i class="status-dot"></i> Session active</span>
             </div>
           </div>
         </div>
 
-        <div class="card">
-          <div class="card-header">
-            <h3 class="card-title">Changer le mot de passe</h3>
+        <div class="panel-card">
+          <div class="panel-header">
+            <h3 class="panel-title">Changer le mot de passe</h3>
+            <span class="panel-hint">6 caractères minimum</span>
           </div>
-          <div class="card-body">
-            <div class="form-group">
-              <label class="form-label">Mot de passe actuel</label>
-              <input class="form-input" type="password" [(ngModel)]="passwordForm.current" placeholder="••••••••" />
+          <div class="panel-body">
+            <div class="field">
+              <label class="field-label">Mot de passe actuel</label>
+              <input class="field-input" type="password" [(ngModel)]="passwordForm.current" placeholder="••••••••" />
             </div>
-            <div class="form-row">
-              <div class="form-group">
-                <label class="form-label">Nouveau mot de passe</label>
-                <input class="form-input" type="password" [(ngModel)]="passwordForm.newPassword" placeholder="••••••••" />
+            <div class="form-grid-2">
+              <div class="field">
+                <label class="field-label">Nouveau mot de passe</label>
+                <input class="field-input" type="password" [(ngModel)]="passwordForm.newPassword" placeholder="••••••••" />
               </div>
-              <div class="form-group">
-                <label class="form-label">Confirmer le mot de passe</label>
-                <input class="form-input" type="password" [(ngModel)]="passwordForm.confirm" placeholder="••••••••" />
+              <div class="field">
+                <label class="field-label">Confirmer le mot de passe</label>
+                <input class="field-input" type="password" [(ngModel)]="passwordForm.confirm" placeholder="••••••••" />
               </div>
             </div>
             <div class="form-actions">
               <button class="btn btn-primary" (click)="changePassword()" [disabled]="saving">
-                {{ saving ? 'Modification...' : '🔄 Changer le mot de passe' }}
+                {{ saving ? 'Modification…' : '🔄 Changer le mot de passe' }}
               </button>
             </div>
           </div>
         </div>
       </div>
 
+      <!-- NOTIFICATIONS -->
       <div *ngIf="activeTab === 'notifications'" class="settings-section">
         <div class="section-header">
-          <h2 class="section-title">Notifications</h2>
-          <p class="section-desc">Configurez vos préférences de notification</p>
+          <div class="section-header-left">
+            <div class="section-icon">🔔</div>
+            <div>
+              <h2 class="section-title">Notifications</h2>
+              <p class="section-desc">Choisissez les événements qui vous alertent</p>
+            </div>
+          </div>
+          <span class="section-badge">{{ notificationItems.length }} canaux</span>
         </div>
 
-        <div class="card">
-          <div class="card-body">
+        <div class="panel-card">
+          <div class="panel-body">
             <div class="toggle-list">
               <div class="toggle-item" *ngFor="let item of notificationItems">
                 <div class="toggle-info">
@@ -189,20 +298,27 @@
             </div>
 
             <div class="form-actions">
-              <button class="btn btn-primary" (click)="saveNotifications()">💾 Enregistrer les préférences</button>
+              <button class="btn btn-primary" (click)="saveNotifications()"><span>💾</span> Enregistrer les préférences</button>
+              <span class="form-footnote">Préférences locales · Instantanées</span>
             </div>
           </div>
         </div>
       </div>
 
+      <!-- APPEARANCE -->
       <div *ngIf="activeTab === 'appearance'" class="settings-section">
         <div class="section-header">
-          <h2 class="section-title">Apparence</h2>
-          <p class="section-desc">Personnalisez votre interface</p>
+          <div class="section-header-left">
+            <div class="section-icon">🎨</div>
+            <div>
+              <h2 class="section-title">Apparence</h2>
+              <p class="section-desc">Thème et lisibilité — adaptez l'interface à vos yeux</p>
+            </div>
+          </div>
         </div>
 
-        <div class="card">
-          <div class="card-body">
+        <div class="panel-card">
+          <div class="panel-body">
             <div class="option-group">
               <label class="option-label">Thème</label>
               <div class="radio-cards">
@@ -210,16 +326,19 @@
                   <input type="radio" name="theme" value="light" [(ngModel)]="appearance.theme" />
                   <span class="radio-icon">☀️</span>
                   <span>Clair</span>
+                  <span class="radio-check" *ngIf="appearance.theme==='light'">✓</span>
                 </label>
                 <label class="radio-card" [class.selected]="appearance.theme === 'dark'">
                   <input type="radio" name="theme" value="dark" [(ngModel)]="appearance.theme" />
                   <span class="radio-icon">🌙</span>
                   <span>Sombre</span>
+                  <span class="radio-check" *ngIf="appearance.theme==='dark'">✓</span>
                 </label>
                 <label class="radio-card" [class.selected]="appearance.theme === 'auto'">
                   <input type="radio" name="theme" value="auto" [(ngModel)]="appearance.theme" />
                   <span class="radio-icon">🔄</span>
                   <span>Auto</span>
+                  <span class="radio-check" *ngIf="appearance.theme==='auto'">✓</span>
                 </label>
               </div>
             </div>
@@ -231,78 +350,99 @@
                   <input type="radio" name="fontSize" value="small" [(ngModel)]="appearance.fontSize" />
                   <span class="radio-icon">🔤</span>
                   <span>Petite</span>
+                  <span class="radio-check" *ngIf="appearance.fontSize==='small'">✓</span>
                 </label>
                 <label class="radio-card" [class.selected]="appearance.fontSize === 'normal'">
                   <input type="radio" name="fontSize" value="normal" [(ngModel)]="appearance.fontSize" />
                   <span class="radio-icon">📝</span>
                   <span>Normal</span>
+                  <span class="radio-check" *ngIf="appearance.fontSize==='normal'">✓</span>
                 </label>
                 <label class="radio-card" [class.selected]="appearance.fontSize === 'large'">
                   <input type="radio" name="fontSize" value="large" [(ngModel)]="appearance.fontSize" />
                   <span class="radio-icon">📊</span>
                   <span>Grande</span>
+                  <span class="radio-check" *ngIf="appearance.fontSize==='large'">✓</span>
                 </label>
               </div>
             </div>
 
             <div class="form-actions">
               <button class="btn btn-primary" (click)="saveAppearance()" [disabled]="saving">
-                {{ saving ? 'Application...' : '💾 Appliquer' }}
+                {{ saving ? 'Application…' : '💾 Appliquer l\'apparence' }}
               </button>
             </div>
           </div>
         </div>
       </div>
 
+      <!-- DATA -->
       <div *ngIf="activeTab === 'data'" class="settings-section">
         <div class="section-header">
-          <h2 class="section-title">Gestion des Données</h2>
-          <p class="section-desc">Exportez et importez vos données</p>
-        </div>
-
-        <div class="card mb-6">
-          <div class="card-body">
-            <div class="data-card">
-              <div class="data-icon">📥</div>
-              <div class="data-info">
-                <h3>Exporter les données</h3>
-                <p>Téléchargez toutes vos données au format JSON</p>
-              </div>
-              <button class="btn btn-outline" (click)="exportData()">📥 Exporter</button>
+          <div class="section-header-left">
+            <div class="section-icon">📊</div>
+            <div>
+              <h2 class="section-title">Gestion des Données</h2>
+              <p class="section-desc">Sauvegardez, restaurez ou réinitialisez votre espace</p>
             </div>
           </div>
         </div>
 
-        <div class="card">
-          <div class="card-body">
+        <div class="panel-card" style="margin-bottom:16px;">
+          <div class="panel-body">
+            <div class="data-card">
+              <div class="data-icon">📥</div>
+              <div class="data-info">
+                <h3>Exporter les données</h3>
+                <p>Téléchargez toutes vos données au format JSON — sauvegarde complète</p>
+              </div>
+              <button class="btn btn-primary" (click)="exportData()"><span>📥</span> Exporter</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="panel-card" style="margin-bottom:16px;">
+          <div class="panel-body">
             <div class="data-card">
               <div class="data-icon">📤</div>
               <div class="data-info">
                 <h3>Importer des données</h3>
-                <p>Restaurez vos données depuis un fichier JSON</p>
+                <p>Restaurez depuis un fichier JSON — écrase les préférences actuelles</p>
               </div>
               <input type="file" accept=".json" (change)="importData($event)" class="file-input" />
             </div>
           </div>
         </div>
 
-        <div class="card mt-6 danger-zone">
-          <div class="card-body">
-            <h3 class="danger-title">Zone de danger</h3>
-            <p class="danger-desc">Réinitialisez tous les paramètres à leurs valeurs par défaut.</p>
-            <button class="btn btn-danger" (click)="clearAllData()">🗑️ Réinitialiser tout</button>
+        <div class="panel-card danger-zone">
+          <div class="panel-body">
+            <div class="danger-header">
+              <div class="danger-icon">⚠️</div>
+              <div>
+                <h3 class="danger-title">Zone de danger</h3>
+                <p class="danger-desc">Réinitialisez tous les paramètres à leurs valeurs par défaut. Action irréversible.</p>
+              </div>
+            </div>
+            <button class="btn btn-danger" (click)="clearAllData()"><span>🗑️</span> Réinitialiser tout</button>
           </div>
         </div>
       </div>
 
+      <!-- ABOUT -->
       <div *ngIf="activeTab === 'about'" class="settings-section">
         <div class="section-header">
-          <h2 class="section-title">À propos</h2>
-          <p class="section-desc">Informations sur le système</p>
+          <div class="section-header-left">
+            <div class="section-icon">ℹ️</div>
+            <div>
+              <h2 class="section-title">À propos</h2>
+              <p class="section-desc">Informations système · Build 2026</p>
+            </div>
+          </div>
+          <span class="section-badge">v1.0.0</span>
         </div>
 
-        <div class="card">
-          <div class="card-body">
+        <div class="panel-card">
+          <div class="panel-body">
             <div class="about-grid">
               <div class="about-item">
                 <span class="about-label">Nom du système</span>

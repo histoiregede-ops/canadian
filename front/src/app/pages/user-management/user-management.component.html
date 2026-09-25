@@ -1,142 +1,207 @@
-<div class="page-container">
-  <div class="page-header">
-    <div>
-      <h1 class="page-title">Gestion des Utilisateurs</h1>
-      <p class="page-subtitle">Créer et gérer les comptes caissiers, techniciens et administrateurs</p>
+<div class="user-mgmt-page">
+  <!-- ===== HERO ===== -->
+  <header class="mgmt-hero">
+    <div class="hero-glow"></div>
+    <div class="hero-content">
+      <div class="hero-left">
+        <div class="hero-eyebrow">
+          <span class="eyebrow-dot"></span>
+          <span>Équipe • Accès & rôles</span>
+          <span class="eyebrow-separator">•</span>
+          <span class="live-indicator"><i></i> Live</span>
+        </div>
+        <h1 class="hero-title">Gestion des <span class="hero-title-accent">utilisateurs</span></h1>
+        <p class="hero-subtitle">Créez et pilotez les comptes caissiers, techniciens et administrateurs — en toute sécurité, en une seconde.</p>
+      </div>
+      <div class="hero-actions">
+        <button class="btn btn-ghost btn-sm" (click)="loadUsers()"><span class="btn-icon">↻</span> Actualiser</button>
+        <button class="btn btn-primary" (click)="openModal()"><span>＋</span> Nouvel utilisateur</button>
+        <button class="btn btn-secondary btn-sm" (click)="logout()" title="Déconnexion"><span>⎋</span> Déconnexion</button>
+      </div>
     </div>
-    <div class="header-actions">
-      <button class="btn btn-primary" (click)="openModal()">➕ Nouvel Utilisateur</button>
-      <button class="btn btn-outline" (click)="logout()" title="Déconnexion">🚪 Déconnexion</button>
+  </header>
+
+  <!-- ===== KPIs ===== -->
+  <section class="metrics" *ngIf="!loading">
+    <article class="metric-card metric-total">
+      <div class="metric-top">
+        <div class="metric-icon">◫</div>
+        <span class="metric-trend">{{ totalUsers }} comptes</span>
+      </div>
+      <p class="metric-label">Total</p>
+      <p class="metric-value">{{ totalUsers }}<span>utilisateurs</span></p>
+      <div class="metric-bar"><i style="width: 82%"></i></div>
+      <p class="metric-foot"><span class="dot dot-success"></span> Tous rôles confondus</p>
+    </article>
+    <article class="metric-card metric-admin">
+      <div class="metric-top">
+        <div class="metric-icon">👑</div>
+        <span class="metric-trend" [class.positive]="adminCount>0">{{ adminCount }} admins</span>
+      </div>
+      <p class="metric-label">Administrateurs</p>
+      <p class="metric-value">{{ adminCount }}<span>privilégiés</span></p>
+      <div class="metric-bar"><i [style.width.%]="totalUsers ? (adminCount/totalUsers*100) : 0"></i></div>
+      <p class="metric-foot"><span class="dot dot-danger"></span> Accès complet</p>
+    </article>
+    <article class="metric-card metric-tech">
+      <div class="metric-top">
+        <div class="metric-icon">🔧</div>
+        <span class="metric-trend positive">{{ techCount }} techs</span>
+      </div>
+      <p class="metric-label">Techniciens</p>
+      <p class="metric-value">{{ techCount }}<span>terrain</span></p>
+      <div class="metric-bar"><i [style.width.%]="totalUsers ? (techCount/totalUsers*100) : 0"></i></div>
+      <p class="metric-foot"><span class="dot dot-accent"></span> Interventions SAV</p>
+    </article>
+    <article class="metric-card metric-other">
+      <div class="metric-top">
+        <div class="metric-icon">◎</div>
+        <span class="metric-trend">{{ otherCount }} autres</span>
+      </div>
+      <p class="metric-label">Autres rôles</p>
+      <p class="metric-value">{{ otherCount }}<span>caissiers • vendeurs</span></p>
+      <div class="metric-bar"><i [style.width.%]="totalUsers ? (otherCount/totalUsers*100) : 0"></i></div>
+      <p class="metric-foot"><span class="dot dot-primary"></span> Opérationnel</p>
+    </article>
+  </section>
+
+  <!-- ===== TOOLBAR ===== -->
+  <section class="toolbar" *ngIf="!loading">
+    <div class="toolbar-left">
+      <div class="search-field">
+        <span class="search-icon">⌕</span>
+        <input type="text" [(ngModel)]="searchQuery" placeholder="Rechercher nom, email, identifiant…" class="search-input" />
+      </div>
+      <div class="select-field">
+        <select [(ngModel)]="roleFilter" class="filter-select">
+          <option value="">Tous les rôles</option>
+          <option *ngFor="let r of roles; trackBy: trackByRole" [value]="r">{{ getRoleLabel(r) }}</option>
+        </select>
+      </div>
     </div>
+    <div class="toolbar-right">
+      <span class="toolbar-count">{{ filteredUsers.length }} résultat(s)</span>
+      <button class="btn btn-primary btn-sm" (click)="openModal()"><span>＋</span> Créer</button>
+    </div>
+  </section>
+
+  <!-- Pills quick -->
+  <div class="pills-row" *ngIf="!loading">
+    <span class="pills-label">Filtrer</span>
+    <button class="pill" [class.active]="!roleFilter" (click)="roleFilter=''">Tous</button>
+    <button class="pill" [class.active]="roleFilter==='admin'" (click)="roleFilter='admin'">👑 Admin</button>
+    <button class="pill" [class.active]="roleFilter==='technician'" (click)="roleFilter='technician'">🔧 Tech</button>
+    <button class="pill" [class.active]="roleFilter==='cashier'" (click)="roleFilter='cashier'">💵 Caissier</button>
+    <button class="pill" [class.active]="roleFilter==='seller'" (click)="roleFilter='seller'">🤝 Vendeur</button>
   </div>
 
-  <div class="stats-grid" *ngIf="!loading">
-    <div class="stat-card">
-      <div class="stat-icon info">👥</div>
-      <div class="stat-content">
-        <p class="stat-label">Total</p>
-        <h3 class="stat-value">{{ totalUsers }}</h3>
+  <!-- ===== TABLE CARD ===== -->
+  <section class="table-card" *ngIf="!loading">
+    <div class="table-header">
+      <div class="table-header-left">
+        <h2 class="table-title">Utilisateurs <span class="count-pill">{{ filteredUsers.length }}</span></h2>
+        <p class="table-subtitle"><span class="table-dot"></span> {{ totalUsers }} au total · {{ filteredUsers.length }} affichés</p>
+      </div>
+      <div class="table-actions">
+        <button class="btn btn-ghost btn-sm" (click)="loadUsers()"><span>↻</span> Recharger</button>
+        <button class="btn btn-primary btn-sm" (click)="openModal()"><span>＋</span> Nouveau</button>
       </div>
     </div>
-    <div class="stat-card">
-      <div class="stat-icon danger">🔴</div>
-      <div class="stat-content">
-        <p class="stat-label">Admins</p>
-        <h3 class="stat-value">{{ adminCount }}</h3>
-      </div>
-    </div>
-    <div class="stat-card">
-      <div class="stat-icon success">🟢</div>
-      <div class="stat-content">
-        <p class="stat-label">Techniciens</p>
-        <h3 class="stat-value">{{ techCount }}</h3>
-      </div>
-    </div>
-    <div class="stat-card">
-      <div class="stat-icon primary">🔵</div>
-      <div class="stat-content">
-        <p class="stat-label">Autres</p>
-        <h3 class="stat-value">{{ otherCount }}</h3>
-      </div>
-    </div>
-  </div>
-
-  <div class="filters-card" *ngIf="!loading">
-    <div class="filter-group">
-      <div class="search-box">
-        <span class="search-icon">🔍</span>
-        <input type="text" [(ngModel)]="searchQuery" placeholder="Rechercher un utilisateur..." class="form-input" />
-      </div>
-      <select [(ngModel)]="roleFilter" class="form-select">
-        <option value="">Tous les rôles</option>
-        <option *ngFor="let r of roles; trackBy: trackByRole" [value]="r">{{ getRoleLabel(r) }}</option>
-      </select>
-      <span class="result-count">{{ filteredUsers.length }} résultat(s)</span>
-    </div>
-  </div>
-
-  <div class="table-container" *ngIf="!loading">
-    <table class="data-table">
-      <thead>
-        <tr>
-          <th>Utilisateur</th>
-          <th>Email</th>
-          <th>Rôle</th>
-          <th>Actions</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr *ngFor="let user of filteredUsers; trackBy: trackByUserId">
-          <td>
-            <div class="user-cell">
-              <div class="user-avatar">{{ (user.fullName || user.username).substring(0,2).toUpperCase() }}</div>
-              <div class="user-details">
-                <span class="user-name">{{ user.fullName || user.username }}</span>
-                <span class="user-username">@{{ user.username }}</span>
+    <div class="table-wrap">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Utilisateur</th>
+            <th>Email</th>
+            <th>Rôle</th>
+            <th class="th-actions">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let user of filteredUsers; trackBy: trackByUserId">
+            <td>
+              <div class="user-cell">
+                <div class="user-avatar">{{ (user.fullName || user.username).substring(0,2).toUpperCase() }}</div>
+                <div class="user-details">
+                  <span class="user-name">{{ user.fullName || user.username }}</span>
+                  <span class="user-username">@{{ user.username }}</span>
+                </div>
               </div>
-            </div>
-          </td>
-          <td>{{ user.email || '—' }}</td>
-          <td><span class="badge" [class]="user.role">{{ getRoleLabel(user.role) }}</span></td>
-          <td>
-            <div class="actions-cell">
-              <button class="btn btn-ghost btn-sm" (click)="editUser(user)" title="Modifier">✏️</button>
-              <button class="btn btn-ghost btn-sm" (click)="deleteUser(user)" title="Supprimer" style="color:var(--danger)" [disabled]="deletingUserId === user.id">🗑️</button>
-            </div>
-          </td>
-        </tr>
-        <tr *ngIf="filteredUsers.length === 0">
-          <td colspan="4">
-            <div class="empty-state">
-              <span class="empty-icon">👤</span>
-              <h3 class="empty-title">Aucun utilisateur trouvé</h3>
-              <button class="btn btn-primary" (click)="openModal()">Créer un utilisateur</button>
-            </div>
-          </td>
-        </tr>
-      </tbody>
-    </table>
+            </td>
+            <td class="td-muted">{{ user.email || '—' }}</td>
+            <td><span class="role-pill" [attr.data-role]="user.role">{{ getRoleLabel(user.role) }}</span></td>
+            <td class="td-actions">
+              <div class="action-group">
+                <button class="action-btn" (click)="editUser(user)" title="Modifier">✎</button>
+                <button class="action-btn action-btn--danger" (click)="deleteUser(user)" title="Supprimer" [disabled]="deletingUserId === user.id">⌫</button>
+              </div>
+            </td>
+          </tr>
+          <tr *ngIf="filteredUsers.length === 0">
+            <td colspan="4">
+              <div class="state state-empty">
+                <div class="empty-illustration"><div class="empty-orb"></div><span class="empty-emoji">◈</span></div>
+                <h4>Aucun utilisateur trouvé</h4>
+                <p>Modifiez vos filtres ou créez un nouveau compte.</p>
+                <button class="btn btn-primary btn-sm" (click)="openModal()"><span>＋</span> Créer un utilisateur</button>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <div class="state state-loading" *ngIf="loading">
+    <div class="loader"></div>
+    <p>Chargement des utilisateurs…</p>
+    <span class="loading-hint">Synchronisation avec le serveur</span>
   </div>
 
-  <div class="loading-state" *ngIf="loading">
-    <div class="spinner"></div>
-    <p>Chargement des utilisateurs...</p>
-  </div>
-
+  <!-- ===== MODAL ===== -->
   <div class="modal-overlay" *ngIf="showModal">
-    <div class="modal-card">
+    <div class="modal-card" (click)="$event.stopPropagation()">
       <div class="modal-header">
-        <h2 class="modal-title">{{ editingUser ? '✏️ Modifier Utilisateur' : '➕ Nouvel Utilisateur' }}</h2>
-        <button class="modal-close" (click)="showModal = false">×</button>
+        <div class="modal-header-left">
+          <div class="modal-icon">{{ editingUser ? '✎' : '＋' }}</div>
+          <div>
+            <h2 class="modal-title">{{ editingUser ? 'Modifier l\'utilisateur' : 'Nouvel utilisateur' }}</h2>
+            <p class="modal-subtitle">{{ editingUser ? 'Mettez à jour les informations' : 'Créez un compte en 30 secondes' }}</p>
+          </div>
+        </div>
+        <button class="modal-close" (click)="showModal = false">✕</button>
       </div>
 
       <div class="modal-body">
-        <form (ngSubmit)="save($event)" class="form">
-          <div class="form-group">
-            <label class="form-label">Nom d'utilisateur *</label>
-            <input type="text" [(ngModel)]="form.username" name="username" required placeholder="ex: jean.dupont" class="form-input" />
+        <form (ngSubmit)="save($event)" class="modal-form">
+          <div class="field">
+            <label class="field-label">Nom d'utilisateur *</label>
+            <input type="text" [(ngModel)]="form.username" name="username" required placeholder="ex: jean.dupont" class="field-input" />
           </div>
-          <div class="form-group">
-            <label class="form-label">{{ editingUser ? 'Mot de passe (laisser vide pour ne pas changer)' : 'Mot de passe *' }}</label>
-            <input type="password" [(ngModel)]="form.password" name="password" [required]="!editingUser" placeholder="••••••••" class="form-input" />
+          <div class="field">
+            <label class="field-label">{{ editingUser ? 'Mot de passe (laisser vide pour ne pas changer)' : 'Mot de passe *' }}</label>
+            <input type="password" [(ngModel)]="form.password" name="password" [required]="!editingUser" placeholder="••••••••" class="field-input" />
           </div>
-          <div class="form-group">
-            <label class="form-label">Nom complet</label>
-            <input type="text" [(ngModel)]="form.fullName" name="fullName" placeholder="Jean Dupont" class="form-input" />
+          <div class="field">
+            <label class="field-label">Nom complet</label>
+            <input type="text" [(ngModel)]="form.fullName" name="fullName" placeholder="Jean Dupont" class="field-input" />
           </div>
-          <div class="form-group">
-            <label class="form-label">Email</label>
-            <input type="email" [(ngModel)]="form.email" name="email" placeholder="jean@exemple.com" class="form-input" />
+          <div class="field">
+            <label class="field-label">Email</label>
+            <input type="email" [(ngModel)]="form.email" name="email" placeholder="jean@exemple.com" class="field-input" />
           </div>
-          <div class="form-group">
-            <label class="form-label">Rôle</label>
-            <select [(ngModel)]="form.role" name="role" class="form-select">
+          <div class="field">
+            <label class="field-label">Rôle</label>
+            <select [(ngModel)]="form.role" name="role" class="field-input">
               <option *ngFor="let r of roles; trackBy: trackByRole" [value]="r">{{ getRoleLabel(r) }}</option>
             </select>
           </div>
           <div class="modal-footer">
             <button type="button" class="btn btn-secondary" (click)="showModal = false">Annuler</button>
-            <button type="submit" class="btn btn-primary" [disabled]="saving">{{ editingUser ? 'Mettre à jour' : 'Créer' }}</button>
+            <button type="submit" class="btn btn-primary" [disabled]="saving">
+              <span *ngIf="!saving">{{ editingUser ? 'Mettre à jour' : 'Créer l\'utilisateur' }}</span>
+              <span *ngIf="saving" class="btn-loading"><i class="spinner-sm"></i> En cours…</span>
+            </button>
           </div>
         </form>
       </div>

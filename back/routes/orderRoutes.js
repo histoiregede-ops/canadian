@@ -107,7 +107,7 @@ router.post('/', authenticate, async (req, res) => {
       const threshold = product.lowStockThreshold || 1;
       await sequelize.query(
         'INSERT INTO stock_movements (productId, previousQuantity, newQuantity, changeAmount, reason, reference, createdBy, createdByRole, userId, referenceType, createdAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)',
-        { replacements: [item.productId, prev, product.stockQuantity, product.stockQuantity - prev, 'sale', order.orderNumber, req.user?.username || 'system', req.user?.role || null, req.user?.id || null, 'order_sale'] }
+        { replacements: [item.productId, prev, product.stockQuantity, product.stockQuantity - prev, 'sale', order.orderNumber, req.user?.username || 'system', req.user?.role || null, req.user?.id || null, 'order_sale'], transaction: t }
       ).catch(err => console.error('Failed to log stock movement:', err));
       if (product.stockQuantity <= threshold && product.stockQuantity > 0 && global.broadcastNotification) {
         global.broadcastNotification({
@@ -130,14 +130,18 @@ router.post('/', authenticate, async (req, res) => {
         const c = await Customer.findByPk(resolvedCustomerId, { transaction: t });
         customerName = c ? (c.fullName || c.name) : null;
       }
+      const productNames = items.map(i => productMap.get(i.productId)?.name || 'Produit').join(', ');
       await CashTransaction.create({
         type: 'income',
         amount: paidAmount,
-        description: `Vente ${order.orderNumber}`,
+        description: `Vente ${order.orderNumber}${productNames ? ' - ' + productNames : ''}`,
         category: 'Sales',
         date: new Date(),
         customerId: resolvedCustomerId,
-        customerName
+        customerName,
+        referenceId: order.id,
+        referenceType: 'order',
+        notes: productNames
       }, { transaction: t });
     }
 
@@ -319,7 +323,7 @@ router.delete('/:id', authenticate, authorize('admin', 'cashier'), async (req, r
         await product.save({ transaction: t });
         await sequelize.query(
           'INSERT INTO stock_movements (productId, previousQuantity, newQuantity, changeAmount, reason, reference, createdBy, createdByRole, userId, referenceType, createdAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)',
-          { replacements: [item.productId, prev, product.stockQuantity, product.stockQuantity - prev, 'return', order.orderNumber, req.user?.username || 'system', req.user?.role || null, req.user?.id || null, 'order_return'] }
+          { replacements: [item.productId, prev, product.stockQuantity, product.stockQuantity - prev, 'return', order.orderNumber, req.user?.username || 'system', req.user?.role || null, req.user?.id || null, 'order_return'], transaction: t }
         ).catch(err => console.error('Failed to log stock movement:', err));
       }
       await item.destroy({ transaction: t });

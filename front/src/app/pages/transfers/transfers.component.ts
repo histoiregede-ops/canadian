@@ -29,6 +29,7 @@ export class TransfersComponent implements OnInit {
   deletingId: string | null = null;
   editing = false;
   editingTransferId: string | null = null;
+  amountFocused = false;
 
   // Countries list for international transfers (Afrique de l'Ouest et ailleurs)
   readonly countries: { code: string; name: string; flag: string }[] = [

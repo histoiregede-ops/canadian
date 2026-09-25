@@ -189,6 +189,10 @@ export class CategoriesComponent implements OnInit, OnDestroy {
     this.productCounts.set(category.id, existing);
   }
 
+  trackByCategoryId(index: number, item: any): string {
+    return item?.id ?? String(index);
+  }
+
   // Helper methods for the template
   getCategoryIcon(type: string): string {
     switch (type) {

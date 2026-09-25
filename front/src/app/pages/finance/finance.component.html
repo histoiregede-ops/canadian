@@ -1,240 +1,330 @@
-<div class="page-container">
-  <div class="page-header">
-    <div>
-      <h1 class="page-title">Finance & Performance</h1>
-      <p class="page-subtitle">Analyse des revenus et répartition des flux monétaires</p>
+<div class="finance-page">
+  <!-- ===== HERO ===== -->
+  <header class="finance-hero">
+    <div class="hero-glow"></div>
+    <div class="hero-content">
+      <div class="hero-left">
+        <div class="hero-eyebrow">
+          <span class="eyebrow-dot"></span>
+          <span>Finance • Flux monétaires</span>
+          <span class="eyebrow-separator">•</span>
+          <span class="live-indicator"><i></i> Temps réel</span>
+        </div>
+        <h1 class="hero-title">
+          Finance & <span class="hero-title-accent">Performance</span>
+        </h1>
+        <p class="hero-subtitle">
+          Analyse des revenus et répartition des flux — précision opérationnelle, vision trésorerie
+        </p>
+      </div>
+      <div class="hero-actions">
+        <button class="btn btn-secondary" (click)="openReportModal()">▦ Rapport Journalier</button>
+        <button class="btn btn-primary" (click)="openAddModal()">+ Nouvelle Opération</button>
+      </div>
     </div>
-    <div class="header-actions">
-      <button class="btn btn-secondary" (click)="openReportModal()">📋 Rapport Journalier</button>
-      <button class="btn btn-primary" (click)="openAddModal()">➕ Nouvelle Opération</button>
-    </div>
-  </div>
+  </header>
 
-  <div class="stats-grid">
-    <div class="stat-card">
-      <div class="stat-icon success">💰</div>
-      <div class="stat-content">
-        <p class="stat-label">Total Encaissements</p>
-        <h3 class="stat-value">{{ stats?.revenue | number }} FCFA</h3>
+  <!-- ===== KPIs ===== -->
+  <section class="kpi-grid">
+    <article class="kpi-card kpi-revenue">
+      <div class="kpi-top">
+        <div class="kpi-icon">↗</div>
+        <span class="kpi-trend positive">Encaissé</span>
       </div>
-    </div>
-    <div class="stat-card">
-      <div class="stat-icon danger">💸</div>
-      <div class="stat-content">
-        <p class="stat-label">Total Décaissements</p>
-        <h3 class="stat-value">{{ stats?.expense | number }} FCFA</h3>
-      </div>
-    </div>
-    <div class="stat-card">
-      <div class="stat-icon primary">📊</div>
-      <div class="stat-content">
-        <p class="stat-label">Solde Net</p>
-        <h3 class="stat-value" [class.text-success]="(stats?.balance || 0) >= 0" [class.text-danger]="(stats?.balance || 0) < 0">{{ stats?.balance | number }} FCFA</h3>
-      </div>
-    </div>
-  </div>
+      <p class="kpi-label">Total encaissements</p>
+      <p class="kpi-value">{{ stats?.revenue | number:'1.0-0' }}<span>FCFA</span></p>
+      <div class="kpi-bar"><i style="width: 72%"></i></div>
+      <p class="kpi-foot"><span class="dot dot-success"></span> Flux entrants</p>
+    </article>
 
-  <div class="charts-grid">
-    <div class="card">
-      <div class="card-header">
-        <h3 class="card-title">Évolution Mensuelle</h3>
+    <article class="kpi-card kpi-expense">
+      <div class="kpi-top">
+        <div class="kpi-icon">↘</div>
+        <span class="kpi-trend negative">Sorti</span>
+      </div>
+      <p class="kpi-label">Total décaissements</p>
+      <p class="kpi-value">{{ stats?.expense | number:'1.0-0' }}<span>FCFA</span></p>
+      <div class="kpi-bar"><i style="width: 38%"></i></div>
+      <p class="kpi-foot"><span class="dot dot-danger"></span> Flux sortants</p>
+    </article>
+
+    <article class="kpi-card kpi-balance" [class.kpi-positive]="(stats?.balance || 0) >= 0" [class.kpi-negative]="(stats?.balance || 0) < 0">
+      <div class="kpi-top">
+        <div class="kpi-icon">◈</div>
+        <span class="kpi-trend" [class.positive]="(stats?.balance || 0) >= 0" [class.negative]="(stats?.balance || 0) < 0">{{ (stats?.balance || 0) >= 0 ? 'Excédent' : 'Déficit' }}</span>
+      </div>
+      <p class="kpi-label">Solde net</p>
+      <p class="kpi-value" [class.positive]="(stats?.balance || 0) >= 0" [class.negative]="(stats?.balance || 0) < 0">{{ stats?.balance | number:'1.0-0' }}<span>FCFA</span></p>
+      <div class="kpi-bar"><i [style.width.%]="(stats?.balance || 0) >= 0 ? 65 : 35"></i></div>
+      <p class="kpi-foot">Période courante</p>
+    </article>
+  </section>
+
+  <!-- ===== CHARTS ===== -->
+  <section class="charts-grid">
+    <div class="chart-card">
+      <div class="chart-header">
+        <div class="chart-title-wrap">
+          <h3 class="chart-title">Évolution mensuelle</h3>
+          <p class="chart-subtitle">Revenus sur 6 mois • Tendance lissée</p>
+        </div>
+        <span class="chart-badge">6 mois</span>
       </div>
       <div class="chart-container">
         <canvas #revenueChart></canvas>
       </div>
     </div>
-    <div class="card">
-      <div class="card-header">
-        <h3 class="card-title">Répartition par Flux</h3>
+    <div class="chart-card">
+      <div class="chart-header">
+        <div class="chart-title-wrap">
+          <h3 class="chart-title">Répartition par flux</h3>
+          <p class="chart-subtitle">Entrées vs sorties • Structure</p>
+        </div>
+        <span class="chart-badge">Mix</span>
       </div>
       <div class="chart-container">
         <canvas #categoryChart></canvas>
       </div>
     </div>
-  </div>
+  </section>
 
-  <div class="card">
-    <div class="card-header">
-      <h3 class="card-title">Journal des Transactions</h3>
+  <!-- ===== JOURNAL ===== -->
+  <section class="journal-card">
+    <div class="journal-header">
+      <div class="journal-title-wrap">
+        <h2 class="journal-title">Journal des transactions</h2>
+        <p class="journal-subtitle">{{ transactions.length }} opérations • Tri chronologique</p>
+      </div>
+      <div class="journal-actions">
+        <button class="btn btn-ghost btn-sm" (click)="loadFinanceData()">↻ Actualiser</button>
+        <button class="btn btn-secondary btn-sm" (click)="openReportModal()">▦ Flux journalier →</button>
+      </div>
     </div>
-    <div class="table-container">
+
+    <div class="table-wrap">
       <table class="data-table">
         <thead>
           <tr>
             <th>Date</th>
             <th>Détails</th>
             <th>Type</th>
-            <th>Montant</th>
+            <th class="th-amount">Montant</th>
             <th>Statut</th>
           </tr>
         </thead>
         <tbody>
           <tr *ngFor="let t of transactions; trackBy: trackByTransactionId">
-            <td>{{ t.date | date:'dd/MM/yyyy' }}</td>
-            <td>{{ t.description }}</td>
-            <td><span class="badge" [class.badge-success]="t.type === 'income'" [class.badge-danger]="t.type === 'expense'">{{ t.type === 'income' ? 'Encaissement' : 'Décaissement' }}</span></td>
-            <td class="amount" [class.text-success]="t.type === 'income'" [class.text-danger]="t.type === 'expense'">{{ (t.type === 'income' ? '+' : '-') }} {{ t.amount | number }} FCFA</td>
+            <td class="td-time"><span class="time-pill">{{ t.date | date:'dd/MM/yyyy' }}</span></td>
+            <td class="td-desc">
+              <p class="desc-main">{{ t.description }}</p>
+              <p class="desc-sub" *ngIf="t.customerName || t.category">{{ t.customerName || t.category }}</p>
+            </td>
+            <td><span class="type-badge" [class.type-income]="t.type==='income'" [class.type-expense]="t.type==='expense'"><span class="type-dot"></span>{{ t.type==='income' ? 'Encaissement' : 'Décaissement' }}</span></td>
+            <td class="td-amount" [class.amount-income]="t.type==='income'" [class.amount-expense]="t.type==='expense'"><span class="amount-sign">{{ t.type==='income' ? '+' : '-' }}</span>{{ t.amount | number:'1.0-0' }}<span class="amount-ccy">FCFA</span></td>
             <td><span class="badge" [class]="getStatusClass(t.status || 'paid')">{{ getStatusLabel(t.status || 'paid') }}</span></td>
           </tr>
         </tbody>
       </table>
+      <div class="empty-row" *ngIf="transactions.length===0">
+        <div class="empty-illus"><span>◈</span></div>
+        <p>Aucune transaction</p>
+        <span>Créez votre première opération pour alimenter le journal</span>
+      </div>
     </div>
-  </div>
+  </section>
 
-  <div class="modal-overlay" *ngIf="showModal">
-    <div class="modal-card">
+  <!-- ===== MODAL: Nouvelle Opération ===== -->
+  <div class="modal-overlay" *ngIf="showModal" (click)="closeModal()">
+    <div class="modal-card modal-large" (click)="$event.stopPropagation()">
       <div class="modal-header">
-        <h2 class="modal-title">➕ Nouvelle Opération</h2>
+        <div class="modal-title-wrap">
+          <h2 class="modal-title">Nouvelle opération</h2>
+          <p class="modal-subtitle">Enregistrement instantané • Journal comptable</p>
+        </div>
         <button class="modal-close" (click)="closeModal()">×</button>
       </div>
 
       <div class="modal-body">
-        <form (ngSubmit)="saveTransaction($event)" class="form">
-          <div class="form-row">
-            <div class="form-group">
-              <label class="form-label">Type</label>
-              <select [(ngModel)]="newTransaction.type" name="type" required class="form-select">
-                <option value="income">Encaissement</option>
-                <option value="expense">Décaissement</option>
+        <form (ngSubmit)="saveTransaction($event)" class="form-grid">
+          <div class="field">
+            <label class="field-label">Type <span class="req">*</span></label>
+            <div class="segmented">
+              <button type="button" class="segment" [class.active]="newTransaction.type==='income'" (click)="newTransaction.type='income'"><span>↗</span> Encaissement</button>
+              <button type="button" class="segment" [class.active]="newTransaction.type==='expense'" (click)="newTransaction.type='expense'"><span>↘</span> Décaissement</button>
+            </div>
+          </div>
+
+          <div class="field field-amount">
+            <label class="field-label">Montant (FCFA) <span class="req">*</span></label>
+            <div class="amount-field">
+              <input type="number" [(ngModel)]="newTransaction.amount" name="amount" required min="0" step="0.01" class="amount-input" placeholder="0" />
+              <span class="amount-ccy">FCFA</span>
+            </div>
+          </div>
+
+          <div class="field">
+            <label class="field-label">Description <span class="req">*</span></label>
+            <input type="text" [(ngModel)]="newTransaction.description" name="description" required placeholder="Ex: Vente panneaux solaires" class="field-input" />
+          </div>
+
+          <div class="field">
+            <label class="field-label">Client</label>
+            <div class="select-wrap">
+              <select [(ngModel)]="newTransaction.customerId" name="customerId" (change)="updateCustomerName($event)" class="field-select">
+                <option value="">Sélectionner un client</option>
+                <option *ngFor="let c of customers; trackBy: trackByCustomerId" [value]="c.id">{{ c.fullName || c.name }}</option>
               </select>
             </div>
-            <div class="form-group">
-              <label class="form-label">Montant (FCFA)</label>
-              <input type="number" [(ngModel)]="newTransaction.amount" name="amount" required min="0" step="0.01" class="form-input" />
+          </div>
+
+          <div class="field-row">
+            <div class="field">
+              <label class="field-label">Catégorie</label>
+              <div class="select-wrap">
+                <select [(ngModel)]="newTransaction.category" name="category" class="field-select">
+                  <option value="">Sélectionner</option>
+                  <option value="Ventes">Ventes</option>
+                  <option value="Achats">Achats</option>
+                  <option value="Salaires">Salaires</option>
+                  <option value="Transport">Transport</option>
+                  <option value="Maintenance">Maintenance</option>
+                  <option value="Autre">Autre</option>
+                  <option *ngFor="let cat of expenseCategories" [value]="cat.key || cat.name">{{ cat.name }}</option>
+                </select>
+              </div>
             </div>
-          </div>
-          <div class="form-group">
-            <label class="form-label">Description</label>
-            <input type="text" [(ngModel)]="newTransaction.description" name="description" required placeholder="Ex: Vente panneaux solaires" class="form-input" />
-          </div>
-          <div class="form-group">
-            <label class="form-label">Client</label>
-            <select [(ngModel)]="newTransaction.customerId" name="customerId" (change)="updateCustomerName($event)" class="form-select">
-              <option value="">Sélectionner un client</option>
-              <option *ngFor="let c of customers; trackBy: trackByCustomerId" [value]="c.id">{{ c.fullName || c.name }}</option>
-            </select>
-          </div>
-          <div class="form-row">
-            <div class="form-group">
-              <label class="form-label">Catégorie</label>
-              <select [(ngModel)]="newTransaction.category" name="category" class="form-select">
-                <option value="">Sélectionner</option>
-                <option value="Ventes">Ventes</option>
-                <option value="Achats">Achats</option>
-                <option value="Salaires">Salaires</option>
-                <option value="Transport">Transport</option>
-                <option value="Maintenance">Maintenance</option>
-                <option value="Autre">Autre</option>
-              </select>
+            <div class="field">
+              <label class="field-label">Date <span class="req">*</span></label>
+              <input type="date" [(ngModel)]="newTransaction.date" name="date" required class="field-input" />
             </div>
-            <div class="form-group">
-              <label class="form-label">Date</label>
-              <input type="date" [(ngModel)]="newTransaction.date" name="date" required class="form-input" />
-            </div>
-          </div>
-          <div class="modal-footer">
-            <button type="button" class="btn btn-secondary" (click)="closeModal()">Annuler</button>
-            <button type="submit" class="btn btn-primary" [disabled]="saving">Enregistrer</button>
           </div>
         </form>
       </div>
+
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" (click)="closeModal()">Annuler</button>
+        <button type="button" class="btn btn-primary" (click)="saveTransaction($event)" [disabled]="saving || !newTransaction.description || newTransaction.amount <= 0">
+          <span *ngIf="!saving">Enregistrer — {{ newTransaction.amount || 0 | number }} FCFA</span>
+          <span *ngIf="saving" class="btn-loading"><i class="spinner-sm"></i> Enregistrement...</span>
+        </button>
+      </div>
+      <p class="modal-footnote">Chiffré • Horodaté • Réversible</p>
     </div>
   </div>
 
-  <div class="modal-overlay" *ngIf="showReportModal">
-    <div class="modal-card">
+  <!-- ===== MODAL: Rapport Flux Journalier ===== -->
+  <div class="modal-overlay" *ngIf="showReportModal" (click)="closeReportModal()">
+    <div class="modal-card modal-xl" (click)="$event.stopPropagation()">
       <div class="modal-header">
-        <h2 class="modal-title">📋 Rapport Flux Journalier</h2>
+        <div class="modal-title-wrap">
+          <h2 class="modal-title">Rapport flux journalier</h2>
+          <p class="modal-subtitle">Période → {{ selectedStart | date:'dd MMM yyyy' }} — {{ selectedEnd | date:'dd MMM yyyy' }}</p>
+        </div>
         <button class="modal-close" (click)="closeReportModal()">×</button>
       </div>
 
       <div class="modal-body">
-        <div class="form-row">
-          <div class="form-group">
-            <label class="form-label">Du</label>
-            <input type="date" [(ngModel)]="selectedStart" name="startDate" class="form-input" />
+        <div class="flux-toolbar">
+          <div class="flux-dates">
+            <div class="field">
+              <label class="field-label">Du</label>
+              <input type="date" [(ngModel)]="selectedStart" name="startDate" class="field-input" />
+            </div>
+            <span class="date-sep">→</span>
+            <div class="field">
+              <label class="field-label">Au</label>
+              <input type="date" [(ngModel)]="selectedEnd" name="endDate" class="field-input" />
+            </div>
           </div>
-          <div class="form-group">
-            <label class="form-label">Au</label>
-            <input type="date" [(ngModel)]="selectedEnd" name="endDate" class="form-input" />
+          <button class="btn btn-primary" (click)="loadFlux()">◈ Charger</button>
+        </div>
+
+        <div class="flux-summary" *ngIf="fluxData">
+          <div class="summary-item summary-income">
+            <div class="summary-icon">↗</div>
+            <div class="summary-text">
+              <span class="summary-label">Entrées</span>
+              <strong class="summary-value">+{{ fluxData.income | number:'1.0-0' }}<span>FCFA</span></strong>
+            </div>
           </div>
-          <div class="form-group" style="display:flex;align-items:flex-end">
-            <button class="btn btn-primary" (click)="loadFlux()">🔍</button>
+          <div class="summary-item summary-expense">
+            <div class="summary-icon">↘</div>
+            <div class="summary-text">
+              <span class="summary-label">Sorties</span>
+              <strong class="summary-value">-{{ fluxData.expense | number:'1.0-0' }}<span>FCFA</span></strong>
+            </div>
+          </div>
+          <div class="summary-item summary-balance" [class.positive]="fluxData.balance >=0" [class.negative]="fluxData.balance <0">
+            <div class="summary-icon">◈</div>
+            <div class="summary-text">
+              <span class="summary-label">Solde</span>
+              <strong class="summary-value">{{ fluxData.balance | number:'1.0-0' }}<span>FCFA</span></strong>
+            </div>
           </div>
         </div>
 
-        <div class="flux-totals" *ngIf="fluxData">
-          <div class="flux-total-card income">
-            <span class="total-label">Entrées</span>
-            <span class="total-value">+{{ fluxData.income | number }} FCFA</span>
-          </div>
-          <div class="flux-total-card expense">
-            <span class="total-label">Sorties</span>
-            <span class="total-value">-{{ fluxData.expense | number }} FCFA</span>
-          </div>
-          <div class="flux-total-card balance" [class.positive]="fluxData.balance >= 0" [class.negative]="fluxData.balance < 0">
-            <span class="total-label">Solde</span>
-            <span class="total-value">{{ fluxData.balance | number }} FCFA</span>
-          </div>
-        </div>
-
-        <div class="table-container" *ngIf="fluxData">
+        <div class="table-wrap" *ngIf="fluxData">
           <table class="data-table">
             <thead>
               <tr>
                 <th>Heure</th>
                 <th>Client</th>
                 <th>Description</th>
+                <th>Produits</th>
                 <th>Type</th>
-                <th>Montant</th>
+                <th class="th-amount">Montant</th>
                 <th>Commentaire</th>
               </tr>
             </thead>
             <tbody>
               <tr *ngFor="let t of fluxData.transactions; trackBy: trackByTransactionId">
-                <td>{{ t.time || '-' }}</td>
-                <td>{{ t.customerName || '-' }}</td>
+                <td><span class="time-pill">{{ t.time || '-' }}</span></td>
+                <td class="td-strong">{{ t.customerName || '-' }}</td>
                 <td>{{ t.description }}</td>
-                <td><span class="badge" [class.badge-success]="t.type === 'income'" [class.badge-danger]="t.type === 'expense'">{{ t.type === 'income' ? 'Entrée' : 'Sortie' }}</span></td>
-                <td class="amount" [class.text-success]="t.type === 'income'" [class.text-danger]="t.type === 'expense'">{{ (t.type === 'income' ? '+' : '-') }} {{ t.amount | number }} FCFA</td>
-                <td>
-                  <span class="comment-text">{{ t.comment || '' }}</span>
-                  <button class="btn btn-ghost btn-sm" (click)="openCommentPopup(t)" title="Ajouter/modifier commentaire">💬</button>
+                <td><span class="products-pill" *ngIf="t.products" [title]="t.products">{{ t.products }}</span><span class="products-empty" *ngIf="!t.products">—</span></td>
+                <td><span class="type-badge" [class.type-income]="t.type==='income'" [class.type-expense]="t.type==='expense'">{{ t.type==='income' ? 'Entrée' : 'Sortie' }}</span></td>
+                <td class="td-amount" [class.amount-income]="t.type==='income'" [class.amount-expense]="t.type==='expense'">{{ t.type==='income' ? '+' : '-' }} {{ t.amount | number:'1.0-0' }}<span>FCFA</span></td>
+                <td class="td-comment">
+                  <span class="comment-text" [title]="t.comment || ''">{{ t.comment || '—' }}</span>
+                  <button class="icon-btn" (click)="openCommentPopup(t)" title="Commentaire">💬</button>
                 </td>
               </tr>
             </tbody>
           </table>
-          <div class="empty-state" *ngIf="fluxData.transactions.length === 0" style="padding:24px">
-            <p>Aucune transaction trouvée pour cette période.</p>
+          <div class="empty-row" *ngIf="fluxData.transactions.length===0">
+            <div class="empty-illus"><span>◈</span></div>
+            <p>Aucune transaction sur cette période</p>
+            <span>Essayez d’élargir l’intervalle</span>
           </div>
         </div>
 
-        <div class="modal-footer" *ngIf="fluxData && fluxData.transactions.length > 0">
-          <button class="btn btn-secondary" (click)="exportPDF()">📄 Exporter PDF</button>
-          <button class="btn btn-secondary" (click)="exportXLSX()">📊 Exporter XLSX</button>
+        <div class="flux-exports" *ngIf="fluxData && fluxData.transactions.length>0">
+          <button class="btn btn-secondary" (click)="exportPDF()">⎙ Exporter PDF</button>
+          <button class="btn btn-secondary" (click)="exportXLSX()">▦ Exporter XLSX</button>
         </div>
       </div>
     </div>
   </div>
 
-  <div class="modal-overlay" *ngIf="showCommentPopup">
-    <div class="modal-card" style="max-width:420px">
+  <!-- ===== MODAL: Commentaire ===== -->
+  <div class="modal-overlay" *ngIf="showCommentPopup" (click)="closeCommentPopup()">
+    <div class="modal-card modal-sm" (click)="$event.stopPropagation()">
       <div class="modal-header">
-        <h2 class="modal-title">💬 Commentaire</h2>
+        <div class="modal-title-wrap">
+          <h2 class="modal-title">Commentaire</h2>
+          <p class="modal-subtitle" *ngIf="editingTransaction">{{ editingTransaction.description }}<span *ngIf="editingTransaction.customerName"> — {{ editingTransaction.customerName }}</span></p>
+        </div>
         <button class="modal-close" (click)="closeCommentPopup()">×</button>
       </div>
-
       <div class="modal-body">
-        <p class="comment-transaction-ref">
-          <strong>Transaction:</strong> {{ editingTransaction?.description }}
-          <span *ngIf="editingTransaction?.customerName"> — {{ editingTransaction?.customerName }}</span>
-        </p>
-        <textarea [(ngModel)]="editingComment" class="form-textarea" placeholder="Ajouter un commentaire..." rows="4"></textarea>
+        <textarea [(ngModel)]="editingComment" class="field-textarea" placeholder="Ajouter un commentaire..." rows="4"></textarea>
       </div>
-
       <div class="modal-footer">
-        <button class="btn btn-secondary" (click)="closeCommentPopup()">Annuler</button>
-        <button class="btn btn-primary" (click)="saveComment()">Enregistrer</button>
+        <button class="btn btn-ghost" (click)="closeCommentPopup()">Annuler</button>
+        <button class="btn btn-primary" (click)="saveComment()" [disabled]="savingComment">
+          <span *ngIf="!savingComment">Enregistrer</span>
+          <span *ngIf="savingComment" class="btn-loading"><i class="spinner-sm"></i> Enregistrement...</span>
+        </button>
       </div>
     </div>
   </div>

@@ -49,6 +49,12 @@ const Repair = sequelize.define('Repair', {
   completedAt: {
     type: DataTypes.DATE
   }
+}, {
+  indexes: [
+    { fields: ['status'] },
+    { fields: ['priority'] },
+    { fields: ['receivedAt'] }
+  ]
 });
 
 module.exports = Repair;

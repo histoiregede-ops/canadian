@@ -1,52 +1,99 @@
 <div class="login-page">
-  <!-- Brand Side -->
+  <!-- BRAND -->
   <div class="login-brand">
+    <div class="brand-glow"></div>
     <div class="login-brand-content">
+      <div class="brand-eyebrow">
+        <span class="eyebrow-dot"></span>
+        <span>Electro Canadien • Fintech Premium</span>
+        <span class="eyebrow-separator">•</span>
+        <span class="live-indicator"><i></i> Sécurisé</span>
+      </div>
       <div class="login-logo">⚡</div>
-      <h1>Electro Canadien</h1>
-      <p>L'expertise au service de votre énergie</p>
+      <h1>Electro <span class="hero-title-accent">Canadien</span></h1>
+      <p class="brand-subtitle">L'expertise au service de votre énergie — solaire, électroménager, caisse et opérations en temps réel.</p>
+
+      <div class="brand-kpis">
+        <div class="brand-kpi">
+          <strong>500+</strong>
+          <span>clients premium</span>
+        </div>
+        <div class="brand-kpi">
+          <strong>4.9/5</strong>
+          <span>satisfaction</span>
+        </div>
+        <div class="brand-kpi">
+          <strong>24h</strong>
+          <span>support continu</span>
+        </div>
+      </div>
+
       <div class="login-brand-features">
-        <span class="feature-badge">☀️ Solaire</span>
-        <span class="feature-badge">🔧 Électroménager</span>
-        <span class="feature-badge">📦 Livraison</span>
+        <span class="feature-badge"><span class="badge-dot dot-warning"></span> ☀️ Solaire</span>
+        <span class="feature-badge"><span class="badge-dot dot-accent"></span> 🔧 Électroménager</span>
+        <span class="feature-badge"><span class="badge-dot dot-success"></span> 📦 Livraison</span>
+      </div>
+
+      <div class="brand-trust">
+        <span class="meta-pill"><span class="meta-dot dot-success"></span> Paiement chiffré</span>
+        <span class="meta-pill"><span class="meta-dot dot-accent"></span> Données protégées</span>
       </div>
     </div>
   </div>
 
-  <!-- Form Side -->
+  <!-- FORM -->
   <div class="login-form-side">
     <div class="login-form-container">
-      <div class="login-form-header">
-        <h2>Bienvenue</h2>
-        <p>Connectez-vous à votre espace</p>
+      <div class="form-card">
+        <div class="form-card-glow"></div>
+        <div class="login-form-header">
+          <div class="form-eyebrow"><span class="eyebrow-dot"></span> Espace sécurisé • Staff</div>
+          <h2>Bienvenue <span class="hero-title-accent">—</span></h2>
+          <p>Connectez-vous à votre espace opérationnel. Accès staff uniquement.</p>
+        </div>
+
+        <form (submit)="onSubmit($event)" class="login-form">
+          <div class="form-group">
+            <label class="form-label" for="username">Nom d'utilisateur</label>
+            <input type="text" id="username" class="form-input" [(ngModel)]="username" name="username" placeholder="Identifiant staff" required />
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="password">Mot de passe</label>
+            <input type="password" id="password" class="form-input" [(ngModel)]="password" name="password" placeholder="••••••••" required />
+          </div>
+
+          <button type="submit" class="btn btn-primary btn-lg btn-block" [disabled]="loading">
+            <span *ngIf="!loading">Se connecter →</span>
+            <span *ngIf="loading" style="display:inline-flex;align-items:center;gap:8px">
+              <span class="spinner"></span> Connexion...
+            </span>
+          </button>
+
+          <div class="alert alert-danger" *ngIf="errorMessage">
+            <span>⚠️</span>
+            <span>{{ errorMessage }}</span>
+          </div>
+
+          <div class="form-trust">
+            <span><span class="dot dot-success"></span> Session chiffrée</span>
+            <span><span class="dot dot-accent"></span> Audit & traçabilité</span>
+          </div>
+        </form>
+
+        <div class="form-footer">
+          <p><a routerLink="/shop">← Retour à la boutique</a></p>
+          <p class="footer-hint">Accès réservé au personnel • Support: contact@electrocanadien.com</p>
+        </div>
       </div>
 
-      <!-- Form -->
-      <form (submit)="onSubmit($event)" class="login-form">
-        <!-- Staff username -->
-        <div class="form-group">
-          <label class="form-label" for="username">Nom d'utilisateur</label>
-          <input type="text" id="username" class="form-input" [(ngModel)]="username" name="username" placeholder="Identifiant" required />
-        </div>
-
-        <!-- Password -->
-        <div class="form-group">
-          <label class="form-label" for="password">Mot de passe</label>
-          <input type="password" id="password" class="form-input" [(ngModel)]="password" name="password" placeholder="••••••••" required />
-        </div>
-
-        <!-- Submit -->
-        <button type="submit" class="btn btn-primary btn-lg btn-block" [disabled]="loading">
-          <span *ngIf="!loading">SE CONNECTER</span>
-          <span *ngIf="loading" class="spinner"></span>
-        </button>
-
-        <!-- Error -->
-        <div class="alert alert-danger" *ngIf="errorMessage">
-          <span>⚠️</span>
-          <span>{{ errorMessage }}</span>
-        </div>
-      </form>
+      <div class="side-metrics">
+        <span><strong>99.9%</strong> disponibilité</span>
+        <span class="sep">•</span>
+        <span><strong>2s</strong> latence moyenne</span>
+        <span class="sep">•</span>
+        <span><strong>SSL</strong> activé</span>
+      </div>
     </div>
   </div>
 </div>

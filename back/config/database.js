@@ -14,7 +14,7 @@ if (dialect === 'sqlite') {
     define: {
       timestamps: true
     },
-    pool: { max: 10, min: 0, acquire: 30000, idle: 10000 }
+    pool: { max: 10, min: 2, acquire: 5000, idle: 10000 }
   });
 } else {
   sequelize = new Sequelize(
@@ -26,7 +26,7 @@ if (dialect === 'sqlite') {
       port: process.env.DB_PORT || 3306,
       dialect,
       logging: false,
-      pool: { max: 20, min: 2, acquire: 30000, idle: 10000, evict: 1000 },
+      pool: { max: 20, min: 5, acquire: 5000, idle: 10000, evict: 1000 },
       ...(sslEnabled && {
         dialectOptions: {
           ssl: {

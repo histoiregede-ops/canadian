@@ -1,207 +1,271 @@
-<div class="page-container">
-  <div class="page-header">
-    <div>
-      <h1 class="page-title">Tableau de bord</h1>
-      <p class="page-subtitle">Aperçu de l'activité aujourd'hui</p>
+<div class="dashboard-page">
+  <!-- ===== HERO — Quiet Luxury Mesh ===== -->
+  <header class="dashboard-hero">
+    <div class="hero-glow"></div>
+    <div class="hero-content">
+      <div class="hero-left">
+        <div class="hero-eyebrow">
+          <span class="eyebrow-dot"></span>
+          <span>Opérations • Temps réel</span>
+          <span class="eyebrow-separator">•</span>
+          <span class="live-indicator"><i></i> Live</span>
+        </div>
+        <h1 class="hero-title">
+          Tableau de bord
+          <span class="hero-title-accent">opérationnel</span>
+        </h1>
+        <p class="hero-subtitle">
+          Pilotage à 360° — ventes, atelier, caisse et transferts • Précision au minute près
+        </p>
+      </div>
+      <div class="hero-actions">
+        <button class="btn btn-ghost btn-sm" (click)="loadStats(); loadRecentOrders(); loadUrgentRepairs(); loadTransfersSummary()">
+          <span class="btn-icon">↻</span> Actualiser
+        </button>
+        <div class="hero-meta">
+          <span class="meta-pill"><span class="meta-dot dot-success"></span> {{ stats.dailyOrders }} commandes</span>
+          <span class="meta-pill"><span class="meta-dot dot-accent"></span> {{ stats.activeRepairs }} réparations</span>
+        </div>
+      </div>
     </div>
-  </div>
+  </header>
 
-  <div class="loading-state" *ngIf="loading">
-    <div class="spinner"></div>
-    <p>Chargement des statistiques...</p>
+  <!-- Loading -->
+  <div class="state state-loading" *ngIf="loading">
+    <div class="loader"></div>
+    <div class="loader-text">
+      <p>Chargement de l’activité...</p>
+      <span>Agrégation des ventes, stocks et transferts</span>
+    </div>
   </div>
 
   <ng-container *ngIf="!loading">
-    <div class="stats-grid">
-      <div class="stat-card">
-        <div class="stat-icon primary">💰</div>
-        <div class="stat-content">
-          <p class="stat-label">Chiffre d'affaires</p>
-          <h3 class="stat-value">{{ stats.dailyIncome | number:'1.0-0' }} <span class="stat-unit">FCFA</span></h3>
-          <span class="stat-trend positive">Aujourd'hui</span>
+    <!-- ===== KPI GLASS ===== -->
+    <section class="kpi-grid">
+      <article class="kpi-card kpi-revenue">
+        <div class="kpi-top">
+          <div class="kpi-icon">↗</div>
+          <span class="kpi-trend positive">Aujourd'hui</span>
         </div>
-      </div>
+        <p class="kpi-label">Chiffre d'affaires</p>
+        <p class="kpi-value">{{ stats.dailyIncome | number:'1.0-0' }}<span>FCFA</span></p>
+        <div class="kpi-bar"><i style="width: 72%"></i></div>
+        <p class="kpi-foot"><span class="dot dot-success"></span> Net {{ (stats.dailyIncome - stats.dailyExpense) | number:'1.0-0' }} FCFA</p>
+      </article>
 
-      <div class="stat-card">
-        <div class="stat-icon info">🛒</div>
-        <div class="stat-content">
-          <p class="stat-label">Ventes du jour</p>
-          <h3 class="stat-value">{{ stats.dailyOrders }}</h3>
-          <span class="stat-trend">Aujourd'hui</span>
+      <article class="kpi-card kpi-orders">
+        <div class="kpi-top">
+          <div class="kpi-icon">▦</div>
+          <span class="kpi-trend">Journalier</span>
         </div>
-      </div>
+        <p class="kpi-label">Ventes du jour</p>
+        <p class="kpi-value">{{ stats.dailyOrders }}<span>commandes</span></p>
+        <div class="kpi-bar"><i style="width: 58%"></i></div>
+        <p class="kpi-foot"><span class="dot dot-accent"></span> Flux validé</p>
+      </article>
 
-      <div class="stat-card">
-        <div class="stat-icon warning">🔧</div>
-        <div class="stat-content">
-          <p class="stat-label">Réparations</p>
-          <h3 class="stat-value">{{ stats.activeRepairs }}</h3>
-          <span class="stat-trend">En cours</span>
+      <article class="kpi-card kpi-repairs">
+        <div class="kpi-top">
+          <div class="kpi-icon">◈</div>
+          <span class="kpi-trend" [class.positive]="stats.activeRepairs>0" [class.neutral]="stats.activeRepairs===0">{{ stats.activeRepairs > 0 ? 'En cours' : 'Calme' }}</span>
         </div>
-      </div>
+        <p class="kpi-label">Réparations</p>
+        <p class="kpi-value">{{ stats.activeRepairs }}<span>en atelier</span></p>
+        <div class="kpi-bar"><i [style.width.%]="stats.activeRepairs ? 64 : 18"></i></div>
+        <p class="kpi-foot"><span class="dot" [class.dot-warning]="stats.activeRepairs>0" [class.dot-success]="stats.activeRepairs===0"></span> Priorité suivie</p>
+      </article>
 
-      <div class="stat-card">
-        <div class="stat-icon success">🏗️</div>
-        <div class="stat-content">
-          <p class="stat-label">Installations</p>
-          <h3 class="stat-value">{{ stats.plannedInstallations }}</h3>
-          <span class="stat-trend">Prévues</span>
+      <article class="kpi-card kpi-install">
+        <div class="kpi-top">
+          <div class="kpi-icon">◫</div>
+          <span class="kpi-trend neutral">Prévues</span>
         </div>
-      </div>
-    </div>
+        <p class="kpi-label">Installations</p>
+        <p class="kpi-value">{{ stats.plannedInstallations }}<span>planifiées</span></p>
+        <div class="kpi-bar"><i style="width: 34%"></i></div>
+        <p class="kpi-foot"><span class="dot dot-info"></span> Planning à jour</p>
+      </article>
+    </section>
 
-    <div class="dashboard-grid">
-      <div class="dashboard-main">
-        <div class="card">
-          <div class="card-header">
-            <h3 class="card-title">Dernières Commandes</h3>
+    <!-- ===== MAIN LAYOUT ===== -->
+    <div class="dashboard-layout">
+      <!-- Main -->
+      <div class="main-column">
+        <!-- Recent Orders -->
+        <section class="panel-card">
+          <div class="panel-header">
+            <div class="panel-title-wrap">
+              <h3 class="panel-title">Dernières commandes</h3>
+              <p class="panel-subtitle">Les 5 plus récentes • Mise à jour instantanée</p>
+            </div>
             <button class="btn btn-ghost btn-sm" routerLink="/sales">Voir tout →</button>
           </div>
 
-          <div class="loading-state" *ngIf="ordersLoading">
-            <div class="spinner spinner-sm"></div>
+          <div class="state-inline" *ngIf="ordersLoading">
+            <div class="loader loader-sm"></div>
+            <span>Chargement des commandes...</span>
           </div>
 
-          <div class="empty-state" *ngIf="!ordersLoading && recentOrders.length === 0">
-            <span class="empty-icon">📦</span>
-            <h3 class="empty-title">Aucune commande</h3>
-            <p class="empty-text">Les commandes récentes apparaîtront ici.</p>
+          <div class="empty" *ngIf="!ordersLoading && recentOrders.length === 0">
+            <div class="empty-illus"><span>◈</span></div>
+            <h4>Aucune commande</h4>
+            <p>Les commandes récentes apparaîtront ici.</p>
           </div>
 
-          <div class="table-container" *ngIf="!ordersLoading && recentOrders.length > 0">
+          <div class="table-wrap" *ngIf="!ordersLoading && recentOrders.length > 0">
             <table class="data-table">
               <thead>
                 <tr>
                   <th>N°</th>
                   <th>Client</th>
-                  <th>Montant</th>
+                  <th class="th-amount">Montant</th>
                   <th>Statut</th>
                 </tr>
               </thead>
               <tbody>
                 <tr *ngFor="let order of recentOrders; trackBy: trackByOrderNumber">
-                  <td class="order-number">{{ order.orderNumber }}</td>
-                  <td>{{ order.customerName }}</td>
-                  <td class="amount">{{ order.totalAmount | number:'1.0-0' }} FCFA</td>
-                  <td><span class="badge" [class]="getStatusBadge(order.status)">{{ getStatusLabel(order.status) }}</span></td>
+                  <td class="td-mono">{{ order.orderNumber }}</td>
+                  <td class="td-strong">{{ order.customerName }}</td>
+                  <td class="td-amount">{{ order.totalAmount | number:'1.0-0' }}<span class="ccy">FCFA</span></td>
+                  <td><span class="status-pill" [class]="order.status | orderStatusBadge">{{ order.status | orderStatusLabel }}</span></td>
                 </tr>
               </tbody>
             </table>
           </div>
-        </div>
+        </section>
 
-        <div class="card mt-4">
-          <div class="card-header">
-            <h3 class="card-title">Réparations en cours</h3>
+        <!-- Repairs -->
+        <section class="panel-card">
+          <div class="panel-header">
+            <div class="panel-title-wrap">
+              <h3 class="panel-title">Réparations en cours</h3>
+              <p class="panel-subtitle">Priorités et suivi atelier</p>
+            </div>
             <button class="btn btn-ghost btn-sm" routerLink="/repairs">Voir tout →</button>
           </div>
 
-          <div class="loading-state" *ngIf="repairsLoading">
-            <div class="spinner spinner-sm"></div>
+          <div class="state-inline" *ngIf="repairsLoading">
+            <div class="loader loader-sm"></div>
+            <span>Chargement atelier...</span>
           </div>
 
-          <div class="empty-state" *ngIf="!repairsLoading && urgentRepairs.length === 0">
-            <span class="empty-icon">🔧</span>
-            <h3 class="empty-title">Aucune réparation</h3>
-            <p class="empty-text">Tout est en ordre pour le moment.</p>
+          <div class="empty" *ngIf="!repairsLoading && urgentRepairs.length === 0">
+            <div class="empty-illus"><span>✓</span></div>
+            <h4>Aucune réparation urgente</h4>
+            <p>Tout est en ordre pour le moment.</p>
           </div>
 
-          <div class="repair-list" *ngIf="!repairsLoading && urgentRepairs.length > 0">
-            <div class="repair-item" *ngFor="let repair of urgentRepairs; trackBy: trackByRepairId">
-              <div class="repair-icon">{{ getDeviceIcon(repair.deviceType) }}</div>
-              <div class="repair-details">
-                <span class="device">{{ repair.deviceType }}{{ repair.brand ? ' - ' + repair.brand : '' }}</span>
-                <span class="client">{{ repair.customerName }}</span>
-                <span class="issue">{{ repair.reportedIssue }}</span>
+          <div class="repair-grid" *ngIf="!repairsLoading && urgentRepairs.length > 0">
+            <article class="repair-card" *ngFor="let repair of urgentRepairs; trackBy: trackByRepairId">
+              <div class="repair-icon">{{ repair.deviceType | deviceIcon }}</div>
+              <div class="repair-main">
+                <p class="repair-device">{{ repair.deviceType }}<span *ngIf="repair.brand"> — {{ repair.brand }}</span></p>
+                <p class="repair-client">{{ repair.customerName }}</p>
+                <p class="repair-issue">{{ repair.reportedIssue }}</p>
               </div>
               <div class="repair-badges">
-                <span class="badge" [class]="getPriorityBadge(repair.priority)">{{ getPriorityLabel(repair.priority) }}</span>
-                <span class="badge" [class]="getRepairStatusBadge(repair.status)">{{ getRepairStatusLabel(repair.status) }}</span>
+                <span class="badge-pill" [class]="repair.priority | priorityBadge">{{ repair.priority | priorityLabel }}</span>
+                <span class="badge-pill muted" [class]="repair.status | dashboardRepairStatusBadge">{{ repair.status | dashboardRepairStatusLabel }}</span>
               </div>
-            </div>
+            </article>
           </div>
-        </div>
+        </section>
       </div>
 
-      <div class="dashboard-sidebar">
-        <div class="card">
-          <div class="card-header">
-            <h3 class="card-title">Alertes Stock</h3>
+      <!-- Sidebar -->
+      <aside class="side-column">
+        <!-- Stock Alerts -->
+        <section class="side-card">
+          <div class="side-header">
+            <h3 class="side-title">Alertes stock</h3>
+            <span class="side-badge" [class.badge-danger]="stats.lowStockProducts>0" [class.badge-success]="stats.lowStockProducts===0">{{ stats.lowStockProducts > 0 ? stats.lowStockProducts + ' alerte(s)' : 'OK' }}</span>
           </div>
-          <div class="alert-list">
-            <div class="alert alert-danger" *ngIf="stats.lowStockProducts > 0">
-              <span class="alert-icon">⚠️</span>
-              <div class="alert-content">
-                <span class="alert-title">Produits en alerte</span>
-                <p class="alert-body">{{ stats.lowStockProducts }} produits sont sous le seuil critique.</p>
+          <div class="side-body">
+            <div class="alert-card" *ngIf="stats.lowStockProducts > 0">
+              <div class="alert-icon">⚠</div>
+              <div class="alert-text">
+                <strong>Produits sous seuil</strong>
+                <p>{{ stats.lowStockProducts }} références à réapprovisionner rapidement.</p>
               </div>
             </div>
-            <div class="alert alert-success" *ngIf="stats.lowStockProducts === 0">
-              <span class="alert-icon">✅</span>
-              <div class="alert-content">
-                <span class="alert-title">Stock OK</span>
-                <p class="alert-body">Tous les produits sont bien approvisionnés.</p>
+            <div class="alert-card success" *ngIf="stats.lowStockProducts === 0">
+              <div class="alert-icon">✓</div>
+              <div class="alert-text">
+                <strong>Stock sain</strong>
+                <p>Toutes les références sont au-dessus du seuil critique.</p>
               </div>
             </div>
+            <a routerLink="/products" class="btn btn-secondary btn-sm btn-block side-cta">Gérer le stock →</a>
           </div>
-        </div>
+        </section>
 
-        <div class="card mt-4">
-          <div class="card-header">
-            <h3 class="card-title">Caisse du Jour</h3>
+        <!-- Cash -->
+        <section class="side-card">
+          <div class="side-header">
+            <h3 class="side-title">Caisse du jour</h3>
+            <span class="side-badge neutral">Net {{ (stats.dailyIncome - stats.dailyExpense) | number:'1.0-0' }} FCFA</span>
           </div>
-          <div class="cash-summary">
-            <div class="cash-row">
-              <span>Ventes</span>
-              <span class="income">+ {{ stats.dailyIncome | number:'1.0-0' }} FCFA</span>
+          <div class="side-body">
+            <div class="cash-line">
+              <span class="cash-label"><span class="cash-dot dot-success"></span> Encaissements</span>
+              <strong class="cash-val positive">+ {{ stats.dailyIncome | number:'1.0-0' }}<span>FCFA</span></strong>
             </div>
-            <div class="cash-row">
-              <span>Dépenses</span>
-              <span class="expense">- {{ stats.dailyExpense | number:'1.0-0' }} FCFA</span>
+            <div class="cash-line">
+              <span class="cash-label"><span class="cash-dot dot-danger"></span> Décaissements</span>
+              <strong class="cash-val negative">- {{ stats.dailyExpense | number:'1.0-0' }}<span>FCFA</span></strong>
             </div>
-            <div class="divider"></div>
-            <div class="cash-row total">
-              <span>Solde Net</span>
-              <span>{{ (stats.dailyIncome - stats.dailyExpense) | number:'1.0-0' }} FCFA</span>
+            <div class="cash-divider"></div>
+            <div class="cash-total">
+              <span>Solde net</span>
+              <strong [class.positive]="(stats.dailyIncome - stats.dailyExpense)>=0" [class.negative]="(stats.dailyIncome - stats.dailyExpense)<0">{{ (stats.dailyIncome - stats.dailyExpense) | number:'1.0-0' }}<span>FCFA</span></strong>
             </div>
+            <a routerLink="/finance" class="btn btn-ghost btn-sm btn-block">Détails finance →</a>
           </div>
-        </div>
+        </section>
 
-        <div class="card mt-4" *ngIf="transferSummary">
-          <div class="card-header">
-            <h3 class="card-title">Transferts du jour</h3>
-            <button class="btn btn-ghost btn-sm" routerLink="/transfers">Voir tout →</button>
+        <!-- Transfers -->
+        <section class="side-card" *ngIf="transferSummary">
+          <div class="side-header">
+            <h3 class="side-title">Transferts du jour</h3>
+            <a routerLink="/transfers" class="btn btn-ghost btn-sm">Voir tout →</a>
           </div>
-          <div class="transfer-summary">
-            <div class="summary-row">
-              <span>Envoyés</span>
-              <span class="sent">+ {{ transferSummary.totalSent | number:'1.0-0' }}</span>
-            </div>
-            <div class="summary-row">
-              <span>Reçus</span>
-              <span class="received">+ {{ transferSummary.totalReceived | number:'1.0-0' }}</span>
-            </div>
-            <div class="summary-row">
-              <span>Frais</span>
-              <span class="fees">- {{ transferSummary.totalFees | number:'1.0-0' }}</span>
-            </div>
-            <div class="summary-row total">
-              <span>Transactions</span>
-              <span>{{ transferSummary.count }}</span>
-            </div>
+
+          <div class="state-inline" *ngIf="transfersLoading">
+            <div class="loader loader-sm"></div>
+            <span>Chargement transferts...</span>
           </div>
-          <div class="divider"></div>
-          <div class="operator-list" *ngIf="transferSummary.byOperator | keyvalue as ops">
-            <div class="operator-item" *ngFor="let op of ops">
-              <div class="operator-label">{{ operatorLabel(op.key) }}</div>
-              <div class="operator-meta">
-                <span>{{ op.value.count }} tx</span>
-                <span class="text-muted">Frais: {{ op.value.fees | number:'1.0-0' }}</span>
+
+          <ng-container *ngIf="!transfersLoading">
+            <div class="side-body">
+              <div class="transfer-kpis">
+                <div class="t-kpi">
+                  <span class="t-label">Envoyés</span>
+                  <strong class="t-val positive">+ {{ transferSummary.totalSent | number:'1.0-0' }}</strong>
+                </div>
+                <div class="t-kpi">
+                  <span class="t-label">Reçus</span>
+                  <strong class="t-val accent">+ {{ transferSummary.totalReceived | number:'1.0-0' }}</strong>
+                </div>
+                <div class="t-kpi">
+                  <span class="t-label">Frais</span>
+                  <strong class="t-val negative">- {{ transferSummary.totalFees | number:'1.0-0' }}</strong>
+                </div>
+              </div>
+              <div class="transfer-total">
+                <span>{{ transferSummary.count }} transactions</span>
+                <span class="live-dot"><i></i> Aujourd’hui</span>
+              </div>
+              <div class="divider"></div>
+              <div class="operator-list" *ngIf="operatorEntries.length > 0">
+                <div class="operator-item" *ngFor="let op of operatorEntries; trackBy: trackByOperator">
+                  <span class="op-name">{{ op.key | operatorLabel }}</span>
+                  <span class="op-meta">{{ op.value.count }} tx • Frais {{ op.value.fees | number:'1.0-0' }}</span>
+                </div>
               </div>
             </div>
-          </div>
-        </div>
-      </div>
+          </ng-container>
+        </section>
+      </aside>
     </div>
   </ng-container>
 </div>

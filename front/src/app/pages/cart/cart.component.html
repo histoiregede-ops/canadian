@@ -1,91 +1,196 @@
 <div class="cart-page">
-  <!-- Empty Cart -->
-  <div *ngIf="cartItems.length === 0" class="empty-state" style="margin: var(--space-12) 0;">
-    <div class="empty-icon">🛒</div>
-    <h3 class="empty-title">Votre panier est vide</h3>
-    <p class="empty-text">Commencez vos achats pour remplir votre panier</p>
-    <button class="btn btn-primary" (click)="continueShopping()">Continuer les achats</button>
+  <!-- ===== HERO ===== -->
+  <header class="cart-hero">
+    <div class="hero-glow"></div>
+    <div class="hero-content">
+      <div class="hero-left">
+        <div class="hero-eyebrow">
+          <span class="eyebrow-dot"></span>
+          <span>Panier • Commande en cours</span>
+          <span class="eyebrow-separator">•</span>
+          <span class="live-indicator" *ngIf="cartItems.length>0"><i></i> {{ cartItems.length }} article(s)</span>
+          <span class="live-indicator" *ngIf="cartItems.length===0" style="color:var(--text-muted)"><i style="background:var(--text-light)"></i> Vide</span>
+        </div>
+        <h1 class="hero-title">
+          Votre
+          <span class="hero-title-accent">panier</span>
+        </h1>
+        <p class="hero-subtitle" *ngIf="cartItems.length>0">
+          Vérifiez vos articles — <strong>{{ cartItems.length }} référence(s)</strong> • Total {{ total | number }} FCFA • Paiement sécurisé
+        </p>
+        <p class="hero-subtitle" *ngIf="cartItems.length===0">
+          Votre panier est vide — parcourez le catalogue premium et ajoutez vos favoris.
+        </p>
+      </div>
+      <div class="hero-actions">
+        <button class="btn btn-ghost btn-sm" (click)="continueShopping()">← Continuer les achats</button>
+        <button class="btn btn-primary" *ngIf="cartItems.length>0" (click)="checkout()">Passer commande →</button>
+      </div>
+    </div>
+  </header>
+
+  <!-- ===== KPI ===== -->
+  <section class="cart-metrics" *ngIf="cartItems.length>0">
+    <article class="metric-card">
+      <div class="metric-top">
+        <div class="metric-icon"><span>◫</span></div>
+        <span class="metric-trend">{{ cartItems.length }} ref</span>
+      </div>
+      <p class="metric-label">Articles</p>
+      <p class="metric-value">{{ cartItems.length }}<span>articles</span></p>
+      <div class="metric-bar"><i style="width:72%"></i></div>
+      <p class="metric-foot"><span class="dot dot-accent"></span> Dans votre panier</p>
+    </article>
+    <article class="metric-card">
+      <div class="metric-top">
+        <div class="metric-icon metric-icon--subtle"><span>∑</span></div>
+        <span class="metric-trend">HT</span>
+      </div>
+      <p class="metric-label">Sous-total</p>
+      <p class="metric-value">{{ subtotal | number }}<span>FCFA</span></p>
+      <div class="metric-bar"><i style="width:58%"></i></div>
+      <p class="metric-foot"><span class="dot dot-success"></span> Hors taxes & livraison</p>
+    </article>
+    <article class="metric-card">
+      <div class="metric-top">
+        <div class="metric-icon metric-icon--warm"><span>%</span></div>
+        <span class="metric-trend neutral">TVA 18%</span>
+      </div>
+      <p class="metric-label">Taxes</p>
+      <p class="metric-value">{{ tax | number }}<span>FCFA</span></p>
+      <div class="metric-bar"><i style="width:34%"></i></div>
+      <p class="metric-foot"><span class="dot dot-warning"></span> Calcul automatique</p>
+    </article>
+    <article class="metric-card metric-card--total">
+      <div class="metric-top">
+        <div class="metric-icon metric-icon--primary"><span>◈</span></div>
+        <span class="metric-trend positive">TTC</span>
+      </div>
+      <p class="metric-label">Total à payer</p>
+      <p class="metric-value">{{ total | number }}<span>FCFA</span></p>
+      <div class="metric-bar"><i style="width:88%"></i></div>
+      <p class="metric-foot"><span class="dot dot-success"></span> + {{ shippingCost | number }} FCFA livraison</p>
+    </article>
+  </section>
+
+  <!-- ===== TOOLBAR ===== -->
+  <section class="cart-toolbar" *ngIf="cartItems.length>0">
+    <div class="toolbar-left">
+      <h2 class="toolbar-title">Détail du panier</h2>
+      <span class="toolbar-count">{{ cartItems.length }} article(s) • {{ subtotal | number }} FCFA HT</span>
+    </div>
+    <div class="toolbar-right">
+      <button class="btn btn-secondary btn-sm" (click)="continueShopping()">← Continuer</button>
+      <button class="btn btn-primary btn-sm" (click)="checkout()">Commander →</button>
+    </div>
+  </section>
+
+  <!-- ===== EMPTY STATE PREMIUM ===== -->
+  <div *ngIf="cartItems.length === 0" class="state state-empty">
+    <div class="empty-illus">
+      <div class="empty-orb"></div>
+      <span class="empty-emoji">◫</span>
+    </div>
+    <h3>Votre panier est vide</h3>
+    <p>Commencez vos achats pour remplir votre panier — sélection premium, prix justes.</p>
+    <button class="btn btn-primary" (click)="continueShopping()">Explorer le catalogue →</button>
   </div>
 
-  <!-- Cart Content -->
-  <div *ngIf="cartItems.length > 0" class="cart-content">
+  <!-- ===== CART CONTENT ===== -->
+  <div *ngIf="cartItems.length > 0" class="cart-layout">
     <!-- Items -->
-    <div class="cart-items-section">
-      <div class="card">
-        <div class="card-header">
-          <h3 class="card-title">🛒 Votre Panier ({{ cartItems.length }})</h3>
-        </div>
-        <div class="cart-items">
-          <div class="cart-item" *ngFor="let item of cartItems; trackBy: trackByCartItemId">
-            <div class="cart-item-image">
-              <img [src]="getProductImage(item.product.photo)" *ngIf="item.product.photo" alt="{{ item.product.name }}" />
-              <span *ngIf="!item.product.photo" class="placeholder">📦</span>
-            </div>
-
-            <div class="cart-item-details">
-              <h4>{{ item.product.name }}</h4>
-              <span class="badge badge-neutral">{{ item.product.Category?.name || 'Général' }}</span>
-              <span class="cart-item-price">{{ item.product.price | number }} FCFA</span>
-            </div>
-
-            <div class="cart-item-quantity">
-              <button class="qty-btn" (click)="updateQuantity(item, item.quantity - 1)">−</button>
-              <span class="qty-value">{{ item.quantity }}</span>
-              <button class="qty-btn" (click)="updateQuantity(item, item.quantity + 1)">+</button>
-            </div>
-
-            <div class="cart-item-total">
-              <strong>{{ (item.product.price * item.quantity) | number }} FCFA</strong>
-            </div>
-
-            <button class="btn btn-ghost btn-sm cart-item-remove" (click)="removeItem(item.product.id!)" title="Supprimer">
-              🗑️
-            </button>
+    <section class="cart-items-panel">
+      <div class="panel-card">
+        <div class="panel-header">
+          <div class="panel-title-wrap">
+            <h3 class="panel-title">Articles • {{ cartItems.length }}</h3>
+            <p class="panel-subtitle">Gérez les quantités — mise à jour instantanée</p>
           </div>
+          <span class="panel-badge">{{ cartTotal | number }} FCFA HT</span>
+        </div>
+
+        <div class="cart-list">
+          <article class="cart-row" *ngFor="let item of cartItems; trackBy: trackByCartItemId">
+            <div class="cart-thumb">
+              <img [src]="getProductImage(item.product.photo)" *ngIf="item.product.photo" [alt]="item.product.name" />
+              <span *ngIf="!item.product.photo" class="thumb-placeholder">◫</span>
+            </div>
+
+            <div class="cart-info">
+              <h4 class="cart-name" [title]="item.product.name">{{ item.product.name }}</h4>
+              <span class="cart-cat">{{ item.product.Category?.name || 'Général' }}</span>
+              <span class="cart-price">{{ item.product.price | number }} FCFA</span>
+            </div>
+
+            <div class="cart-qty">
+              <button class="qty-btn" (click)="updateQuantity(item, item.quantity - 1)" aria-label="Diminuer">−</button>
+              <span class="qty-val">{{ item.quantity }}</span>
+              <button class="qty-btn" (click)="updateQuantity(item, item.quantity + 1)" aria-label="Augmenter">＋</button>
+            </div>
+
+            <div class="cart-line-total">
+              <strong>{{ (item.product.price * item.quantity) | number }} <span>FCFA</span></strong>
+            </div>
+
+            <button class="remove-btn" (click)="removeItem(item.product.id!)" title="Supprimer">⌫</button>
+          </article>
         </div>
       </div>
-    </div>
+    </section>
 
     <!-- Summary -->
-    <div class="cart-summary-section">
-      <div class="card">
-        <div class="card-header">
-          <h3 class="card-title">Résumé</h3>
+    <aside class="cart-summary-panel">
+      <div class="summary-card">
+        <div class="summary-header">
+          <h3>Résumé</h3>
+          <span class="summary-badge">Paiement sécurisé</span>
         </div>
-        <div class="card-body">
-          <div class="summary-rows">
-            <div class="summary-row">
-              <span class="summary-label">Sous-total</span>
-              <span class="summary-value">{{ subtotal | number }} FCFA</span>
-            </div>
-            <div class="summary-row">
-              <span class="summary-label">TVA (18%)</span>
-              <span class="summary-value">{{ tax | number }} FCFA</span>
-            </div>
-            <div class="summary-row">
-              <span class="summary-label">Frais d'expédition</span>
-              <span class="summary-value">{{ shippingCost | number }} FCFA</span>
-            </div>
-            <div class="summary-row summary-total">
-              <span class="summary-label">Total</span>
-              <span class="summary-value">{{ total | number }} FCFA</span>
-            </div>
-          </div>
 
-          <div class="cart-actions">
-            <button class="btn btn-secondary btn-block" (click)="continueShopping()">
-              ← Continuer les achats
-            </button>
-            <button class="btn btn-primary btn-lg btn-block" (click)="checkout()">
-              Procéder au paiement →
-            </button>
+        <div class="summary-rows">
+          <div class="summary-row">
+            <span class="summary-label">Sous-total</span>
+            <span class="summary-value">{{ subtotal | number }} FCFA</span>
           </div>
+          <div class="summary-row">
+            <span class="summary-label">TVA (18%)</span>
+            <span class="summary-value">{{ tax | number }} FCFA</span>
+          </div>
+          <div class="summary-row">
+            <span class="summary-label">Livraison</span>
+            <span class="summary-value">{{ shippingCost | number }} FCFA</span>
+          </div>
+          <div class="summary-divider"></div>
+          <div class="summary-row total">
+            <span class="summary-label">Total</span>
+            <span class="summary-value">{{ total | number }} FCFA</span>
+          </div>
+        </div>
 
-          <div class="cart-security">
-            <span>🔒</span> Paiement sécurisé 100%
+        <div class="summary-actions">
+          <button class="btn btn-secondary btn-block" (click)="continueShopping()">← Continuer les achats</button>
+          <button class="btn btn-primary btn-block" (click)="checkout()">Procéder au paiement →</button>
+        </div>
+
+        <div class="secure-banner">
+          <span class="secure-icon">🔒</span>
+          <span>Paiement sécurisé 100% • Chiffrement de bout en bout</span>
+        </div>
+
+        <div class="benefits">
+          <div class="benefit">
+            <span>🚚</span>
+            <div><strong>Livraison 2–3 jours</strong><small>Suivi en temps réel</small></div>
+          </div>
+          <div class="benefit">
+            <span>🔄</span>
+            <div><strong>Retour 30 jours</strong><small>Sans question</small></div>
+          </div>
+          <div class="benefit">
+            <span>💬</span>
+            <div><strong>Support 24/7</strong><small>WhatsApp instantané</small></div>
           </div>
         </div>
       </div>
-    </div>
+    </aside>
   </div>
 </div>

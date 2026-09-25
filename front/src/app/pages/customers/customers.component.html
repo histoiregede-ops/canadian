@@ -1,169 +1,265 @@
-<div class="page-container">
-  <div class="page-header">
-    <div>
-      <h1 class="page-title">Annuaire Clients</h1>
-      <p class="page-subtitle">Gérez vos relations clients et l'historique des contacts</p>
-    </div>
-    <button class="btn btn-primary" (click)="openAddModal()">➕ Nouveau Client</button>
-  </div>
-
-  <div class="stats-grid">
-    <div class="stat-card">
-      <div class="stat-icon info">👥</div>
-      <div class="stat-content">
-        <p class="stat-label">Total clients</p>
-        <h3 class="stat-value">{{ customers.length }}</h3>
-      </div>
-    </div>
-    <div class="stat-card">
-      <div class="stat-icon secondary">📧</div>
-      <div class="stat-content">
-        <p class="stat-label">Avec email</p>
-        <h3 class="stat-value">{{ getWithEmail() }}</h3>
-      </div>
-    </div>
-    <div class="stat-card">
-      <div class="stat-icon success">📞</div>
-      <div class="stat-content">
-        <p class="stat-label">Avec téléphone</p>
-        <h3 class="stat-value">{{ getWithPhone() }}</h3>
-      </div>
-    </div>
-    <div class="stat-card">
-      <div class="stat-icon warning">📍</div>
-      <div class="stat-content">
-        <p class="stat-label">Villes</p>
-        <h3 class="stat-value">{{ getUniqueCities() }}</h3>
-      </div>
-    </div>
-    <div class="stat-card">
-      <div class="stat-icon primary">⭐</div>
-      <div class="stat-content">
-        <p class="stat-label">Gold/Platinum</p>
-        <h3 class="stat-value">{{ getLoyaltyCount('gold') + getLoyaltyCount('platinum') }}</h3>
-      </div>
-    </div>
-  </div>
-
-  <div class="filters-card">
-    <div class="filter-group">
-      <div class="search-box">
-        <span class="search-icon">🔍</span>
-        <input type="text" placeholder="Rechercher par nom, téléphone ou email..." [(ngModel)]="searchQuery" />
-      </div>
-      <select class="filter-select" [(ngModel)]="loyaltyFilter">
-        <option value="">Tous les niveaux</option>
-        <option value="bronze">🥉 Bronze</option>
-        <option value="silver">🥈 Silver</option>
-        <option value="gold">🥇 Gold</option>
-        <option value="platinum">💎 Platinum</option>
-      </select>
-    </div>
-  </div>
-
-  <div class="loading-state" *ngIf="loading">
-    <div class="spinner"></div>
-    <p>Chargement des clients...</p>
-  </div>
-
-  <div class="empty-state" *ngIf="!loading && filteredCustomers.length === 0">
-    <span class="empty-icon">👥</span>
-    <h3 class="empty-title">{{ searchQuery ? 'Aucun résultat' : 'Aucun client enregistré' }}</h3>
-    <p class="empty-text">{{ searchQuery ? 'Aucun client ne correspond à votre recherche.' : 'Cliquez sur "Nouveau Client" pour ajouter votre premier client.' }}</p>
-  </div>
-
-  <div class="customers-grid" *ngIf="!loading && filteredCustomers.length > 0">
-    <div class="card customer-card" *ngFor="let customer of filteredCustomers; trackBy: trackByCustomerId">
-      <div class="card-body">
-        <div class="customer-header">
-          <div class="customer-avatar">{{ getInitials(customer) }}</div>
-          <div class="customer-main">
-            <h3 class="customer-name">{{ customer.fullName || customer.name }}</h3>
-            <span class="customer-city" *ngIf="customer.city">{{ customer.city }}</span>
-          </div>
+<div class="customers-page">
+  <!-- ===== HERO — Quiet Luxury Mesh ===== -->
+  <header class="customers-hero">
+    <div class="hero-glow"></div>
+    <div class="hero-content">
+      <div class="hero-left">
+        <div class="hero-eyebrow">
+          <span class="eyebrow-dot"></span>
+          <span>Clients • CRM • Fidélité</span>
+          <span class="eyebrow-separator">•</span>
+          <span class="live-indicator"><i></i> Live</span>
         </div>
+        <h1 class="hero-title">Annuaire <span class="hero-title-accent">Clients</span></h1>
+        <p class="hero-subtitle">
+          Relations durables, historique centralisé — <strong>{{ customers.length }} contacts</strong> • fidélité, villes et canaux unifiés
+        </p>
+      </div>
+      <div class="hero-actions">
+        <button class="btn btn-ghost btn-sm" (click)="loadCustomers()">
+          <span class="btn-icon">↻</span> Actualiser
+        </button>
+        <button class="btn btn-primary" (click)="openAddModal()">
+          <span class="btn-icon">＋</span> Nouveau client
+        </button>
+      </div>
+    </div>
+  </header>
 
-        <div class="customer-contact">
-          <div class="contact-item" *ngIf="customer.phone">
-            <span class="contact-icon">📞</span>
-            <span>{{ customer.phone }}</span>
-          </div>
-          <div class="contact-item" *ngIf="customer.email">
-            <span class="contact-icon">✉️</span>
-            <span>{{ customer.email }}</span>
-          </div>
-          <div class="contact-item" *ngIf="customer.address">
-            <span class="contact-icon">📍</span>
-            <span>{{ customer.address }}</span>
-          </div>
-          <div class="contact-item muted" *ngIf="!customer.phone && !customer.email && !customer.address">
-            <span>Aucun contact renseigné</span>
-          </div>
-        </div>
+  <!-- ===== KPI — 5 Cartes Premium ===== -->
+  <section class="metrics">
+    <article class="metric-card metric-total">
+      <div class="metric-top">
+        <div class="metric-icon">◫</div>
+        <span class="metric-trend">Base</span>
+      </div>
+      <div class="metric-body">
+        <p class="metric-label">Total clients</p>
+        <p class="metric-value">{{ customers.length }}<span>contacts</span></p>
+        <div class="metric-bar"><i style="width: 78%"></i></div>
+        <p class="metric-foot"><span class="dot dot-accent"></span> {{ filteredCustomers.length }} affichés</p>
+      </div>
+    </article>
 
-        <div class="loyalty-info" *ngIf="customer.loyaltyPoints !== undefined">
-          <span class="loyalty-badge" [class.bronze]="getLevel(customer) === 'bronze'"
-            [class.silver]="getLevel(customer) === 'silver'"
-            [class.gold]="getLevel(customer) === 'gold'"
-            [class.platinum]="getLevel(customer) === 'platinum'">
+    <article class="metric-card metric-email">
+      <div class="metric-top">
+        <div class="metric-icon">✉</div>
+        <span class="metric-trend positive">{{ getWithEmail() }} joignables</span>
+      </div>
+      <div class="metric-body">
+        <p class="metric-label">Avec email</p>
+        <p class="metric-value">{{ getWithEmail() }}<span>emails</span></p>
+        <div class="metric-bar"><i [style.width.%]="customers.length ? (getWithEmail()/customers.length*100) : 0"></i></div>
+        <p class="metric-foot"><span class="dot dot-success"></span> Canal digital</p>
+      </div>
+    </article>
+
+    <article class="metric-card metric-phone">
+      <div class="metric-top">
+        <div class="metric-icon">☎</div>
+        <span class="metric-trend">{{ getWithPhone() }} mobiles</span>
+      </div>
+      <div class="metric-body">
+        <p class="metric-label">Avec téléphone</p>
+        <p class="metric-value">{{ getWithPhone() }}<span>numéros</span></p>
+        <div class="metric-bar"><i [style.width.%]="customers.length ? (getWithPhone()/customers.length*100) : 0"></i></div>
+        <p class="metric-foot"><span class="dot dot-info"></span> Contact direct</p>
+      </div>
+    </article>
+
+    <article class="metric-card metric-cities">
+      <div class="metric-top">
+        <div class="metric-icon">◈</div>
+        <span class="metric-trend neutral">{{ getUniqueCities() }} villes</span>
+      </div>
+      <div class="metric-body">
+        <p class="metric-label">Couverture</p>
+        <p class="metric-value">{{ getUniqueCities() }}<span>villes</span></p>
+        <div class="metric-bar"><i style="width: 48%"></i></div>
+        <p class="metric-foot"><span class="dot dot-warning"></span> Répartition</p>
+      </div>
+    </article>
+
+    <article class="metric-card metric-loyalty">
+      <div class="metric-top">
+        <div class="metric-icon">★</div>
+        <span class="metric-trend premium">{{ getLoyaltyCount('gold') + getLoyaltyCount('platinum') }} premium</span>
+      </div>
+      <div class="metric-body">
+        <p class="metric-label">Gold / Platinum</p>
+        <p class="metric-value">{{ getLoyaltyCount('gold') + getLoyaltyCount('platinum') }}<span>fidèles</span></p>
+        <div class="metric-bar"><i [style.width.%]="customers.length ? ((getLoyaltyCount('gold')+getLoyaltyCount('platinum'))/customers.length*100) : 0"></i></div>
+        <p class="metric-foot"><span class="dot dot-gold"></span> Haute valeur</p>
+      </div>
+    </article>
+  </section>
+
+  <!-- ===== TOOLBAR ===== -->
+  <section class="toolbar">
+    <div class="toolbar-left">
+      <h2 class="toolbar-title">Répertoire</h2>
+      <span class="toolbar-count" *ngIf="!loading">{{ filteredCustomers.length }} / {{ customers.length }} • {{ getUniqueCities() }} villes</span>
+      <span class="toolbar-count" *ngIf="loading">Chargement…</span>
+    </div>
+    <div class="toolbar-right">
+      <div class="search-field">
+        <span class="search-icon">⌕</span>
+        <input type="text" placeholder="Rechercher nom, téléphone ou email…" [(ngModel)]="searchQuery" class="search-input" />
+      </div>
+      <button class="btn btn-secondary btn-sm" (click)="searchQuery=''; loyaltyFilter=''" >Réinitialiser</button>
+    </div>
+  </section>
+
+  <!-- ===== FILTERS — Pills Fidélité ===== -->
+  <section class="filters-pills">
+    <div class="pill-group">
+      <label>Niveau fidélité</label>
+      <div class="pills">
+        <button class="pill" [class.active]="!loyaltyFilter" (click)="loyaltyFilter=''">Tous</button>
+        <button class="pill pill-bronze" [class.active]="loyaltyFilter==='bronze'" (click)="loyaltyFilter='bronze'">🥉 Bronze</button>
+        <button class="pill pill-silver" [class.active]="loyaltyFilter==='silver'" (click)="loyaltyFilter='silver'">🥈 Silver</button>
+        <button class="pill pill-gold" [class.active]="loyaltyFilter==='gold'" (click)="loyaltyFilter='gold'">🥇 Gold</button>
+        <button class="pill pill-platinum" [class.active]="loyaltyFilter==='platinum'" (click)="loyaltyFilter='platinum'">💎 Platinum</button>
+      </div>
+    </div>
+    <div class="filter-hint">
+      <span class="hint-dot"></span>
+      {{ filteredCustomers.length }} résultat(s) • Temps réel
+    </div>
+  </section>
+
+  <!-- ===== STATES ===== -->
+  <div class="state state-loading" *ngIf="loading">
+    <div class="loader"></div>
+    <p>Chargement des clients…</p>
+    <span>Synchronisation CRM • Fidélité calculée</span>
+  </div>
+
+  <div class="state state-empty" *ngIf="!loading && filteredCustomers.length === 0">
+    <div class="empty-illustration">
+      <div class="empty-orb"></div>
+      <span class="empty-emoji">◈</span>
+    </div>
+    <h3>{{ searchQuery || loyaltyFilter ? 'Aucun résultat' : 'Aucun client enregistré' }}</h3>
+    <p>{{ searchQuery || loyaltyFilter ? 'Aucun client ne correspond à votre recherche. Ajustez les filtres.' : 'Cliquez sur “Nouveau client” pour ajouter votre premier contact.' }}</p>
+    <button class="btn btn-primary btn-sm" *ngIf="!searchQuery && !loyaltyFilter" (click)="openAddModal()">＋ Nouveau client</button>
+    <button class="btn btn-secondary btn-sm" *ngIf="searchQuery || loyaltyFilter" (click)="searchQuery=''; loyaltyFilter=''">Effacer les filtres</button>
+  </div>
+
+  <!-- ===== GRID — Cards Premium ===== -->
+  <section class="catalog-section" *ngIf="!loading && filteredCustomers.length > 0">
+    <div class="customers-grid">
+      <article class="customer-card" *ngFor="let customer of filteredCustomers; trackBy: trackByCustomerId">
+        <div class="customer-top">
+          <div class="customer-avatar" [class.platinum]="getLevel(customer)==='platinum'" [class.gold]="getLevel(customer)==='gold'">
+            {{ getInitials(customer) }}
+          </div>
+          <div class="customer-head">
+            <h3 class="customer-name" [title]="customer.fullName || customer.name">{{ customer.fullName || customer.name }}</h3>
+            <span class="customer-city" *ngIf="customer.city"><span class="city-dot"></span> {{ customer.city }}</span>
+            <span class="customer-city muted" *ngIf="!customer.city">Ville non renseignée</span>
+          </div>
+          <span class="loyalty-badge" [ngClass]="getLevel(customer)">
             {{ getLevel(customer) }}
           </span>
-          <span class="loyalty-points">{{ customer.loyaltyPoints }} pts</span>
-          <span class="loyalty-spent" *ngIf="customer.totalSpent">· {{ customer.totalSpent | number }} FCFA</span>
-          <span class="loyalty-orders" *ngIf="customer.orderCount !== undefined">· {{ customer.orderCount }} cmd(s)</span>
         </div>
 
-        <div class="card-actions">
-          <button class="btn btn-outline btn-sm" (click)="openEditModal(customer)">✏️ Modifier</button>
-          <button class="btn btn-danger btn-sm" (click)="deleteCustomer(customer.id!)" [disabled]="deletingId === customer.id">
-            {{ deletingId === customer.id ? 'Suppression...' : '🗑️ Supprimer' }}
+        <div class="customer-divider"></div>
+
+        <div class="customer-contact">
+          <div class="contact-row" *ngIf="customer.phone">
+            <span class="contact-icon">☎</span>
+            <span class="contact-text">{{ customer.phone }}</span>
+          </div>
+          <div class="contact-row" *ngIf="customer.email">
+            <span class="contact-icon">✉</span>
+            <span class="contact-text muted">{{ customer.email }}</span>
+          </div>
+          <div class="contact-row" *ngIf="customer.address">
+            <span class="contact-icon">◈</span>
+            <span class="contact-text muted">{{ customer.address }}</span>
+          </div>
+          <div class="contact-row empty" *ngIf="!customer.phone && !customer.email && !customer.address">
+            <span class="contact-icon">—</span>
+            <span class="contact-text muted">Aucun contact renseigné</span>
+          </div>
+        </div>
+
+        <div class="loyalty-strip" *ngIf="customer.loyaltyPoints !== undefined">
+          <div class="loyalty-left">
+            <span class="points">{{ customer.loyaltyPoints }} pts</span>
+            <span class="spent" *ngIf="customer.totalSpent">• {{ customer.totalSpent | number }} FCFA</span>
+          </div>
+          <span class="orders" *ngIf="customer.orderCount !== undefined">{{ customer.orderCount }} cmd(s)</span>
+        </div>
+        <div class="loyalty-strip placeholder" *ngIf="customer.loyaltyPoints === undefined">
+          <span class="muted">Fidélité en calcul…</span>
+        </div>
+
+        <div class="customer-actions">
+          <button class="action-btn" (click)="openEditModal(customer)" title="Modifier"><span>✎</span> Modifier</button>
+          <button class="action-btn action-btn--danger" (click)="deleteCustomer(customer.id!)" [disabled]="deletingId === customer.id" title="Supprimer">
+            <span>{{ deletingId === customer.id ? '…' : '⌫' }}</span> {{ deletingId === customer.id ? 'Suppression…' : 'Supprimer' }}
           </button>
         </div>
-      </div>
+      </article>
     </div>
-  </div>
+  </section>
 
-  <div class="modal-overlay" *ngIf="showModal">
-    <div class="modal-card">
+  <!-- ===== MODAL — Premium ===== -->
+  <div class="modal-overlay" *ngIf="showModal" (click)="showModal=false">
+    <div class="modal-card modal-premium" (click)="$event.stopPropagation()">
+      <div class="modal-glow"></div>
       <div class="modal-header">
-        <h2 class="modal-title">{{ isEditing ? '✏️ Modifier le Client' : '➕ Nouveau Client' }}</h2>
+        <div class="modal-header-left">
+          <div class="modal-icon"><span>{{ isEditing ? '✎' : '＋' }}</span></div>
+          <div>
+            <h2 class="modal-title">{{ isEditing ? 'Modifier le client' : 'Nouveau client' }}</h2>
+            <p class="modal-subtitle">{{ isEditing ? 'Corrigez les informations et enregistrez' : 'Ajoutez un contact — fidélité auto-calculée' }}</p>
+          </div>
+        </div>
         <button class="modal-close" (click)="showModal = false">×</button>
       </div>
 
       <div class="modal-body">
         <form (ngSubmit)="saveCustomer($event)" class="form">
           <div class="form-group">
-            <label class="form-label">Nom Complet</label>
-            <input type="text" [(ngModel)]="currentCustomer.fullName" name="fullName" required placeholder="Ex: Jean Dupont" class="form-input" />
+            <label class="field-label">Nom complet <span class="required">*</span></label>
+            <input type="text" [(ngModel)]="currentCustomer.fullName" name="fullName" required placeholder="Ex: Jean Dupont" class="field-input" />
           </div>
-          <div class="form-row">
+
+          <div class="field-row">
             <div class="form-group">
-              <label class="form-label">Téléphone</label>
-              <input type="text" [(ngModel)]="currentCustomer.phone" name="phone" placeholder="+228 90 00 00 00" class="form-input" />
+              <label class="field-label">Téléphone</label>
+              <input type="text" [(ngModel)]="currentCustomer.phone" name="phone" placeholder="+228 90 00 00 00" class="field-input" />
             </div>
             <div class="form-group">
-              <label class="form-label">Email</label>
-              <input type="email" [(ngModel)]="currentCustomer.email" name="email" placeholder="client@example.com" class="form-input" />
-            </div>
-          </div>
-          <div class="form-row">
-            <div class="form-group">
-              <label class="form-label">Ville</label>
-              <input type="text" [(ngModel)]="currentCustomer.city" name="city" placeholder="Ex: Lomé" class="form-input" />
-            </div>
-            <div class="form-group">
-              <label class="form-label">Pays</label>
-              <input type="text" [(ngModel)]="currentCustomer.country" name="country" placeholder="Ex: Togo" class="form-input" />
+              <label class="field-label">Email</label>
+              <input type="email" [(ngModel)]="currentCustomer.email" name="email" placeholder="client@example.com" class="field-input" />
             </div>
           </div>
+
+          <div class="field-row">
+            <div class="form-group">
+              <label class="field-label">Ville</label>
+              <input type="text" [(ngModel)]="currentCustomer.city" name="city" placeholder="Ex: Lomé" class="field-input" />
+            </div>
+            <div class="form-group">
+              <label class="field-label">Pays</label>
+              <input type="text" [(ngModel)]="currentCustomer.country" name="country" placeholder="Ex: Togo" class="field-input" />
+            </div>
+          </div>
+
           <div class="form-group">
-            <label class="form-label">Adresse</label>
-            <textarea [(ngModel)]="currentCustomer.address" name="address" rows="2" placeholder="Lomé, Togo" class="form-textarea"></textarea>
+            <label class="field-label">Adresse</label>
+            <textarea [(ngModel)]="currentCustomer.address" name="address" rows="2" placeholder="Rue, quartier, repère…" class="field-textarea"></textarea>
           </div>
-          <div class="modal-footer">
+
+          <div class="modal-footer premium">
             <button type="button" class="btn btn-secondary" (click)="showModal = false">Annuler</button>
             <button type="submit" class="btn btn-primary" [disabled]="saving || !currentCustomer.fullName">
-              {{ saving ? (isEditing ? 'Mise à jour...' : 'Enregistrement...') : (isEditing ? 'Mettre à jour' : 'Enregistrer') }}
+              <span *ngIf="!saving" class="btn-loading"><span>{{ isEditing ? 'Mettre à jour' : 'Enregistrer' }}</span> <span>→</span></span>
+              <span *ngIf="saving" class="btn-loading"><i class="spinner-sm"></i> {{ isEditing ? 'Mise à jour…' : 'Enregistrement…' }}</span>
             </button>
           </div>
         </form>

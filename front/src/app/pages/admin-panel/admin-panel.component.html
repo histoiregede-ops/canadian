@@ -1,85 +1,173 @@
-<div class="page-container admin-page">
-  <!-- ===== HEADER ===== -->
-  <div class="page-header">
-    <div>
-      <h1 class="page-title">⚙️ Administration</h1>
-      <p class="page-subtitle">Paramètres généraux, utilisateurs, permissions et fonctionnalités</p>
-    </div>
-  </div>
-
-  <!-- ===== TABS ===== -->
-  <div class="admin-tabs">
-    <button class="admin-tab" [class.active]="activeTab === 'general'" (click)="activeTab = 'general'">
-      ⚙️ Général
-    </button>
-    <button class="admin-tab" [class.active]="activeTab === 'users'" (click)="activeTab = 'users'">
-      👥 Utilisateurs <span class="tab-badge">{{ users.length }}</span>
-    </button>
-    <button class="admin-tab" [class.active]="activeTab === 'permissions'" (click)="activeTab = 'permissions'">
-      🔐 Permissions
-    </button>
-    <button class="admin-tab" [class.active]="activeTab === 'features'" (click)="activeTab = 'features'">
-      🚀 Fonctionnalités <span class="tab-badge">{{ enabledFeatures }}/{{ features.length }}</span>
-    </button>
-  </div>
-
-  <!-- ============================================================ -->
-  <!-- TAB 1 : GÉNÉRAL -->
-  <!-- ============================================================ -->
-  <div class="tab-content" *ngIf="activeTab === 'general'">
-    <div class="card">
-      <div class="card-header">
-        <h3 class="card-title">🏢 Informations société</h3>
+<div class="admin-panel-page">
+  <!-- ===== HERO — Mesh Gradient ===== -->
+  <header class="admin-hero">
+    <div class="hero-glow"></div>
+    <div class="hero-content">
+      <div class="hero-left">
+        <div class="hero-eyebrow">
+          <span class="eyebrow-dot"></span>
+          <span>Administration • Système</span>
+          <span class="eyebrow-separator">•</span>
+          <span class="live-indicator"><i></i> Contrôle total</span>
+        </div>
+        <h1 class="hero-title">Administration <span class="hero-title-accent">système</span></h1>
+        <p class="hero-subtitle">Paramètres généraux, utilisateurs, permissions et fonctionnalités — pilotez l'ensemble de l'ERP depuis un seul endroit, en toute confiance.</p>
       </div>
-      <div class="card-body">
-        <form (ngSubmit)="saveCompany($event)" class="settings-form">
-          <div class="form-row">
-            <div class="form-group">
-              <label class="form-label">Nom de l'entreprise</label>
-              <input type="text" class="form-input" [(ngModel)]="company.name" name="c_name" required />
+      <div class="hero-actions">
+        <button class="btn btn-ghost btn-sm" (click)="activeTab='users'">
+          <span class="btn-icon">◈</span> {{ users.length }} utilisateurs
+        </button>
+        <div class="hero-badge">
+          <span class="badge-dot"></span>
+          <span>{{ enabledFeatures }}/{{ features.length }} modules actifs</span>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- ===== KPI / Metrics Glass ===== -->
+  <section class="metrics-grid">
+    <article class="metric-card metric-total">
+      <div class="metric-top">
+        <div class="metric-icon"><span>◫</span></div>
+        <span class="metric-trend positive">Live</span>
+      </div>
+      <p class="metric-label">Utilisateurs totaux</p>
+      <p class="metric-value">{{ users.length }}<span>comptes</span></p>
+      <div class="metric-bar"><i style="width: 78%"></i></div>
+      <p class="metric-foot"><span class="dot dot-success"></span> {{ users.length - userCounts('admin') }} non-admin</p>
+    </article>
+    <article class="metric-card metric-admin">
+      <div class="metric-top">
+        <div class="metric-icon"><span>👑</span></div>
+        <span class="metric-trend">{{ userCounts('admin') }} admins</span>
+      </div>
+      <p class="metric-label">Administrateurs</p>
+      <p class="metric-value">{{ userCounts('admin') }}<span>privilégiés</span></p>
+      <div class="metric-bar"><i style="width: 45%"></i></div>
+      <p class="metric-foot"><span class="dot dot-warning"></span> Accès complet</p>
+    </article>
+    <article class="metric-card metric-features">
+      <div class="metric-top">
+        <div class="metric-icon"><span>🚀</span></div>
+        <span class="metric-trend" [class.positive]="enabledFeatures===features.length" [class.neutral]="enabledFeatures!==features.length">{{ enabledFeatures }}/{{ features.length }}</span>
+      </div>
+      <p class="metric-label">Fonctionnalités</p>
+      <p class="metric-value">{{ enabledFeatures }}<span>actives</span></p>
+      <div class="metric-bar"><i [style.width.%]="features.length ? (enabledFeatures/features.length*100) : 0"></i></div>
+      <p class="metric-foot"><span class="dot dot-accent"></span> Modules opérationnels</p>
+    </article>
+    <article class="metric-card metric-perm">
+      <div class="metric-top">
+        <div class="metric-icon"><span>🔐</span></div>
+        <span class="metric-trend">Matrice</span>
+      </div>
+      <p class="metric-label">Rôles configurés</p>
+      <p class="metric-value">{{ permissions.length }}<span>rôles</span></p>
+      <div class="metric-bar"><i style="width: 62%"></i></div>
+      <p class="metric-foot"><span class="dot dot-primary"></span> Permissions affinées</p>
+    </article>
+  </section>
+
+  <!-- ===== TABS — Toolbar pills ===== -->
+  <nav class="tabs-toolbar">
+    <div class="tabs-pills">
+      <button class="tab-pill" [class.active]="activeTab === 'general'" (click)="activeTab = 'general'">
+        <span class="tab-pill-icon">⚙️</span> Général
+      </button>
+      <button class="tab-pill" [class.active]="activeTab === 'users'" (click)="activeTab = 'users'">
+        <span class="tab-pill-icon">👥</span> Utilisateurs <span class="pill-count">{{ users.length }}</span>
+      </button>
+      <button class="tab-pill" [class.active]="activeTab === 'permissions'" (click)="activeTab = 'permissions'">
+        <span class="tab-pill-icon">🔐</span> Permissions
+      </button>
+      <button class="tab-pill" [class.active]="activeTab === 'features'" (click)="activeTab = 'features'">
+        <span class="tab-pill-icon">🚀</span> Fonctionnalités <span class="pill-count pill-count-accent">{{ enabledFeatures }}/{{ features.length }}</span>
+      </button>
+    </div>
+    <div class="tabs-meta" *ngIf="activeTab==='users' && !usersLoading">
+      <span class="meta-dot"></span> {{ filteredUsers.length }} affichés
+    </div>
+  </nav>
+
+  <!-- ============================================================ -->
+  <!-- TAB 1 : GENERAL -->
+  <!-- ============================================================ -->
+  <div class="tab-panel" *ngIf="activeTab === 'general'">
+    <div class="panel-card">
+      <div class="panel-header">
+        <div class="panel-header-left">
+          <div class="panel-icon">🏢</div>
+          <div>
+            <h3 class="panel-title">Informations société</h3>
+            <p class="panel-subtitle">Identité, devise, fiscalité et coordonnées — affichées sur factures & exports</p>
+          </div>
+        </div>
+        <span class="panel-badge">Éditable</span>
+      </div>
+      <div class="panel-body">
+        <form (ngSubmit)="saveCompany($event)" class="premium-form">
+          <div class="form-grid-2">
+            <div class="field">
+              <label class="field-label">Nom de l'entreprise <span class="required">*</span></label>
+              <input type="text" class="field-input" [(ngModel)]="company.name" name="c_name" required placeholder="Electro Canadien" />
             </div>
-            <div class="form-group">
-              <label class="form-label">Devise</label>
-              <input type="text" class="form-input" [(ngModel)]="company.currency" name="c_currency" />
+            <div class="field">
+              <label class="field-label">Devise</label>
+              <div class="select-wrap">
+                <input type="text" class="field-input" [(ngModel)]="company.currency" name="c_currency" placeholder="FCFA" />
+              </div>
+              <span class="field-hint">XOF · EUR · USD · FCFA</span>
             </div>
           </div>
-          <div class="form-row">
-            <div class="form-group">
-              <label class="form-label">Téléphone</label>
-              <input type="text" class="form-input" [(ngModel)]="company.phone" name="c_phone" />
+          <div class="form-grid-2">
+            <div class="field">
+              <label class="field-label">Téléphone</label>
+              <div class="phone-field">
+                <span class="phone-prefix">☎</span>
+                <input type="text" class="field-input--bare" [(ngModel)]="company.phone" name="c_phone" placeholder="+228 90 00 00 00" />
+              </div>
             </div>
-            <div class="form-group">
-              <label class="form-label">WhatsApp</label>
-              <input type="text" class="form-input" [(ngModel)]="company.whatsapp" name="c_whatsapp" />
-            </div>
-          </div>
-          <div class="form-group">
-            <label class="form-label">Email</label>
-            <input type="email" class="form-input" [(ngModel)]="company.email" name="c_email" />
-          </div>
-          <div class="form-group">
-            <label class="form-label">Adresse</label>
-            <input type="text" class="form-input" [(ngModel)]="company.address" name="c_address" />
-          </div>
-          <div class="form-row">
-            <div class="form-group">
-              <label class="form-label">Ville</label>
-              <input type="text" class="form-input" [(ngModel)]="company.city" name="c_city" />
-            </div>
-            <div class="form-group">
-              <label class="form-label">Pays</label>
-              <input type="text" class="form-input" [(ngModel)]="company.country" name="c_country" />
+            <div class="field">
+              <label class="field-label">WhatsApp</label>
+              <div class="phone-field">
+                <span class="phone-prefix">◈</span>
+                <input type="text" class="field-input--bare" [(ngModel)]="company.whatsapp" name="c_whatsapp" placeholder="+228 90 00 00 00" />
+              </div>
             </div>
           </div>
-          <div class="form-row">
-            <div class="form-group">
-              <label class="form-label">TVA (%)</label>
-              <input type="number" class="form-input" [(ngModel)]="company.taxRate" name="c_tax" min="0" max="100" />
+          <div class="field">
+            <label class="field-label">Email</label>
+            <input type="email" class="field-input" [(ngModel)]="company.email" name="c_email" placeholder="contact@electro-canadien.com" />
+          </div>
+          <div class="field">
+            <label class="field-label">Adresse</label>
+            <input type="text" class="field-input" [(ngModel)]="company.address" name="c_address" placeholder="Rue, quartier, avenue..." />
+          </div>
+          <div class="form-grid-2">
+            <div class="field">
+              <label class="field-label">Ville</label>
+              <input type="text" class="field-input" [(ngModel)]="company.city" name="c_city" placeholder="Lomé" />
+            </div>
+            <div class="field">
+              <label class="field-label">Pays</label>
+              <input type="text" class="field-input" [(ngModel)]="company.country" name="c_country" placeholder="Togo" />
             </div>
           </div>
-          <button type="submit" class="btn btn-primary" [disabled]="saving">
-            {{ saving ? '💾 Enregistrement...' : '💾 Enregistrer' }}
-          </button>
+          <div class="field" style="max-width: 240px;">
+            <label class="field-label">TVA (%)</label>
+            <div class="amount-field">
+              <input type="number" class="amount-input" [(ngModel)]="company.taxRate" name="c_tax" min="0" max="100" placeholder="18" />
+              <span class="amount-suffix">%</span>
+            </div>
+          </div>
+          <div class="form-actions">
+            <button type="submit" class="btn btn-primary btn-lg" [disabled]="saving">
+              <span *ngIf="!saving">💾 Enregistrer les modifications</span>
+              <span *ngIf="saving" class="btn-loading"><i class="spinner-sm"></i> Enregistrement…</span>
+            </button>
+            <span class="form-footnote">Synchro instantanée · Audit tracé</span>
+          </div>
         </form>
       </div>
     </div>
@@ -88,44 +176,52 @@
   <!-- ============================================================ -->
   <!-- TAB 2 : UTILISATEURS -->
   <!-- ============================================================ -->
-  <div class="tab-content" *ngIf="activeTab === 'users'">
-    <!-- Stats -->
-    <div class="user-stats" *ngIf="!usersLoading">
-      <div class="user-stat-card" *ngFor="let r of roles">
-        <span class="user-stat-icon">{{ r.icon }}</span>
-        <div class="user-stat-info">
-          <span class="user-stat-label">{{ r.label }}</span>
-          <span class="user-stat-count">{{ userCounts(r.value) }}</span>
+  <div class="tab-panel stack" *ngIf="activeTab === 'users'">
+    <!-- Role Stats — compact glass -->
+    <div class="role-stats" *ngIf="!usersLoading">
+      <div class="role-card" *ngFor="let r of roles">
+        <span class="role-card-icon">{{ r.icon }}</span>
+        <div class="role-card-text">
+          <span class="role-card-label">{{ r.label }}</span>
+          <strong class="role-card-count">{{ userCounts(r.value) }}</strong>
         </div>
+        <span class="role-card-bar"><i [style.width.%]="users.length ? (userCounts(r.value)/users.length*100) : 0"></i></span>
       </div>
     </div>
 
-    <!-- Filters -->
-    <div class="card">
-      <div class="card-body">
-        <div class="user-filters">
-          <input type="text" class="form-input" [(ngModel)]="searchQuery" placeholder="🔍 Rechercher un utilisateur..." />
-          <select class="form-select" [(ngModel)]="roleFilter">
+    <!-- Filters Toolbar -->
+    <div class="toolbar">
+      <div class="toolbar-left">
+        <div class="search-field">
+          <span class="search-icon">⌕</span>
+          <input type="text" class="search-input" [(ngModel)]="searchQuery" placeholder="Rechercher nom, email, identifiant…" />
+        </div>
+        <div class="select-field">
+          <select class="filter-select" [(ngModel)]="roleFilter">
             <option value="">Tous les rôles</option>
             <option *ngFor="let r of roles" [value]="r.value">{{ r.icon }} {{ r.label }}</option>
           </select>
-          <button class="btn btn-primary" (click)="openUserModal()">➕ Nouvel utilisateur</button>
         </div>
+      </div>
+      <div class="toolbar-right">
+        <span class="toolbar-count">{{ filteredUsers.length }} résultat(s)</span>
+        <button class="btn btn-primary" (click)="openUserModal()"><span>＋</span> Nouvel utilisateur</button>
       </div>
     </div>
 
     <!-- Loading -->
-    <div class="loading-state" *ngIf="usersLoading">
-      <div class="spinner"></div>
-      <p>Chargement des utilisateurs...</p>
+    <div class="state state-loading" *ngIf="usersLoading">
+      <div class="loader"></div>
+      <p>Chargement des utilisateurs…</p>
     </div>
 
-    <!-- Users List -->
-    <div class="card" *ngIf="!usersLoading">
-      <div class="card-header">
-        <h3 class="card-title">👥 Liste des utilisateurs ({{ filteredUsers.length }})</h3>
+    <!-- Table -->
+    <div class="data-card" *ngIf="!usersLoading">
+      <div class="data-card-header">
+        <h3 class="data-card-title">Liste des utilisateurs <span class="count-pill">{{ filteredUsers.length }}</span></h3>
+        <span class="data-card-hint">Cliquez sur ✎ pour modifier · 🔒 pour bloquer</span>
       </div>
-      <div class="table-container" *ngIf="filteredUsers.length > 0">
+      <div class="table-wrap" *ngIf="filteredUsers.length > 0">
         <table class="data-table">
           <thead>
             <tr>
@@ -139,72 +235,87 @@
           </thead>
           <tbody>
             <tr *ngFor="let u of filteredUsers; trackBy: trackById">
-              <td><strong>{{ u.username }}</strong></td>
-              <td>{{ u.fullName || '—' }}</td>
-              <td class="text-muted">{{ u.email || '—' }}</td>
-              <td><span class="role-badge" [class]="'role-' + u.role">{{ roleLabel(u.role) }}</span></td>
               <td>
-                <span class="badge" [class.badge-success]="u.isActive !== false" [class.badge-danger]="u.isActive === false">
-                  {{ u.isActive === false ? '🚫 Bloqué' : '✅ Actif' }}
+                <div class="id-cell">
+                  <div class="avatar">{{ (u.fullName || u.username).substring(0,2).toUpperCase() }}</div>
+                  <strong class="id-username">{{ u.username }}</strong>
+                </div>
+              </td>
+              <td class="td-name">{{ u.fullName || '—' }}</td>
+              <td class="td-muted">{{ u.email || '—' }}</td>
+              <td><span class="role-pill" [attr.data-role]="u.role">{{ roleLabel(u.role) }}</span></td>
+              <td>
+                <span class="status-pill" [class.status-ok]="u.isActive !== false" [class.status-blocked]="u.isActive === false">
+                  <i class="status-dot"></i> {{ u.isActive === false ? 'Bloqué' : 'Actif' }}
                 </span>
               </td>
               <td class="td-actions">
-                <div class="action-buttons">
-                  <button class="btn-action btn-action-edit" (click)="openUserModal(u)" title="Modifier">✏️</button>
-                  <button class="btn-action" [class.btn-action-warning]="u.isActive !== false" [class.btn-action-success]="u.isActive === false"
+                <div class="action-group">
+                  <button class="action-btn" (click)="openUserModal(u)" title="Modifier">✎</button>
+                  <button class="action-btn" [class.action-btn--warn]="u.isActive !== false" [class.action-btn--success]="u.isActive === false"
                     (click)="u.isActive === false ? unblockUser(u) : blockUser(u)"
                     [title]="u.isActive === false ? 'Débloquer' : 'Bloquer'"
                     [disabled]="blockingUserId === u.id || unblockingUserId === u.id">
                     {{ u.isActive === false ? '🔓' : '🔒' }}
                   </button>
-                  <button class="btn-action btn-action-danger" (click)="deleteUser(u)" title="Supprimer" [disabled]="deletingUserId === u.id">🗑️</button>
+                  <button class="action-btn action-btn--danger" (click)="deleteUser(u)" title="Supprimer" [disabled]="deletingUserId === u.id">⌫</button>
                 </div>
               </td>
             </tr>
           </tbody>
         </table>
       </div>
-      <div class="empty-state" *ngIf="filteredUsers.length === 0">
-        <div class="empty-icon-wrapper">👥</div>
-        <h3 class="empty-title">Aucun utilisateur trouvé</h3>
-        <p class="empty-text" *ngIf="searchQuery">Essayez de modifier votre recherche.</p>
+      <div class="state state-empty" *ngIf="filteredUsers.length === 0">
+        <div class="empty-illustration"><div class="empty-orb"></div><span class="empty-emoji">◈</span></div>
+        <h4>Aucun utilisateur trouvé</h4>
+        <p>Essayez une autre recherche ou créez un nouveau compte.</p>
+        <button class="btn btn-primary btn-sm" (click)="openUserModal()">＋ Créer un utilisateur</button>
       </div>
     </div>
 
-    <!-- User Modal -->
+    <!-- User Modal — premium glass -->
     <div class="modal-overlay" *ngIf="showUserModal" (click)="showUserModal = false">
       <div class="modal-card" (click)="$event.stopPropagation()">
         <div class="modal-header">
-          <h3 class="modal-title">{{ editingUser ? '✏️ Modifier' : '➕ Nouvel' }} utilisateur</h3>
+          <div class="modal-header-left">
+            <div class="modal-icon">{{ editingUser ? '✎' : '＋' }}</div>
+            <div>
+              <h3 class="modal-title">{{ editingUser ? 'Modifier l\'utilisateur' : 'Nouvel utilisateur' }}</h3>
+              <p class="modal-subtitle">{{ editingUser ? 'Mettez à jour les informations' : 'Créez un accès en 30 secondes' }}</p>
+            </div>
+          </div>
           <button class="modal-close" (click)="showUserModal = false">✕</button>
         </div>
         <div class="modal-body">
           <form (ngSubmit)="saveUser($event)" class="modal-form">
-            <div class="form-group" *ngIf="!editingUser">
-              <label class="form-label">Identifiant *</label>
-              <input type="text" class="form-input" [(ngModel)]="userForm.username" name="u_username" required />
+            <div class="field" *ngIf="!editingUser">
+              <label class="field-label">Identifiant *</label>
+              <input type="text" class="field-input" [(ngModel)]="userForm.username" name="u_username" required placeholder="jean.dupont" />
             </div>
-            <div class="form-group">
-              <label class="form-label">Nom complet</label>
-              <input type="text" class="form-input" [(ngModel)]="userForm.fullName" name="u_name" />
+            <div class="field">
+              <label class="field-label">Nom complet</label>
+              <input type="text" class="field-input" [(ngModel)]="userForm.fullName" name="u_name" placeholder="Jean Dupont" />
             </div>
-            <div class="form-group">
-              <label class="form-label">Email</label>
-              <input type="email" class="form-input" [(ngModel)]="userForm.email" name="u_email" />
+            <div class="field">
+              <label class="field-label">Email</label>
+              <input type="email" class="field-input" [(ngModel)]="userForm.email" name="u_email" placeholder="jean@exemple.com" />
             </div>
-            <div class="form-group">
-              <label class="form-label">Mot de passe {{ editingUser ? '(laisser vide pour conserver)' : '*' }}</label>
-              <input type="password" class="form-input" [(ngModel)]="userForm.password" name="u_pass" [required]="!editingUser" />
+            <div class="field">
+              <label class="field-label">Mot de passe {{ editingUser ? '(laisser vide pour conserver)' : '*' }}</label>
+              <input type="password" class="field-input" [(ngModel)]="userForm.password" name="u_pass" [required]="!editingUser" placeholder="••••••••" />
             </div>
-            <div class="form-group">
-              <label class="form-label">Rôle *</label>
-              <select class="form-select" [(ngModel)]="userForm.role" name="u_role" required>
+            <div class="field">
+              <label class="field-label">Rôle *</label>
+              <select class="field-input" [(ngModel)]="userForm.role" name="u_role" required>
                 <option *ngFor="let r of roles" [value]="r.value">{{ r.icon }} {{ r.label }}</option>
               </select>
             </div>
             <div class="modal-footer">
               <button type="button" class="btn btn-secondary" (click)="showUserModal = false">Annuler</button>
-              <button type="submit" class="btn btn-primary" [disabled]="savingUser">{{ editingUser ? '💾 Enregistrer' : '➕ Créer' }}</button>
+              <button type="submit" class="btn btn-primary" [disabled]="savingUser">
+                <span *ngIf="!savingUser">{{ editingUser ? 'Enregistrer' : 'Créer l\'utilisateur' }}</span>
+                <span *ngIf="savingUser" class="btn-loading"><i class="spinner-sm"></i> En cours…</span>
+              </button>
             </div>
           </form>
         </div>
@@ -215,76 +326,94 @@
   <!-- ============================================================ -->
   <!-- TAB 3 : PERMISSIONS -->
   <!-- ============================================================ -->
-  <div class="tab-content" *ngIf="activeTab === 'permissions'">
-    <div class="card">
-      <div class="card-header">
-        <h3 class="card-title">🔐 Matrice des permissions</h3>
-        <div class="card-actions">
-          <button class="btn btn-secondary btn-sm" (click)="resetPermissions()">↺ Réinitialiser</button>
-          <button class="btn btn-primary btn-sm" (click)="savePermissions()" [disabled]="savingPermissions">💾 Sauvegarder</button>
+  <div class="tab-panel" *ngIf="activeTab === 'permissions'">
+    <div class="panel-card">
+      <div class="panel-header">
+        <div class="panel-header-left">
+          <div class="panel-icon">🔐</div>
+          <div>
+            <h3 class="panel-title">Matrice des permissions</h3>
+            <p class="panel-subtitle">Affinez les droits par rôle — temps réel, sans redémarrage</p>
+          </div>
+        </div>
+        <div class="panel-actions">
+          <button class="btn btn-ghost btn-sm" (click)="resetPermissions()">↺ Réinitialiser</button>
+          <button class="btn btn-primary btn-sm" (click)="savePermissions()" [disabled]="savingPermissions">
+            <span *ngIf="!savingPermissions">💾 Sauvegarder</span>
+            <span *ngIf="savingPermissions" class="btn-loading"><i class="spinner-sm"></i> …</span>
+          </button>
         </div>
       </div>
-      <div class="loading-state" *ngIf="permissionsLoading">
-        <div class="spinner"></div>
+      <div class="state state-loading" *ngIf="permissionsLoading">
+        <div class="loader"></div><p>Chargement des permissions…</p>
       </div>
-      <div class="table-container" *ngIf="!permissionsLoading && permissions.length > 0">
-        <table class="data-table permissions-table">
+      <div class="table-wrap" *ngIf="!permissionsLoading && permissions.length > 0">
+        <table class="data-table perm-table">
           <thead>
             <tr>
-              <th class="perm-th-perm">Permission</th>
+              <th class="perm-th">Permission</th>
               <th *ngFor="let role of permissions" class="perm-th-role">
-                {{ role.roleLabel }}
+                <span class="perm-role-pill">{{ role.roleLabel }}</span>
               </th>
             </tr>
           </thead>
           <tbody>
             <tr *ngFor="let perm of permissions[0]?.permissions; let permIdx = index; trackBy: trackByKey">
-              <td class="perm-label">
-                <span class="perm-icon" [class.perm-enabled]="permissions.some(r => r.permissions[permIdx]?.allowed)">
-                  {{ permissions.some(r => r.permissions[permIdx]?.allowed) ? '✅' : '❌' }}
-                </span>
+              <td class="perm-label-cell">
+                <span class="perm-indicator" [class.on]="permissions.some(r => r.permissions[permIdx]?.allowed)"></span>
                 {{ perm.label }}
               </td>
               <td *ngFor="let role of permissions; let roleIdx = index" class="perm-cell">
                 <button class="perm-toggle"
-                  [class.perm-allowed]="role.permissions[permIdx]?.allowed"
-                  [class.perm-denied]="!role.permissions[permIdx]?.allowed"
+                  [class.on]="role.permissions[permIdx]?.allowed"
+                  [class.off]="!role.permissions[permIdx]?.allowed"
                   (click)="togglePermission(roleIdx, permIdx)"
-                  [title]="(role.permissions[permIdx]?.allowed ? '✅ Autorisé' : '❌ Bloqué') + ' — Cliquer pour changer'">
+                  [title]="(role.permissions[permIdx]?.allowed ? 'Autorisé' : 'Bloqué') + ' — Cliquer pour changer'">
+                  <span class="perm-toggle-dot"></span>
                 </button>
               </td>
             </tr>
           </tbody>
         </table>
       </div>
+      <div class="state state-empty" *ngIf="!permissionsLoading && permissions.length===0">
+        <p>Aucune permission configurée.</p>
+      </div>
     </div>
   </div>
 
   <!-- ============================================================ -->
-  <!-- TAB 4 : FONCTIONNALITÉS -->
+  <!-- TAB 4 : FONCTIONNALITES -->
   <!-- ============================================================ -->
-  <div class="tab-content" *ngIf="activeTab === 'features'">
-    <div class="card">
-      <div class="card-header">
-        <h3 class="card-title">🚀 Activer / Désactiver les fonctionnalités</h3>
-        <span class="features-count">{{ enabledFeatures }} / {{ features.length }} activées</span>
+  <div class="tab-panel" *ngIf="activeTab === 'features'">
+    <div class="panel-card">
+      <div class="panel-header">
+        <div class="panel-header-left">
+          <div class="panel-icon">🚀</div>
+          <div>
+            <h3 class="panel-title">Fonctionnalités</h3>
+            <p class="panel-subtitle">Activez ou désactivez les modules sans déploiement</p>
+          </div>
+        </div>
+        <span class="features-count"><span class="count-dot"></span>{{ enabledFeatures }} / {{ features.length }} actives</span>
       </div>
-      <div class="loading-state" *ngIf="featuresLoading">
-        <div class="spinner"></div>
+      <div class="state state-loading" *ngIf="featuresLoading">
+        <div class="loader"></div><p>Chargement…</p>
       </div>
       <div class="features-grid" *ngIf="!featuresLoading">
-        <div class="feature-card" *ngFor="let f of features; trackBy: trackByKey"
-          [class.feature-on]="f.enabled"
-          [class.feature-off]="!f.enabled">
-          <div class="feature-icon">{{ f.icon }}</div>
+        <div class="feature-card" *ngFor="let f of features; trackBy: trackByKey" [class.on]="f.enabled" [class.off]="!f.enabled">
+          <div class="feature-card-top">
+            <div class="feature-icon">{{ f.icon }}</div>
+            <label class="switch">
+              <input type="checkbox" [checked]="f.enabled" (change)="toggleFeature(f)" [disabled]="updatingFeatureKey === f.key" />
+              <span class="switch-slider"></span>
+            </label>
+          </div>
           <div class="feature-info">
             <span class="feature-name">{{ f.name }}</span>
             <span class="feature-desc">{{ f.description }}</span>
           </div>
-          <label class="switch">
-            <input type="checkbox" [checked]="f.enabled" (change)="toggleFeature(f)" [disabled]="updatingFeatureKey === f.key" />
-            <span class="switch-slider"></span>
-          </label>
+          <span class="feature-badge" [class.badge-on]="f.enabled" [class.badge-off]="!f.enabled">{{ f.enabled ? 'Activé' : 'Désactivé' }}</span>
         </div>
       </div>
     </div>

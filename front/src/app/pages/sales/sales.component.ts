@@ -28,11 +28,59 @@ interface CartItem {
 })
 export class SalesComponent implements OnInit, OnDestroy {
   products: Product[] = [];
-  cart: CartItem[] = [];
-  searchQuery: string = '';
-  paymentMethod: string = 'cash';
-  discount: number = 0;
-  tax: number = 0;
+
+  // --- champs mémoïsés et backing fields ---
+  private _cart: CartItem[] = [];
+  get cart(): CartItem[] { return this._cart; }
+  set cart(value: CartItem[]) {
+    this._cart = value;
+    this.updateTotals();
+    this.updateWhatsAppLink();
+  }
+
+  private _searchQuery: string = '';
+  get searchQuery(): string { return this._searchQuery; }
+  set searchQuery(value: string) {
+    this._searchQuery = value;
+    this.updateFilteredProducts();
+  }
+
+  private _selectedCategory: string = '';
+  get selectedCategory(): string { return this._selectedCategory; }
+  set selectedCategory(value: string) {
+    this._selectedCategory = value;
+    this.updateFilteredProducts();
+  }
+
+  private _paymentMethod: string = 'cash';
+  get paymentMethod(): string { return this._paymentMethod; }
+  set paymentMethod(value: string) {
+    this._paymentMethod = value;
+    this.updateIsMobileMoney();
+    this.updateWhatsAppLink();
+  }
+
+  private _discount: number = 0;
+  get discount(): number { return this._discount; }
+  set discount(value: number) {
+    this._discount = Number(value) || 0;
+    this.updateTotals();
+  }
+
+  private _tax: number = 0;
+  get tax(): number { return this._tax; }
+  set tax(value: number) {
+    this._tax = Number(value) || 0;
+    this.updateTotals();
+  }
+
+  private _loyaltyDiscountRate: number = 0;
+  get loyaltyDiscountRate(): number { return this._loyaltyDiscountRate; }
+  set loyaltyDiscountRate(value: number) {
+    this._loyaltyDiscountRate = Number(value) || 0;
+    this.updateTotals();
+  }
+
   isCartCollapsed: boolean = false;
   whatsappNumber = '';
   lastOrderRef = '';
@@ -52,10 +100,26 @@ export class SalesComponent implements OnInit, OnDestroy {
   customerSearchQuery = '';
   customerSearchResults: Customer[] = [];
   showCustomerDropdown = false;
-  loyaltyDiscountRate = 0;
   private refreshSub: Subscription | null = null;
 
   lastCompletedOrder: { orderNumber?: string; id?: string; orderData?: OrderData; cartItems?: { productName: string; quantity: number; unitPrice: number }[] } | null = null;
+
+  // --- champs mémoïsés ---
+  private _filteredProducts: Product[] = [];
+  get filteredProducts(): Product[] { return this._filteredProducts; }
+
+  private _subtotal: number = 0;
+  get subtotal(): number { return this._subtotal; }
+
+  private _total: number = 0;
+  get total(): number { return this._total; }
+
+  private _isMobileMoney: boolean = false;
+  get isMobileMoney(): boolean { return this._isMobileMoney; }
+
+  private _whatsappLink: string = '';
+  get whatsappLink(): string { return this._whatsappLink; }
+  private _whatsappLinkCache = new Map<string, string>();
 
   constructor(
     private route: ActivatedRoute,
@@ -78,15 +142,19 @@ export class SalesComponent implements OnInit, OnDestroy {
     this.route.data.subscribe(({ data }) => {
       if (data) {
         this.products = data.products;
+        this.updateFilteredProducts();
         this.paymentMethodsList = data.config.methods;
         this.whatsappNumber = data.config.whatsapp;
         this.mobileMoneyMethods = data.config.methods.filter((m: any) => m.isMobileMoney).map((m: any) => m.key);
+        this.updateIsMobileMoney();
         data.config.methods.forEach((m: any) => {
           this.paymentLabels[m.key] = { name: m.name, icon: '', operator: m.operator };
         });
         if (this.paymentMethodsList.length > 0) {
           this.paymentMethod = this.paymentMethodsList[0].key;
         }
+        this.updateTotals();
+        this.updateWhatsAppLink();
       }
     });
     this.refreshSub = this.refreshService.refresh$.subscribe(() => {
@@ -94,6 +162,10 @@ export class SalesComponent implements OnInit, OnDestroy {
       this.loadConfig();
     });
     this.loadScanCart();
+    // initialisation des valeurs mémoïsées
+    this.updateFilteredProducts();
+    this.updateTotals();
+    this.updateIsMobileMoney();
   }
 
   private loadScanCart(): void {
@@ -107,14 +179,16 @@ export class SalesComponent implements OnInit, OnDestroy {
             for (const item of items) {
               const product = products.find(p => p.id === item.productId);
               if (product) {
-                const existing = this.cart.find(c => c.product.id === product.id);
+                const existing = this._cart.find(c => c.product.id === product.id);
                 if (existing) {
                   existing.quantity += item.quantity;
                 } else {
-                  this.cart.push({ product, quantity: item.quantity });
+                  this._cart.push({ product, quantity: item.quantity });
                 }
               }
             }
+            this.updateTotals();
+            this.updateWhatsAppLink();
           },
           error: (err) => console.error('Error loading scan cart products:', err)
         });
@@ -144,12 +218,14 @@ export class SalesComponent implements OnInit, OnDestroy {
         this.paymentMethodsList = config.methods;
         this.whatsappNumber = config.whatsapp;
         this.mobileMoneyMethods = config.methods.filter(m => m.isMobileMoney).map(m => m.key);
+        this.updateIsMobileMoney();
         config.methods.forEach(m => {
           this.paymentLabels[m.key] = { name: m.name, icon: '', operator: m.operator };
         });
         if (this.paymentMethodsList.length > 0) {
           this.paymentMethod = this.paymentMethodsList[0].key;
         }
+        this.updateWhatsAppLink();
       },
       error: (err) => {
         console.error('Error loading config:', err);
@@ -162,6 +238,7 @@ export class SalesComponent implements OnInit, OnDestroy {
     this.productService.getProducts().subscribe({
       next: (data) => {
         this.products = data;
+        this.updateFilteredProducts();
       },
       error: (err) => {
         console.error('Error loading products:', err);
@@ -190,10 +267,43 @@ export class SalesComponent implements OnInit, OnDestroy {
     return item?.product?.id ?? index;
   }
 
-  get filteredProducts() {
-    return this.products.filter(p =>
-      p.name.toLowerCase().includes(this.searchQuery.toLowerCase())
-    );
+  private updateFilteredProducts(): void {
+    const q = this._searchQuery.trim().toLowerCase();
+    const cat = this._selectedCategory;
+    if (!q && !cat) {
+      this._filteredProducts = [...this.products];
+      return;
+    }
+    this._filteredProducts = this.products.filter(p => {
+      const matchesSearch = !q || p.name.toLowerCase().includes(q);
+      let matchesCategory = true;
+      if (cat) {
+        const prodCat: any = (p as any).category ?? (p as any).Category?.type ?? (p as any).categoryId ?? '';
+        matchesCategory = prodCat === cat;
+      }
+      return matchesSearch && matchesCategory;
+    });
+  }
+
+  private updateTotals(): void {
+    this._subtotal = this._cart.reduce((sum, item) => sum + (item.product.price * item.quantity), 0);
+    const disc = Number(this._discount) || 0;
+    const loyaltyDisc = Number(this._loyaltyDiscountRate) || 0;
+    const tx = Number(this._tax) || 0;
+    this._total = this._subtotal - disc - loyaltyDisc + tx;
+    this.updateWhatsAppLink();
+  }
+
+  private updateIsMobileMoney(): void {
+    this._isMobileMoney = this.mobileMoneyMethods.includes(this._paymentMethod);
+  }
+
+  private updateWhatsAppLink(): void {
+    try {
+      this._whatsappLink = this.getWhatsAppLink(this._total, this.lastOrderRef);
+    } catch (_) {
+      // ignore
+    }
   }
 
   searchCustomers(): void {
@@ -268,40 +378,28 @@ export class SalesComponent implements OnInit, OnDestroy {
       this.toastService.show('Stock insuffisant !', 'warning');
       return;
     }
-    const existing = this.cart.find(item => item.product.id === product.id);
+    const existing = this._cart.find(item => item.product.id === product.id);
     if (existing) {
       existing.quantity++;
     } else {
-      this.cart.push({ product, quantity: 1 });
+      this._cart.push({ product, quantity: 1 });
     }
+    this.updateTotals();
   }
 
   removeFromCart(index: number): void {
-    this.cart.splice(index, 1);
+    this._cart.splice(index, 1);
+    this.updateTotals();
   }
 
   updateQuantity(index: number, delta: number): void {
-    const item = this.cart[index];
+    const item = this._cart[index];
     if (!item) return;
     item.quantity += delta;
     if (item.quantity <= 0) {
-      this.removeFromCart(index);
+      this._cart.splice(index, 1);
     }
-  }
-
-  get subtotal(): number {
-    return this.cart.reduce((sum, item) => sum + (item.product.price * item.quantity), 0);
-  }
-
-  get total(): number {
-    const disc = Number(this.discount) || 0;
-    const loyaltyDisc = this.loyaltyDiscountRate || 0;
-    const tx = Number(this.tax) || 0;
-    return this.subtotal - disc - loyaltyDisc + tx;
-  }
-
-  get isMobileMoney(): boolean {
-    return this.mobileMoneyMethods.includes(this.paymentMethod);
+    this.updateTotals();
   }
 
   clearCart(): void {
@@ -319,9 +417,22 @@ export class SalesComponent implements OnInit, OnDestroy {
   }
 
   getWhatsAppLink(amount: number, orderRef: string): string {
-    const label = this.paymentLabels[this.paymentMethod]?.name || this.paymentMethod;
+    const key = `${amount}|${orderRef}|${this._paymentMethod}|${this.whatsappNumber}`;
+    const cached = this._whatsappLinkCache.get(key);
+    if (cached !== undefined) {
+      if (amount === this._total && orderRef === this.lastOrderRef) {
+        this._whatsappLink = cached;
+      }
+      return cached;
+    }
+    const label = this.paymentLabels[this._paymentMethod]?.name || this._paymentMethod;
     const message = `Bonjour, paiement ${label} de ${amount.toLocaleString()} FCFA pour la commande ${orderRef}.`;
-    return `https://wa.me/${this.whatsappNumber.replace(/\D/g, '')}?text=${encodeURIComponent(message)}`;
+    const link = `https://wa.me/${this.whatsappNumber.replace(/\D/g, '')}?text=${encodeURIComponent(message)}`;
+    this._whatsappLinkCache.set(key, link);
+    if (amount === this._total && orderRef === this.lastOrderRef) {
+      this._whatsappLink = link;
+    }
+    return link;
   }
 
   checkout(): void {
@@ -389,6 +500,7 @@ export class SalesComponent implements OnInit, OnDestroy {
         }
 
         this.lastOrderRef = res.orderNumber || res.id;
+        this.updateWhatsAppLink();
         this.lastCompletedOrder = {
           orderNumber: res.orderNumber,
           id: res.id,

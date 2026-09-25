@@ -1,221 +1,380 @@
-<div class="page-container">
-  <div class="page-header">
-    <div>
-      <h1 class="page-title">Catalogue & Stock</h1>
-      <p class="page-subtitle">Gérez vos produits solaires et électroniques</p>
-    </div>
-    <button class="btn btn-primary" (click)="openAddModal()">➕ Nouveau Produit</button>
-  </div>
-
-  <div class="stats-grid">
-    <div class="stat-card">
-      <div class="stat-icon primary">📦</div>
-      <div class="stat-content">
-        <p class="stat-label">Total Produits</p>
-        <h3 class="stat-value">{{ products.length }}</h3>
-      </div>
-    </div>
-    <div class="stat-card">
-      <div class="stat-icon warning">⚠️</div>
-      <div class="stat-content">
-        <p class="stat-label">Stock Faible (≤1)</p>
-        <h3 class="stat-value">{{ lowStockCount }}</h3>
-      </div>
-    </div>
-    <div class="stat-card">
-      <div class="stat-icon danger">🚫</div>
-      <div class="stat-content">
-        <p class="stat-label">Rupture (0)</p>
-        <h3 class="stat-value">{{ outOfStockCount }}</h3>
-      </div>
-    </div>
-  </div>
-
-  <div class="filters-card">
-    <div class="filter-group">
-      <div class="search-box">
-        <span class="search-icon">🔍</span>
-        <input type="text" placeholder="Rechercher un produit..." [(ngModel)]="searchQuery" class="form-input" />
-      </div>
-      <select class="form-select" [(ngModel)]="selectedCategoryId">
-        <option value="">Toutes les catégories</option>
-        <option *ngFor="let cat of categories; trackBy: trackByCategoryId" [value]="cat.id">{{ cat.name }}</option>
-      </select>
-      <select class="form-select" [(ngModel)]="selectedStatus">
-        <option value="">Tous les statuts</option>
-        <option value="available">Disponible</option>
-        <option value="on_order">Stock Faible</option>
-        <option value="out_of_stock">Rupture</option>
-      </select>
-      <select class="form-select" [(ngModel)]="selectedSupplierId">
-        <option value="">Tous les fournisseurs</option>
-        <option *ngFor="let sup of suppliers; trackBy: trackBySupplierId" [value]="sup.id">{{ sup.name }}</option>
-      </select>
-    </div>
-  </div>
-
-  <div class="loading-state" *ngIf="loading">
-    <div class="spinner"></div>
-    <p>Chargement des produits...</p>
-  </div>
-
-  <div class="empty-state" *ngIf="!loading && products.length === 0 && !rateLimitError">
-    <span class="empty-icon">📦</span>
-    <h3 class="empty-title">Aucun produit trouvé</h3>
-    <p class="empty-text">Commencez par ajouter un produit à votre catalogue.</p>
-  </div>
-
-  <div class="empty-state" *ngIf="!loading && rateLimitError">
-    <span class="empty-icon">⏳</span>
-    <h3 class="empty-title">Trop de requêtes, réessayez</h3>
-    <p class="empty-text">Le serveur est temporairement saturé. Veuillez rafraîchir la page dans quelques instants.</p>
-    <button class="btn btn-primary" (click)="loadProducts()">Réessayer</button>
-  </div>
-
-  <div class="product-grid" *ngIf="!loading && products.length > 0">
-    <div class="card product-card" *ngFor="let product of filteredProducts; trackBy: trackByProductId">
-      <div class="product-image">
-        <span class="placeholder-icon" *ngIf="!product.photo || imgErrors.has(product.id!)">📦</span>
-        <img [src]="getProductImage(product.photo)" *ngIf="product.photo && !imgErrors.has(product.id!)" (error)="onImgError(product.id!)" alt="Product Image" />
-      </div>
-      <div class="product-info">
-        <div class="product-header">
-          <span class="category-badge">{{ product.Category?.name || 'Général' }}</span>
-          <span *ngIf="product.supplierName" class="badge badge-neutral">🏭 {{ product.supplierName }}</span>
+<div class="inventory-page">
+  <!-- ===== HERO HEADER — Mesh Gradient + Glass ===== -->
+  <header class="inventory-hero">
+    <div class="hero-glow"></div>
+    <div class="hero-content">
+      <div class="hero-left">
+        <div class="hero-eyebrow">
+          <span class="eyebrow-dot"></span>
+          <span>Catalogue • Stock temps réel</span>
+          <span class="eyebrow-separator">•</span>
+          <span class="live-indicator"><i></i> Live</span>
         </div>
-        <h3 class="product-name">{{ product.name }}</h3>
-        <p class="product-desc">{{ product.description }}</p>
-        <div class="product-meta">
-          <span class="price">{{ product.price | number }} FCFA</span>
-          <span class="stock-badge" [ngClass]="getStatusClass(product.status)">
-            {{ getStatusLabel(product.status) }} ({{ product.stockQuantity }})
-          </span>
-        </div>
-        <img *ngIf="product.barcode" [src]="getBarcodePreview(product.barcode)" alt="Code-barres" class="barcode-preview" />
+        <h1 class="hero-title">
+          Catalogue &amp;
+          <span class="hero-title-accent">Stock</span>
+        </h1>
+        <p class="hero-subtitle">
+          Pilotez votre inventaire solaire et électronique — <strong>{{ products.length }} références</strong> • suivi au centime, vision à 360°
+        </p>
       </div>
-      <div class="product-actions">
-        <button class="btn btn-ghost btn-sm" (click)="openHistory(product)" title="Historique">📋</button>
-        <button class="btn btn-ghost btn-sm" (click)="openEditModal(product)" title="Modifier">✏️</button>
-        <button class="btn btn-ghost btn-sm" (click)="downloadBarcode(product)" title="Télécharger code-barres">📎</button>
-        <button class="btn btn-ghost btn-sm" (click)="deleteProduct(product.id!)" [disabled]="deletingId === product.id" title="Supprimer" style="color:var(--danger)">{{ deletingId === product.id ? '...' : '🗑️' }}</button>
+      <div class="hero-actions">
+        <button class="btn btn-ghost btn-sm" (click)="loadProducts()">
+          <span class="btn-icon">↻</span> Actualiser
+        </button>
+        <button class="btn btn-primary" (click)="openAddModal()">
+          <span class="btn-icon">＋</span> Nouveau produit
+        </button>
       </div>
     </div>
+  </header>
+
+  <!-- ===== KPI / METRICS — Glass 4 cards ===== -->
+  <section class="metrics">
+    <article class="metric-card metric-total">
+      <div class="metric-top">
+        <div class="metric-icon"><span>◫</span></div>
+        <span class="metric-trend positive">Catalogue</span>
+      </div>
+      <div class="metric-body">
+        <p class="metric-label">Total produits</p>
+        <p class="metric-value">{{ products.length }}<span>références</span></p>
+        <div class="metric-bar"><i style="width: 72%"></i></div>
+        <p class="metric-foot"><span class="dot dot-success"></span> {{ filteredProducts.length }} affichés</p>
+      </div>
+    </article>
+    <article class="metric-card metric-low">
+      <div class="metric-top">
+        <div class="metric-icon"><span>◈</span></div>
+        <span class="metric-trend neutral">{{ lowStockCount }} • à surveiller</span>
+      </div>
+      <div class="metric-body">
+        <p class="metric-label">Stock faible (≤1)</p>
+        <p class="metric-value">{{ lowStockCount }}<span>alertes</span></p>
+        <div class="metric-bar"><i [style.width.%]="products.length ? (lowStockCount / products.length * 100) : 0"></i></div>
+        <p class="metric-foot"><span class="dot dot-warning"></span> Seuil bas</p>
+      </div>
+    </article>
+    <article class="metric-card metric-out">
+      <div class="metric-top">
+        <div class="metric-icon"><span>⊘</span></div>
+        <span class="metric-trend negative" *ngIf="outOfStockCount > 0">{{ outOfStockCount }} critique</span>
+        <span class="metric-trend" *ngIf="outOfStockCount === 0">OK</span>
+      </div>
+      <div class="metric-body">
+        <p class="metric-label">Rupture (0)</p>
+        <p class="metric-value">{{ outOfStockCount }}<span>en rupture</span></p>
+        <div class="metric-bar"><i [style.width.%]="products.length ? (outOfStockCount / products.length * 100) : 0"></i></div>
+        <p class="metric-foot"><span class="dot dot-danger"></span> Action requise</p>
+      </div>
+    </article>
+    <article class="metric-card metric-cat">
+      <div class="metric-top">
+        <div class="metric-icon"><span>⬡</span></div>
+        <span class="metric-trend">{{ categories.length }} • catégories</span>
+      </div>
+      <div class="metric-body">
+        <p class="metric-label">Disponibles</p>
+        <p class="metric-value">{{ products.length - lowStockCount - outOfStockCount }}<span>en stock</span></p>
+        <div class="metric-bar"><i style="width: 68%"></i></div>
+        <p class="metric-foot"><span class="dot dot-accent"></span> Opérationnels</p>
+      </div>
+    </article>
+  </section>
+
+  <!-- ===== TOOLBAR — Search + Count + Reset ===== -->
+  <section class="toolbar">
+    <div class="toolbar-left">
+      <h2 class="toolbar-title">Inventaire</h2>
+      <span class="toolbar-count" *ngIf="!loading">{{ filteredProducts.length }} / {{ products.length }} • {{ categories.length }} catégories</span>
+      <span class="toolbar-count" *ngIf="loading">Chargement…</span>
+    </div>
+    <div class="toolbar-right">
+      <div class="search-field">
+        <span class="search-icon">⌕</span>
+        <input type="text" placeholder="Rechercher nom, description, code-barres…" [(ngModel)]="searchQuery" class="search-input" />
+      </div>
+      <button class="btn btn-secondary btn-sm" (click)="searchQuery=''; selectedCategoryId=''; selectedStatus=''; selectedSupplierId=''">Réinitialiser</button>
+    </div>
+  </section>
+
+  <!-- ===== FILTERS PILLS — Comme transfers ===== -->
+  <section class="filters-pills">
+    <div class="pill-group">
+      <label>Catégorie</label>
+      <div class="pills">
+        <button class="pill" [class.active]="!selectedCategoryId" (click)="selectedCategoryId=''">Toutes</button>
+        <button class="pill" *ngFor="let cat of categories; trackBy: trackByCategoryId" [class.active]="selectedCategoryId===cat.id" (click)="selectedCategoryId=cat.id || ''">{{ cat.name }}</button>
+      </div>
+    </div>
+    <div class="pill-group">
+      <label>Statut</label>
+      <div class="pills">
+        <button class="pill" [class.active]="!selectedStatus" (click)="selectedStatus=''">Tous</button>
+        <button class="pill pill-pending" [class.active]="selectedStatus==='available'" (click)="selectedStatus='available'">En stock</button>
+        <button class="pill pill-warning" [class.active]="selectedStatus==='on_order'" (click)="selectedStatus='on_order'">Stock faible</button>
+        <button class="pill pill-danger" [class.active]="selectedStatus==='out_of_stock'" (click)="selectedStatus='out_of_stock'">Rupture</button>
+      </div>
+    </div>
+    <div class="pill-group">
+      <label>Fournisseur</label>
+      <div class="pills">
+        <button class="pill" [class.active]="!selectedSupplierId" (click)="selectedSupplierId=''">Tous</button>
+        <button class="pill" *ngFor="let sup of suppliers; trackBy: trackBySupplierId" [class.active]="selectedSupplierId===sup.id" (click)="selectedSupplierId=sup.id || ''">🏭 {{ sup.name }}</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== STATES ===== -->
+  <div class="state state-loading" *ngIf="loading">
+    <div class="loader"></div>
+    <p>Chargement des produits…</p>
+    <span>Synchronisation catalogue en cours</span>
   </div>
 
-  <div class="finished-section" *ngIf="!loading && finishedProducts.length > 0">
-    <div class="section-header">
-      <h2>⚠️ Articles Finis ou Presque Finis</h2>
-      <span class="badge-count">{{ finishedProducts.length }}</span>
+  <div class="state state-empty" *ngIf="!loading && products.length === 0 && !rateLimitError">
+    <div class="empty-illustration">
+      <div class="empty-orb"></div>
+      <span class="empty-emoji">◈</span>
     </div>
-    <div class="finished-grid">
-      <div class="card finished-card" *ngFor="let product of finishedProducts; trackBy: trackByProductId">
-        <div class="finished-icon" [ngClass]="product.stockQuantity === 0 ? 'empty' : 'low'">
-          {{ product.stockQuantity === 0 ? '🚫' : '⚠️' }}
+    <h3>Aucun produit trouvé</h3>
+    <p>Commencez par ajouter un produit à votre catalogue.</p>
+    <button class="btn btn-primary btn-sm" (click)="openAddModal()">＋ Ajouter un produit</button>
+  </div>
+
+  <div class="state state-empty" *ngIf="!loading && rateLimitError">
+    <div class="empty-illustration">
+      <div class="empty-orb"></div>
+      <span class="empty-emoji">⏳</span>
+    </div>
+    <h3>Trop de requêtes, réessayez</h3>
+    <p>Le serveur est temporairement saturé. Veuillez rafraîchir la page dans quelques instants.</p>
+    <button class="btn btn-primary btn-sm" (click)="loadProducts()">↻ Réessayer</button>
+  </div>
+
+  <!-- ===== PRODUCT GRID — Glass Cards Premium ===== -->
+  <section class="catalog-section" *ngIf="!loading && products.length > 0">
+    <div class="catalog-header" *ngIf="filteredProducts.length === 0">
+      <div class="state state-empty" style="border:none; box-shadow:none; background: transparent;">
+        <div class="empty-illustration">
+          <div class="empty-orb"></div>
+          <span class="empty-emoji">⌕</span>
         </div>
-        <div class="finished-info">
-          <h3>{{ product.name }}</h3>
-          <p class="category">{{ product.Category?.name || 'Général' }}
-            <span *ngIf="product.supplierName" class="badge badge-neutral" style="margin-left:6px">🏭 {{ product.supplierName }}</span>
-          </p>
-          <div class="stock-info">
-            <span class="quantity" [ngClass]="product.stockQuantity === 0 ? 'red' : 'orange'">
-              Stock: {{ product.stockQuantity }} unité(s)
+        <h3>Aucun résultat</h3>
+        <p>Aucun produit ne correspond à vos filtres.</p>
+      </div>
+    </div>
+
+    <div class="product-grid" *ngIf="filteredProducts.length > 0">
+      <article class="product-card" *ngFor="let product of filteredProducts; trackBy: trackByProductId">
+        <div class="product-image-wrap">
+          <div class="product-image">
+            <span class="placeholder-icon" *ngIf="!product.photo || imgErrors.has(product.id!)">◫</span>
+            <img [src]="getProductImage(product.photo)" *ngIf="product.photo && !imgErrors.has(product.id!)" (error)="onImgError(product.id!)" [alt]="product.name" loading="lazy" decoding="async" width="300" height="220" />
+          </div>
+          <div class="image-overlay">
+            <span class="image-badge" [ngClass]="product.status | statusClass">{{ product.status | statusLabel }}</span>
+            <span class="stock-pill" [class.low]="product.stockQuantity <= (product.lowStockThreshold || 1)" [class.out]="product.stockQuantity===0">
+              <span class="stock-dot"></span> {{ product.stockQuantity }} en stock
             </span>
-            <span class="price">{{ product.price | number }} FCFA</span>
+          </div>
+        </div>
+
+        <div class="product-body">
+          <div class="product-head">
+            <span class="category-badge">{{ product.Category?.name || 'Général' }}</span>
+            <span *ngIf="product.supplierName" class="supplier-badge">🏭 {{ product.supplierName }}</span>
+          </div>
+          <h3 class="product-name" [title]="product.name">{{ product.name }}</h3>
+          <p class="product-desc" [title]="product.description">{{ product.description || 'Aucune description' }}</p>
+
+          <div class="product-meta">
+            <span class="price">{{ product.price | number }} <span>FCFA</span></span>
+            <span class="stock-badge" [ngClass]="product.status | statusClass">
+              {{ product.status | statusLabel }} • {{ product.stockQuantity }}
+            </span>
+          </div>
+
+          <div class="barcode-wrap" *ngIf="product.barcode">
+            <img [src]="getBarcodePreview(product.barcode)" alt="Code-barres" class="barcode-preview" loading="lazy" decoding="async" />
+            <span class="barcode-text">{{ product.barcode }}</span>
+          </div>
+        </div>
+
+        <div class="product-actions">
+          <button class="action-btn" (click)="openHistory(product)" title="Historique"><span>▦</span></button>
+          <button class="action-btn" (click)="openEditModal(product)" title="Modifier"><span>✎</span></button>
+          <button class="action-btn" (click)="downloadBarcode(product)" title="Télécharger code-barres"><span>⎙</span></button>
+          <button class="action-btn action-btn--danger" (click)="deleteProduct(product.id!)" [disabled]="deletingId === product.id" title="Supprimer"><span>{{ deletingId === product.id ? '…' : '⌫' }}</span></button>
+        </div>
+      </article>
+    </div>
+  </section>
+
+  <!-- ===== FINISHED / LOW STOCK — Premium Warning Grid ===== -->
+  <section class="finished-section" *ngIf="!loading && finishedProducts.length > 0">
+    <div class="finished-header">
+      <div class="finished-title">
+        <div class="finished-icon-header"><span>◈</span></div>
+        <div>
+          <h2>Articles finis ou presque finis</h2>
+          <p>Réapprovisionnement prioritaire • {{ finishedProducts.length }} référence(s) critique(s)</p>
+        </div>
+      </div>
+      <span class="finished-count">{{ finishedProducts.length }}</span>
+    </div>
+
+    <div class="finished-grid">
+      <article class="finished-card" *ngFor="let product of finishedProducts; trackBy: trackByProductId">
+        <div class="finished-card-left">
+          <div class="finished-icon" [ngClass]="product.stockQuantity === 0 ? 'empty' : 'low'">
+            <span>{{ product.stockQuantity === 0 ? '⊘' : '⚑' }}</span>
+          </div>
+          <div class="finished-info">
+            <h3 [title]="product.name">{{ product.name }}</h3>
+            <p class="category">{{ product.Category?.name || 'Général' }}
+              <span *ngIf="product.supplierName" class="badge badge-neutral" style="margin-left:6px; font-size:0.65rem;">🏭 {{ product.supplierName }}</span>
+            </p>
+            <div class="stock-info">
+              <span class="quantity" [ngClass]="product.stockQuantity === 0 ? 'red' : 'orange'">
+                <span class="stock-dot"></span> Stock: {{ product.stockQuantity }} unité(s)
+              </span>
+              <span class="price-sm">{{ product.price | number }} FCFA</span>
+            </div>
           </div>
         </div>
         <div class="finished-actions">
-          <button class="btn btn-warning btn-sm" (click)="restockProduct(product)">Reapprovisionner</button>
-          <button class="btn btn-outline btn-sm" (click)="adjustStock(product)">🔧 Ajuster stock</button>
-          <button class="btn btn-outline btn-sm" (click)="openHistory(product)">📋 Historique</button>
-          <button class="btn btn-outline btn-sm" (click)="downloadBarcode(product)">📎 Code-barres</button>
+          <button class="btn btn-primary btn-sm" (click)="restockProduct(product)">＋ Réapprovisionner</button>
+          <button class="btn btn-secondary btn-sm" (click)="adjustStock(product)">Ajuster</button>
+          <div class="finished-subactions">
+            <button class="btn btn-ghost btn-sm" (click)="openHistory(product)">▦ Historique</button>
+            <button class="btn btn-ghost btn-sm" (click)="downloadBarcode(product)">⎙ Code</button>
+          </div>
         </div>
-      </div>
+      </article>
     </div>
-  </div>
+  </section>
 
-  <div class="modal-overlay" *ngIf="showModal">
-    <div class="modal-card">
+  <!-- ===== MODAL — Create / Edit ===== -->
+  <div class="modal-overlay" *ngIf="showModal" (click)="showModal=false">
+    <div class="modal-card modal-premium" (click)="$event.stopPropagation()">
+      <div class="modal-glow"></div>
       <div class="modal-header">
-        <h2 class="modal-title">{{ isEditing ? '✏️ Modifier le Produit' : '➕ Ajouter un Produit' }}</h2>
+        <div class="modal-header-left">
+          <div class="modal-icon"><span>{{ isEditing ? '✎' : '＋' }}</span></div>
+          <div>
+            <h2 class="modal-title">{{ isEditing ? 'Modifier le produit' : 'Nouveau produit' }}</h2>
+            <p class="modal-subtitle">{{ isEditing ? 'Corrigez les informations et enregistrez' : 'Ajoutez une référence au catalogue — image obligatoire' }}</p>
+          </div>
+        </div>
         <button class="modal-close" (click)="showModal = false">×</button>
       </div>
 
       <div class="modal-body">
         <form (ngSubmit)="saveProduct($event)" class="form">
           <div class="form-group">
-            <label class="form-label">Nom du Produit *</label>
-            <input type="text" [(ngModel)]="currentProduct.name" name="name" required placeholder="Ex: Panneau Solaire 400W" class="form-input" />
+            <label class="field-label">Nom du produit <span class="required">*</span></label>
+            <input type="text" [(ngModel)]="currentProduct.name" name="name" required placeholder="Ex: Panneau Solaire 400W Canadian" class="form-input" />
           </div>
-          <div class="form-row">
+
+          <div class="field-row">
             <div class="form-group">
-              <label class="form-label">Prix (FCFA) *</label>
-              <input type="number" [(ngModel)]="currentProduct.price" name="price" required class="form-input" />
+              <label class="field-label">Prix (FCFA) <span class="required">*</span></label>
+              <div class="input-wrap">
+                <input type="number" [(ngModel)]="currentProduct.price" name="price" required class="form-input" placeholder="0" />
+                <span class="input-suffix">FCFA</span>
+              </div>
             </div>
             <div class="form-group">
-              <label class="form-label">Stock Initial *</label>
-              <input type="number" [(ngModel)]="currentProduct.stockQuantity" name="stock" required class="form-input" />
+              <label class="field-label">Stock initial <span class="required">*</span></label>
+              <div class="input-wrap">
+                <input type="number" [(ngModel)]="currentProduct.stockQuantity" name="stock" required class="form-input" placeholder="0" />
+                <span class="input-suffix">unités</span>
+              </div>
             </div>
           </div>
-          <div class="form-group">
-            <label class="form-label">Catégorie *</label>
-            <select [(ngModel)]="currentProduct.categoryId" name="categoryId" required class="form-select">
-              <option value="">Sélectionner une catégorie</option>
-              <option *ngFor="let cat of categories; trackBy: trackByCategoryId" [value]="cat.id">{{ cat.name }}</option>
-            </select>
+
+          <div class="field-row">
+            <div class="form-group">
+              <label class="field-label">Catégorie <span class="required">*</span></label>
+              <select [(ngModel)]="currentProduct.categoryId" name="categoryId" required class="form-select">
+                <option value="">Sélectionner une catégorie</option>
+                <option *ngFor="let cat of categories; trackBy: trackByCategoryId" [value]="cat.id">{{ cat.name }}</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="field-label">Fournisseur</label>
+              <select [(ngModel)]="currentProduct.supplierId" name="supplierId" class="form-select">
+                <option value="">Sélectionner un fournisseur</option>
+                <option *ngFor="let sup of suppliers; trackBy: trackBySupplierId" [value]="sup.id">{{ sup.name }}</option>
+              </select>
+            </div>
           </div>
+
           <div class="form-group">
-            <label class="form-label">Fournisseur</label>
-            <select [(ngModel)]="currentProduct.supplierId" name="supplierId" class="form-select">
-              <option value="">Sélectionner un fournisseur</option>
-              <option *ngFor="let sup of suppliers; trackBy: trackBySupplierId" [value]="sup.id">{{ sup.name }}</option>
-            </select>
+            <label class="field-label">Description</label>
+            <textarea [(ngModel)]="currentProduct.description" name="description" rows="3" class="form-textarea" placeholder="Détails, puissance, référence technique…"></textarea>
           </div>
+
           <div class="form-group">
-            <label class="form-label">Description</label>
-            <textarea [(ngModel)]="currentProduct.description" name="description" rows="3" class="form-textarea"></textarea>
-          </div>
-          <div class="form-group">
-            <label class="form-label">Code-barres</label>
+            <label class="field-label">Code-barres</label>
             <div class="barcode-input-group">
-              <input [(ngModel)]="currentProduct.barcode" name="barcode" placeholder="Scan or enter barcode" class="form-input" />
-              <button type="button" class="btn btn-sm btn-secondary" (click)="startBarcodeScan()">📷 Scanner</button>
-              <button type="button" class="btn btn-sm btn-outline" (click)="downloadBarcode(currentProduct)" *ngIf="currentProduct.barcode && isEditing" title="Télécharger code-barres">📎</button>
+              <div class="input-wrap" style="flex:1;">
+                <input [(ngModel)]="currentProduct.barcode" name="barcode" placeholder="ELEC-XXX-XXXX-XXXX" class="form-input" />
+              </div>
+              <button type="button" class="btn btn-secondary btn-sm" (click)="startBarcodeScan()">⌕ Scanner</button>
+              <button type="button" class="btn btn-ghost btn-sm" (click)="downloadBarcode(currentProduct)" *ngIf="currentProduct.barcode && isEditing" title="Télécharger code-barres">⎙</button>
             </div>
           </div>
+
           <div class="form-group">
-            <label class="form-label">Image du Produit</label>
-            <input type="file" (change)="onFileSelected($event)" accept="image/*" class="form-input" />
-            <div class="image-preview" *ngIf="photoPreview">
-              <img [src]="photoPreview" alt="Aperçu" />
-              <p class="image-preview-text">Aperçu du produit prêt</p>
+            <label class="field-label">Image du produit <span class="required" *ngIf="!isEditing">*</span></label>
+            <div class="file-field">
+              <input type="file" (change)="onFileSelected($event)" accept="image/*" class="form-input" />
+              <p class="field-hint">Compression auto 800px • JPEG 80% • max discret</p>
             </div>
-            <div class="image-preview existing-image" *ngIf="!photoPreview && currentProduct.photo && !currentProduct.photo.startsWith('data:')">
-              <img [src]="getProductImage(currentProduct.photo)" alt="Image actuelle" />
+            <div class="image-preview premium" *ngIf="photoPreview">
+              <img [src]="photoPreview" alt="Aperçu" loading="lazy" />
+              <p class="image-preview-text">Aperçu — prêt à enregistrer</p>
+            </div>
+            <div class="image-preview premium existing" *ngIf="!photoPreview && currentProduct.photo && !currentProduct.photo.startsWith('data:')">
+              <img [src]="getProductImage(currentProduct.photo)" alt="Image actuelle" loading="lazy" />
               <p class="image-preview-text">Image actuelle</p>
             </div>
           </div>
-          <div class="modal-footer">
-            <button type="button" class="btn btn-danger" *ngIf="isEditing" (click)="deleteProduct(currentProduct.id!); showModal = false">Supprimer</button>
-            <button type="button" class="btn btn-secondary" (click)="showModal = false">Annuler</button>
-            <button type="submit" class="btn btn-primary" [disabled]="saving">{{ saving ? 'Enregistrement...' : (isEditing ? 'Enregistrer' : 'Créer le Produit') }}</button>
+
+          <div class="modal-footer premium">
+            <button type="button" class="btn btn-danger btn-sm" *ngIf="isEditing" (click)="deleteProduct(currentProduct.id!); showModal = false">⌫ Supprimer</button>
+            <div class="footer-right">
+              <button type="button" class="btn btn-secondary" (click)="showModal = false">Annuler</button>
+              <button type="submit" class="btn btn-primary" [disabled]="saving">
+                <span *ngIf="!saving" class="btn-loading"><span>{{ isEditing ? 'Enregistrer' : 'Créer le produit' }}</span> <span>→</span></span>
+                <span *ngIf="saving" class="btn-loading"><i class="spinner-sm"></i> Enregistrement…</span>
+              </button>
+            </div>
           </div>
         </form>
       </div>
     </div>
   </div>
 
-  <div class="modal-overlay" *ngIf="showHistoryModal">
-    <div class="modal-card modal-wide">
+  <!-- ===== MODAL — History ===== -->
+  <div class="modal-overlay" *ngIf="showHistoryModal" (click)="showHistoryModal=false">
+    <div class="modal-card modal-wide modal-premium" (click)="$event.stopPropagation()">
+      <div class="modal-glow"></div>
       <div class="modal-header">
-        <h2 class="modal-title">📋 Historique des mouvements</h2>
+        <div class="modal-header-left">
+          <div class="modal-icon"><span>▦</span></div>
+          <div>
+            <h2 class="modal-title">Historique des mouvements</h2>
+            <p class="modal-subtitle">Traçabilité complète — <strong>{{ historyProductName }}</strong></p>
+          </div>
+        </div>
         <button class="modal-close" (click)="showHistoryModal = false">×</button>
       </div>
 
       <div class="modal-body">
-        <p class="history-product-name"><strong>{{ historyProductName }}</strong></p>
-
-        <div class="table-container" *ngIf="!loadingMovements && movements.length > 0">
+        <div class="table-wrap" *ngIf="!loadingMovements && movements.length > 0">
           <table class="data-table">
             <thead>
               <tr>
@@ -230,25 +389,25 @@
             </thead>
             <tbody>
               <tr *ngFor="let m of movements; trackBy: trackByMovementId">
-                <td>{{ m.createdAt | date:'dd/MM/yy HH:mm' }}</td>
+                <td><span class="time-pill">{{ m.createdAt | date:'dd/MM/yy HH:mm' }}</span></td>
                 <td><span class="reason-badge" [ngClass]="m.reason">{{ reasonLabel(m.reason) }}</span></td>
                 <td>{{ m.previousQuantity }}</td>
                 <td>{{ m.newQuantity }}</td>
                 <td [class.text-success]="m.changeAmount >= 0" [class.text-danger]="m.changeAmount < 0">
                   {{ m.changeAmount >= 0 ? '+' : '' }}{{ m.changeAmount }}
                 </td>
-                <td>{{ m.reference || '-' }}</td>
-                <td>{{ m.createdBy || '-' }}</td>
+                <td>{{ m.reference || '—' }}</td>
+                <td>{{ m.createdBy || '—' }}</td>
               </tr>
             </tbody>
           </table>
         </div>
-        <div class="empty-state" *ngIf="!loadingMovements && movements.length === 0" style="padding:24px">
-          <p>Aucun mouvement enregistré</p>
+        <div class="state state-empty" *ngIf="!loadingMovements && movements.length === 0" style="padding:28px; border:none; box-shadow:none;">
+          <p style="color:var(--text-muted);">Aucun mouvement enregistré</p>
         </div>
-        <div class="loading-state" *ngIf="loadingMovements">
-          <div class="spinner spinner-sm"></div>
-          <p>Chargement...</p>
+        <div class="state state-loading" *ngIf="loadingMovements" style="padding:28px; border:none; box-shadow:none;">
+          <div class="loader"></div>
+          <p>Chargement…</p>
         </div>
       </div>
 
@@ -258,9 +417,12 @@
     </div>
   </div>
 
-  <div class="toast-container" *ngIf="toastMessage">
+  <!-- ===== TOAST — Glass ===== -->
+  <div class="toast-stack" *ngIf="toastMessage">
     <div class="toast-card" [ngClass]="toastType">
-      <span class="toast-icon">{{ toastType === 'out_of_stock' ? '🚫' : '⚠️' }}</span>
+      <div class="toast-icon-wrap">
+        <span class="toast-icon">{{ toastType === 'out_of_stock' ? '⊘' : '◈' }}</span>
+      </div>
       <div class="toast-body">
         <strong>{{ toastType === 'out_of_stock' ? 'Rupture de stock' : 'Stock faible' }}</strong>
         <p>{{ toastMessage }}</p>

@@ -10,16 +10,35 @@ import { UserService } from '../../services/user.service';
 import { OrderService } from '../../services/order';
 import { RefreshService } from '../../services/refresh.service';
 import { ToastService } from '../../services/toast.service';
+import {
+  InstallationStatusClassPipe,
+  InstallationStatusLabelPipe,
+  InstallationUrgencyPipe,
+  InstallationUrgencyLabelPipe
+} from '../../pipes/optimized.pipes';
 
 @Component({
   selector: 'app-installations',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [
+    CommonModule,
+    FormsModule,
+    InstallationStatusClassPipe,
+    InstallationStatusLabelPipe,
+    InstallationUrgencyPipe,
+    InstallationUrgencyLabelPipe
+  ],
   templateUrl: './installations.component.html',
   styleUrls: ['./installations.component.css']
 })
 export class InstallationsComponent implements OnInit, OnDestroy {
-  installations: Installation[] = [];
+  private _installations: Installation[] = [];
+  get installations(): Installation[] { return this._installations; }
+  set installations(value: Installation[]) {
+    this._installations = value || [];
+    this.updateSortedInstallations();
+  }
+  sortedInstallations: Installation[] = [];
   customers: Customer[] = [];
   technicians: any[] = [];
   orders: any[] = [];
@@ -32,18 +51,10 @@ export class InstallationsComponent implements OnInit, OnDestroy {
   currentInstallation: Installation = this.initInstallation();
   private refreshSub: Subscription | null = null;
 
-  private statusWeight: any = { in_progress: 0, planned: 1, survey: 2, testing: 3, completed: 4, cancelled: 5 };
-
-  get sortedInstallations(): Installation[] {
-    return [...this.installations].sort((a, b) => {
-      const sA = this.statusWeight[a.status] ?? 9;
-      const sB = this.statusWeight[b.status] ?? 9;
-      if (sA !== sB) return sA - sB;
-      const dA = a.scheduledDate ? new Date(a.scheduledDate).getTime() : 0;
-      const dB = b.scheduledDate ? new Date(b.scheduledDate).getTime() : 0;
-      return dA - dB;
-    });
-  }
+  private statusWeight: Record<string, number> = { in_progress: 0, planned: 1, survey: 2, testing: 3, completed: 4, cancelled: 5 };
+  private sortedCache = new Map<string, Installation[]>();
+  private urgencyCache = new Map<string, string>();
+  private dateCache = new Map<string, number>();
 
   constructor(
     private route: ActivatedRoute,
@@ -58,7 +69,7 @@ export class InstallationsComponent implements OnInit, OnDestroy {
   ngOnInit(): void {
     this.route.data.subscribe(({ data }) => {
       if (data) {
-        this.installations = data.installations;
+        this.installations = data.installations || [];
         this.customers = data.customers;
         this.technicians = data.technicians;
         this.orders = data.orders;
@@ -66,6 +77,58 @@ export class InstallationsComponent implements OnInit, OnDestroy {
       }
     });
     this.refreshSub = this.refreshService.refresh$.subscribe(() => this.loadInstallations());
+  }
+
+  private updateSortedInstallations(): void {
+    const cacheKey = this._installations.map(i => `${i.id || i.location}|${i.status}|${i.scheduledDate}|${i.priority}`).join(';');
+    if (this.sortedCache.has(cacheKey)) {
+      this.sortedInstallations = this.sortedCache.get(cacheKey)!;
+      return;
+    }
+    const sorted = [...this._installations].sort((a, b) => {
+      const sA = this.statusWeight[a.status] ?? 9;
+      const sB = this.statusWeight[b.status] ?? 9;
+      if (sA !== sB) return sA - sB;
+      const getTime = (d: any): number => {
+        if (!d) return 0;
+        const key = String(d);
+        if (this.dateCache.has(key)) return this.dateCache.get(key)!;
+        const t = new Date(d).getTime();
+        this.dateCache.set(key, t);
+        return t;
+      };
+      const dA = getTime(a.scheduledDate);
+      const dB = getTime(b.scheduledDate);
+      return dA - dB;
+    });
+    this.sortedCache.set(cacheKey, sorted);
+    // limit cache size
+    if (this.sortedCache.size > 20) {
+      const firstKey = this.sortedCache.keys().next().value;
+      if (firstKey !== undefined) this.sortedCache.delete(firstKey);
+    }
+    if (this.dateCache.size > 100) this.dateCache.clear();
+    this.sortedInstallations = sorted;
+  }
+
+  // Memoized urgency for component caching (also available via pipe)
+  getCachedUrgency(install: Installation): string {
+    const key = `${install.id || ''}|${install.priority || ''}|${install.status}|${install.scheduledDate || ''}`;
+    if (this.urgencyCache.has(key)) return this.urgencyCache.get(key)!;
+    let result: string;
+    if (install.priority) result = install.priority;
+    else {
+      const now = new Date().getTime();
+      if (install.status === 'in_progress') result = 'urgent';
+      else if (install.status === 'planned' && install.scheduledDate) {
+        const days = (new Date(install.scheduledDate as any).getTime() - now) / 86400000;
+        if (days < 2) result = 'high';
+        else result = 'low';
+      } else if (install.status === 'survey') result = 'normal';
+      else result = 'low';
+    }
+    this.urgencyCache.set(key, result);
+    return result;
   }
 
   ngOnDestroy(): void {
@@ -141,7 +204,7 @@ export class InstallationsComponent implements OnInit, OnDestroy {
     this.loading = true;
     this.installationService.getInstallations().subscribe({
       next: (data) => {
-        this.installations = data;
+        this.installations = data || [];
         this.loading = false;
       },
       error: (err) => {
@@ -206,37 +269,4 @@ export class InstallationsComponent implements OnInit, OnDestroy {
     });
   }
 
-  getStatusClass(status: string): string {
-    switch (status) {
-      case 'planned': return 'badge-info';
-      case 'in_progress': return 'badge-warning';
-      case 'completed': return 'badge-success';
-      case 'cancelled': return 'badge-danger';
-      default: return '';
-    }
-  }
-
-  getStatusLabel(status: string): string {
-    const labels: any = {
-      survey: 'Étude',
-      planned: 'Planifié',
-      in_progress: 'En cours',
-      testing: 'Tests',
-      completed: 'Terminé',
-      cancelled: 'Annulé'
-    };
-    return labels[status] || status;
-  }
-
-  getUrgencyBadge(install: Installation): string {
-    if (install.priority) return install.priority;
-    const now = new Date().getTime();
-    if (install.status === 'in_progress') return 'urgent';
-    if (install.status === 'planned' && install.scheduledDate) {
-      const days = (new Date(install.scheduledDate).getTime() - now) / 86400000;
-      if (days < 2) return 'high';
-    }
-    if (install.status === 'survey') return 'normal';
-    return 'low';
-  }
 }

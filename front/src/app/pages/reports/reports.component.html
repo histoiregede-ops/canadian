@@ -1,0 +1,166 @@
+<div class="reports-page">
+  <!-- ===== HERO ===== -->
+  <header class="reports-hero">
+    <div class="hero-glow"></div>
+    <div class="hero-content">
+      <div class="hero-left">
+        <div class="hero-eyebrow">
+          <span class="eyebrow-dot"></span>
+          <span>Analytics • Décisionnel</span>
+          <span class="eyebrow-separator">•</span>
+          <span class="live-indicator"><i></i> Live</span>
+        </div>
+        <h1 class="hero-title">
+          Rapports <span class="hero-title-accent">commerciaux</span>
+        </h1>
+        <p class="hero-subtitle">
+          Performance ventes, produits et techniciens — insights temps réel pour décider plus vite
+        </p>
+      </div>
+      <div class="hero-actions">
+        <div class="hero-badge">
+          <span class="badge-dot"></span>
+          <span *ngIf="data">{{ data.topProducts.length }} produits suivis</span>
+          <span *ngIf="!data">Chargement...</span>
+        </div>
+        <button class="btn btn-ghost btn-sm" (click)="refresh()">↻ Actualiser</button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Loading -->
+  <div class="state state-loading" *ngIf="loading">
+    <div class="loader"></div>
+    <div class="loader-text">
+      <p>Analyse des performances...</p>
+      <span>Calcul des tendances et classements</span>
+    </div>
+  </div>
+
+  <ng-container *ngIf="!loading && data">
+    <!-- ===== KPI GLASS ===== -->
+    <section class="kpi-grid">
+      <article class="kpi-card kpi-revenue">
+        <div class="kpi-top">
+          <div class="kpi-icon">↗</div>
+          <span class="kpi-trend positive">Ce mois</span>
+        </div>
+        <p class="kpi-label">CA du mois</p>
+        <p class="kpi-value">{{ data.monthlyRevenue | number:'1.0-0' }}<span>FCFA</span></p>
+        <div class="kpi-bar"><i style="width: 78%"></i></div>
+        <p class="kpi-foot"><span class="dot dot-success"></span> Revenu consolidé</p>
+      </article>
+
+      <article class="kpi-card kpi-sold">
+        <div class="kpi-top">
+          <div class="kpi-icon">▦</div>
+          <span class="kpi-trend">Top ventes</span>
+        </div>
+        <p class="kpi-label">Produits vendus (top)</p>
+        <p class="kpi-value">{{ getTopTotalSold() | number:'1.0-0' }}<span>unités</span></p>
+        <div class="kpi-bar"><i style="width: 62%"></i></div>
+        <p class="kpi-foot"><span class="dot dot-accent"></span> Volume écoulé</p>
+      </article>
+
+      <article class="kpi-card kpi-tech">
+        <div class="kpi-top">
+          <div class="kpi-icon">◈</div>
+          <span class="kpi-trend neutral">Terrain</span>
+        </div>
+        <p class="kpi-label">Installations</p>
+        <p class="kpi-value">{{ getTotalRepairs() }}<span>interventions</span></p>
+        <div class="kpi-bar"><i style="width: 44%"></i></div>
+        <p class="kpi-foot"><span class="dot dot-info"></span> Performance techniciens</p>
+      </article>
+
+      <article class="kpi-card kpi-cat">
+        <div class="kpi-top">
+          <div class="kpi-icon">◫</div>
+          <span class="kpi-trend neutral">{{ data.categoryDistribution.length }} cat.</span>
+        </div>
+        <p class="kpi-label">Catégories actives</p>
+        <p class="kpi-value">{{ data.categoryDistribution.length }}<span>familles</span></p>
+        <div class="kpi-bar"><i style="width: 36%"></i></div>
+        <p class="kpi-foot"><span class="dot dot-muted"></span> Diversification</p>
+      </article>
+    </section>
+
+    <!-- ===== CHARTS 2x2 ===== -->
+    <section class="charts-grid">
+      <div class="chart-card">
+        <div class="chart-header">
+          <div class="chart-title-wrap">
+            <h3 class="chart-title">Évolution du CA mensuel</h3>
+            <p class="chart-subtitle">6 derniers mois • Tendance lissée</p>
+          </div>
+          <span class="chart-badge">CA</span>
+        </div>
+        <div class="chart-wrapper"><canvas #revenueChart></canvas></div>
+      </div>
+
+      <div class="chart-card">
+        <div class="chart-header">
+          <div class="chart-title-wrap">
+            <h3 class="chart-title">Top produits vendus</h3>
+            <p class="chart-subtitle">Top 5 • Volume</p>
+          </div>
+          <span class="chart-badge">Top 5</span>
+        </div>
+        <div class="chart-wrapper"><canvas #topProductsChart></canvas></div>
+      </div>
+
+      <div class="chart-card">
+        <div class="chart-header">
+          <div class="chart-title-wrap">
+            <h3 class="chart-title">Répartition par catégorie</h3>
+            <p class="chart-subtitle">Mix produits • Poids</p>
+          </div>
+          <span class="chart-badge">Mix</span>
+        </div>
+        <div class="chart-wrapper"><canvas #categoryChart></canvas></div>
+      </div>
+
+      <div class="chart-card">
+        <div class="chart-header">
+          <div class="chart-title-wrap">
+            <h3 class="chart-title">Performance techniciens</h3>
+            <p class="chart-subtitle">Installations réalisées</p>
+          </div>
+          <span class="chart-badge">Équipe</span>
+        </div>
+        <div class="chart-wrapper"><canvas #techChart></canvas></div>
+      </div>
+    </section>
+
+    <!-- ===== TABLE TOP 10 ===== -->
+    <section class="table-card">
+      <div class="table-header">
+        <div class="table-title-wrap">
+          <h3 class="table-title">Top 10 produits</h3>
+          <p class="table-subtitle">{{ data.topProducts.length }} références • Tri par volume</p>
+        </div>
+        <span class="table-badge">{{ data.topProducts.length }} produits</span>
+      </div>
+      <div class="table-wrap">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Produit</th>
+              <th class="th-amount">Qté vendue</th>
+              <th class="th-amount">CA généré</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let p of data.topProducts; let i = index">
+              <td class="td-rank"><span class="rank-pill" [class.rank-top]="i < 3">{{ i + 1 }}</span></td>
+              <td class="td-strong">{{ p.name }}</td>
+              <td class="td-amount">{{ p.totalSold | number:'1.0-0' }}</td>
+              <td class="td-amount accent">{{ p.totalRevenue | number:'1.0-0' }}<span class="ccy">FCFA</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </ng-container>
+</div>

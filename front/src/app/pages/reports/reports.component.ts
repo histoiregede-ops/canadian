@@ -13,71 +13,7 @@ Chart.register(...registerables);
   standalone: true,
   imports: [CommonModule],
   styleUrls: ['./reports.component.css'],
-  template: `
-    <div class="container">
-      <h1>Rapports commerciaux</h1>
-
-      <div *ngIf="loading" class="loading">Chargement des rapports...</div>
-
-      <ng-container *ngIf="!loading && data">
-        <div class="stats-grid">
-          <div class="stat-card">
-            <span class="stat-label">CA du mois</span>
-            <span class="stat-value">{{ data.monthlyRevenue | number }} FCFA</span>
-          </div>
-          <div class="stat-card">
-            <span class="stat-label">Produits vendus (top)</span>
-            <span class="stat-value">{{ getTopTotalSold() }}</span>
-          </div>
-          <div class="stat-card">
-            <span class="stat-label">Installations</span>
-            <span class="stat-value">{{ getTotalRepairs() }}</span>
-          </div>
-          <div class="stat-card">
-            <span class="stat-label">Catégories</span>
-            <span class="stat-value">{{ data.categoryDistribution.length }}</span>
-          </div>
-        </div>
-
-        <div class="grid-2">
-          <div class="chart-card">
-            <h3>Évolution du CA mensuel</h3>
-            <div class="chart-wrapper"><canvas #revenueChart></canvas></div>
-          </div>
-          <div class="chart-card">
-            <h3>Top produits vendus</h3>
-            <div class="chart-wrapper"><canvas #topProductsChart></canvas></div>
-          </div>
-          <div class="chart-card">
-            <h3>Répartition par catégorie</h3>
-            <div class="chart-wrapper"><canvas #categoryChart></canvas></div>
-          </div>
-          <div class="chart-card">
-            <h3>Performance techniciens</h3>
-            <div class="chart-wrapper"><canvas #techChart></canvas></div>
-          </div>
-        </div>
-
-        <div class="card mt-6">
-          <h3>Top 10 produits</h3>
-          <div class="table-container">
-            <table class="table">
-              <thead>
-                <tr><th>Produit</th><th>Qté vendue</th><th>CA généré</th></tr>
-              </thead>
-              <tbody>
-                <tr *ngFor="let p of data.topProducts">
-                  <td>{{ p.name }}</td>
-                  <td>{{ p.totalSold }}</td>
-                  <td>{{ p.totalRevenue | number }} FCFA</td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </ng-container>
-    </div>
-  `
+  templateUrl: './reports.component.html'
 })
 export class ReportsComponent implements OnInit, AfterViewInit, OnDestroy {
   @ViewChild('revenueChart') private revenueChartRef!: ElementRef;
@@ -204,7 +140,19 @@ export class ReportsComponent implements OnInit, AfterViewInit, OnDestroy {
     return this.data?.technicianPerformance.reduce((s, t) => s + t.totalInstallations, 0) || 0;
   }
 
+  refresh(): void {
+    this.loading = true;
+    this.reportsService.getDashboard().subscribe({
+      next: (data) => { this.data = data; this.loading = false; setTimeout(() => this.renderCharts(), 300); },
+      error: () => { this.loading = false; }
+    });
+  }
+
   ngOnDestroy(): void {
     this.refreshSub?.unsubscribe();
+    this.revenueChart?.destroy();
+    this.topChart?.destroy();
+    this.catChart?.destroy();
+    this.techChart?.destroy();
   }
 }

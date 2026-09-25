@@ -73,6 +73,33 @@ export class AccountingComponent implements OnInit {
     return type === 'income' ? 'Entrée' : 'Sortie';
   }
 
+  // Helpers for new design
+  today(): string {
+    return new Date().toISOString().split('T')[0];
+  }
+
+  setLast7Days(): void {
+    const end = new Date();
+    const start = new Date();
+    start.setDate(end.getDate() - 7);
+    this.selectedStart = start.toISOString().split('T')[0];
+    this.selectedEnd = end.toISOString().split('T')[0];
+    this.loadFlux();
+  }
+
+  setThisMonth(): void {
+    const now = new Date();
+    const start = new Date(now.getFullYear(), now.getMonth(), 1);
+    const end = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+    this.selectedStart = start.toISOString().split('T')[0];
+    this.selectedEnd = end.toISOString().split('T')[0];
+    this.loadFlux();
+  }
+
+  trackById(index: number, item: any): string {
+    return item?.id ?? String(index);
+  }
+
   exportPDF(): void {
     if (!this.fluxData) return;
     const doc = new jsPDF();

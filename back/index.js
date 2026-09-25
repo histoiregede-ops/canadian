@@ -9,6 +9,7 @@ const morgan = require('morgan');
 const WebSocket = require('ws');
 const jwt = require('jsonwebtoken');
 const rateLimit = require('express-rate-limit');
+const { initRedis, isRedisAvailable } = require('./config/redis');
 const sequelize = require('./config/database');
 const Product = require('./models/Product');
 const models = require('./models');
@@ -561,6 +562,10 @@ sequelize.query(`ALTER TABLE Suppliers ENGINE=InnoDB`).catch(() => {});
 sequelize.sync()
   .then(async () => {
     console.log('Database synced successfully.');
+
+    // Initialize Redis connection
+    initRedis();
+    console.log('[Redis] Redis initialization attempted.');
 
     // Idempotent migration: fix lowStockThreshold to 1 for all existing products
     try {

@@ -17,8 +17,12 @@ import { ToastService } from '../../services/toast.service';
 })
 export class CustomersComponent implements OnInit, OnDestroy {
   customers: Customer[] = [];
-  searchQuery = '';
-  loyaltyFilter = '';
+  private _searchQuery = '';
+  get searchQuery(): string { return this._searchQuery; }
+  set searchQuery(v: string) { this._searchQuery = v; this.updateFilteredCustomers(); }
+  private _loyaltyFilter = '';
+  get loyaltyFilter(): string { return this._loyaltyFilter; }
+  set loyaltyFilter(v: string) { this._loyaltyFilter = v; this.updateFilteredCustomers(); }
   loading = true;
   showModal = false;
   isEditing = false;
@@ -37,13 +41,25 @@ export class CustomersComponent implements OnInit, OnDestroy {
   ) {}
 
   ngOnInit(): void {
-    this.route.data.subscribe(({ data }) => {
-      if (data) {
-        this.customers = data.customers;
-        this.customers.forEach(c => this.loadLoyaltyForCustomer(c));
-        this.loading = false;
-      }
-    });
+    // Use snapshot to avoid subscription leak + double CD
+    const snap = this.route.snapshot.data['data'];
+    if (snap?.customers) {
+      this.customers = snap.customers;
+      this.updateFilteredCustomers();
+      this.updateStatsCounts();
+      this.loadAllLoyalty();
+      this.loading = false;
+    } else {
+      this.route.data.subscribe(({ data }) => {
+        if (data) {
+          this.customers = data.customers;
+          this.updateFilteredCustomers();
+          this.updateStatsCounts();
+          this.loadAllLoyalty();
+          this.loading = false;
+        }
+      });
+    }
     this.refreshSub = this.refreshService.refresh$.subscribe(() => this.loadCustomers());
   }
 
@@ -51,9 +67,17 @@ export class CustomersComponent implements OnInit, OnDestroy {
     this.refreshSub?.unsubscribe();
   }
 
-  get filteredCustomers() {
+  // Memoized — évite recalcul à chaque CD
+  filteredCustomers: Customer[] = [];
+  withEmailCount = 0;
+  withPhoneCount = 0;
+  uniqueCitiesCount = 0;
+  goldPlatinumCount = 0;
+  private loyaltyCache = new Map<string, string>();
+
+  private updateFilteredCustomers(): void {
     const q = (this.searchQuery ?? '').toLowerCase().trim();
-    return this.customers.filter(c => {
+    this.filteredCustomers = this.customers.filter(c => {
       if (this.loyaltyFilter && this.getLevel(c) !== this.loyaltyFilter) return false;
       if (!q) return true;
       const name = ((c.fullName || c.name) ?? '').toLowerCase();
@@ -63,21 +87,24 @@ export class CustomersComponent implements OnInit, OnDestroy {
     });
   }
 
-  getWithEmail(): number {
-    return this.customers.filter(c => c.email).length;
+  private updateStatsCounts(): void {
+    this.withEmailCount = this.customers.filter(c => c.email).length;
+    this.withPhoneCount = this.customers.filter(c => c.phone).length;
+    this.uniqueCitiesCount = new Set(this.customers.map(c => c.city).filter(Boolean)).size;
+    this.goldPlatinumCount = this.customers.filter(c => {
+      const lvl = this.getLevel(c);
+      return lvl === 'gold' || lvl === 'platinum';
+    }).length;
   }
 
-  getWithPhone(): number {
-    return this.customers.filter(c => c.phone).length;
-  }
-
+  // Wrapper pour compatibilité template — maintenant O(1) si on utilise les champs
+  getWithEmail(): number { return this.withEmailCount; }
+  getWithPhone(): number { return this.withPhoneCount; }
+  getUniqueCities(): number { return this.uniqueCitiesCount; }
   getLoyaltyCount(level: string): number {
+    // Pour le template qui fait getLoyaltyCount('gold') + getLoyaltyCount('platinum'), on retourne le cache
+    if (level === 'gold' || level === 'platinum') return this.goldPlatinumCount;
     return this.customers.filter(c => this.getLevel(c) === level).length;
-  }
-
-  getUniqueCities(): number {
-    const cities = new Set(this.customers.map(c => c.city).filter(Boolean));
-    return cities.size;
   }
 
   trackByCustomerId(index: number, item: any): string {
@@ -103,12 +130,23 @@ export class CustomersComponent implements OnInit, OnDestroy {
   }
 
   getLevel(customer: Customer): string {
-    if (customer.loyaltyLevel) return customer.loyaltyLevel;
-    const pts = customer.points || customer.loyaltyPoints || 0;
-    if (pts >= 1000) return 'platinum';
-    if (pts >= 500) return 'gold';
-    if (pts >= 100) return 'silver';
-    return 'bronze';
+    const cacheKey = customer.id || customer.email || JSON.stringify(customer);
+    if (this.loyaltyCache.has(cacheKey)) return this.loyaltyCache.get(cacheKey)!;
+    let level: string;
+    if (customer.loyaltyLevel) level = customer.loyaltyLevel;
+    else {
+      const pts = customer.points || customer.loyaltyPoints || 0;
+      if (pts >= 1000) level = 'platinum';
+      else if (pts >= 500) level = 'gold';
+      else if (pts >= 100) level = 'silver';
+      else level = 'bronze';
+    }
+    this.loyaltyCache.set(cacheKey, level);
+    if (this.loyaltyCache.size > 500) {
+      const first = this.loyaltyCache.keys().next().value;
+      if (first) this.loyaltyCache.delete(first);
+    }
+    return level;
   }
 
   loadLoyaltyForCustomer(customer: Customer): void {
@@ -119,8 +157,53 @@ export class CustomersComponent implements OnInit, OnDestroy {
         customer.loyaltyLevel = loyalty.level;
         customer.totalSpent = loyalty.totalSpent;
         customer.orderCount = loyalty.orderCount;
+        this.loyaltyCache.delete(customer.id || '');
+        this.updateFilteredCustomers();
+        this.updateStatsCounts();
       },
       error: () => {}
+    });
+  }
+
+  private loadAllLoyalty(): void {
+    if (this.customers.length === 0) return;
+    // Batch avec forkJoin + limite de 10 en parallèle pour éviter storm, une seule CD à la fin
+    import('rxjs').then(({ forkJoin, of }) => {
+      import('rxjs/operators').then(({ catchError }) => {
+        const batchSize = 10;
+        const batches: any[][] = [];
+        for (let i = 0; i < this.customers.length; i += batchSize) {
+          batches.push(this.customers.slice(i, i + batchSize));
+        }
+        const processBatch = (idx: number) => {
+          if (idx >= batches.length) {
+            this.updateFilteredCustomers();
+            this.updateStatsCounts();
+            this.changeDetector.markForCheck();
+            return;
+          }
+          const batch = batches[idx];
+          forkJoin(
+            batch.map(c =>
+              c.id ? this.customerService.getCustomerLoyalty(c.id).pipe(
+                catchError(() => of(null))
+              ) : of(null)
+            )
+          ).subscribe(results => {
+            results.forEach((loyalty: any, i: number) => {
+              if (loyalty && batch[i]) {
+                batch[i].loyaltyPoints = loyalty.points;
+                batch[i].loyaltyLevel = loyalty.level;
+                batch[i].totalSpent = loyalty.totalSpent;
+                batch[i].orderCount = loyalty.orderCount;
+              }
+            });
+            this.loyaltyCache.clear();
+            processBatch(idx + 1);
+          });
+        };
+        processBatch(0);
+      });
     });
   }
 
@@ -129,7 +212,9 @@ export class CustomersComponent implements OnInit, OnDestroy {
     this.customerService.getCustomers().subscribe({
       next: (data) => {
         this.customers = data;
-        this.customers.forEach(c => this.loadLoyaltyForCustomer(c));
+        this.updateFilteredCustomers();
+        this.updateStatsCounts();
+        this.loadAllLoyalty();
         this.loading = false;
       },
       error: (err) => {

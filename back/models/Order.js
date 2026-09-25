@@ -45,6 +45,12 @@ const Order = sequelize.define('Order', {
   deliveryAddress: {
     type: DataTypes.TEXT
   }
+}, {
+  indexes: [
+    { fields: ['createdAt'] },
+    { fields: ['status'] },
+    { fields: ['customerId'] }
+  ]
 });
 
 const OrderItem = sequelize.define('OrderItem', {
@@ -73,6 +79,11 @@ const OrderItem = sequelize.define('OrderItem', {
     type: DataTypes.DECIMAL(10, 2),
     allowNull: false
   }
+}, {
+  indexes: [
+    { fields: ['orderId'] },
+    { fields: ['productId'] }
+  ]
 });
 
 module.exports = { Order, OrderItem };

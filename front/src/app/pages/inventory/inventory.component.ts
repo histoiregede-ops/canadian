@@ -15,11 +15,12 @@ import { RefreshService } from '../../services/refresh.service';
 import { ToastService } from '../../services/toast.service';
 import { BarcodeService } from '../../services/barcode.service';
 import { AuthService } from '../../services/auth';
+import { StatusLabelPipe, StatusClassPipe } from '../../pipes/status.pipe';
 
 @Component({
   selector: 'app-inventory',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, StatusLabelPipe, StatusClassPipe],
   templateUrl: './inventory.component.html',
   styleUrls: ['./inventory.component.css'],
 })
@@ -28,10 +29,21 @@ export class InventoryComponent implements OnInit, OnDestroy, AfterViewInit {
   categories: Category[] = [];
   suppliers: any[] = [];
 
-  searchQuery = '';
-  selectedCategoryId = '';
-  selectedSupplierId = '';
-  selectedStatus: string = '';
+  private _searchQuery = '';
+  get searchQuery(): string { return this._searchQuery; }
+  set searchQuery(v: string) { this._searchQuery = v; this.updateFilteredProducts(); }
+
+  private _selectedCategoryId = '';
+  get selectedCategoryId(): string { return this._selectedCategoryId; }
+  set selectedCategoryId(v: string) { this._selectedCategoryId = v; this.updateFilteredProducts(); this.updateDerivedCounts(); }
+
+  private _selectedSupplierId = '';
+  get selectedSupplierId(): string { return this._selectedSupplierId; }
+  set selectedSupplierId(v: string) { this._selectedSupplierId = v; this.updateFilteredProducts(); }
+
+  private _selectedStatus: string = '';
+  get selectedStatus(): string { return this._selectedStatus; }
+  set selectedStatus(v: string) { this._selectedStatus = v; this.updateFilteredProducts(); }
   saving = false;
   private saveWatchdog: ReturnType<typeof setTimeout> | null = null;
   deletingId: string | null = null;
@@ -48,38 +60,34 @@ export class InventoryComponent implements OnInit, OnDestroy, AfterViewInit {
   private categoryChart: any;
   private statusChart: any;
 
-  get filteredProducts(): Product[] {
-    const q = (this.searchQuery || '').toLowerCase();
+  // Memoized filtered lists — évite recalcul à chaque détection de changement
+  filteredProducts: Product[] = [];
+  finishedProducts: Product[] = [];
+  lowStockCount = 0;
+  outOfStockCount = 0;
 
-    return this.products.filter((p) => {
+  private updateFilteredProducts(): void {
+    const q = (this.searchQuery || '').toLowerCase();
+    this.filteredProducts = this.products.filter((p) => {
       const matchesQuery =
         !q ||
         (p.name || '').toLowerCase().includes(q) ||
         (p.description || '').toLowerCase().includes(q) ||
         (p.barcode || '').toLowerCase().includes(q);
-      const matchesCategory =
-        !this.selectedCategoryId || p.categoryId === this.selectedCategoryId;
-      const matchesSupplier =
-        !this.selectedSupplierId || p.supplierId === Number(this.selectedSupplierId);
+      const matchesCategory = !this.selectedCategoryId || p.categoryId === this.selectedCategoryId;
+      const matchesSupplier = !this.selectedSupplierId || p.supplierId === Number(this.selectedSupplierId);
       const matchesStatus = !this.selectedStatus || p.status === this.selectedStatus;
-
       return matchesQuery && matchesCategory && matchesSupplier && matchesStatus;
     });
   }
 
-  get finishedProducts(): Product[] {
+  private updateDerivedCounts(): void {
     const threshold = this.selectedCategoryId ? 0 : 1;
-    return this.products
+    this.finishedProducts = this.products
       .filter((p) => p.stockQuantity <= (p.lowStockThreshold || threshold))
       .sort((a, b) => a.stockQuantity - b.stockQuantity);
-  }
-
-  get lowStockCount(): number {
-    return this.products.filter(p => p.stockQuantity > 0 && p.stockQuantity <= (p.lowStockThreshold || 1)).length;
-  }
-
-  get outOfStockCount(): number {
-    return this.products.filter(p => p.stockQuantity === 0).length;
+    this.lowStockCount = this.products.filter(p => p.stockQuantity > 0 && p.stockQuantity <= (p.lowStockThreshold || 1)).length;
+    this.outOfStockCount = this.products.filter(p => p.stockQuantity === 0).length;
   }
 
   loading = true;
@@ -104,6 +112,7 @@ export class InventoryComponent implements OnInit, OnDestroy, AfterViewInit {
   private wsSub: Subscription | null = null;
   private refreshSub: Subscription | null = null;
   private productsLoadRequest = 0;
+  private barcodeCache = new Map<string, string>();
 
   currentProduct: Product = this.initProduct();
 
@@ -129,14 +138,27 @@ export class InventoryComponent implements OnInit, OnDestroy, AfterViewInit {
   }
 
   ngOnInit(): void {
-    this.route.data.subscribe(({ data }) => {
-      if (data) {
-        this.products = data.products || [];
-        this.rateLimitError = this.products.length === 0;
-        this.loading = false;
-        this.updateCharts();
-      }
-    });
+    // Use snapshot to avoid subscription leak and double CD
+    const snapshotData = this.route.snapshot.data['data'];
+    if (snapshotData?.products) {
+      this.products = snapshotData.products || [];
+      this.rateLimitError = this.products.length === 0;
+      this.loading = false;
+      this.updateFilteredProducts();
+      this.updateDerivedCounts();
+      this.updateCharts();
+    } else {
+      this.route.data.subscribe(({ data }) => {
+        if (data) {
+          this.products = data.products || [];
+          this.rateLimitError = this.products.length === 0;
+          this.loading = false;
+          this.updateFilteredProducts();
+          this.updateDerivedCounts();
+          this.updateCharts();
+        }
+      });
+    }
     this.loadCategories();
     this.loadSuppliers();
     this.listenNotifications();
@@ -314,7 +336,10 @@ export class InventoryComponent implements OnInit, OnDestroy, AfterViewInit {
         this.products = data;
         this.loading = false;
         this.rateLimitError = data.length === 0;
+        this.updateFilteredProducts();
+        this.updateDerivedCounts();
         this.updateCharts();
+        this.changeDetector.markForCheck();
         callback?.();
       },
       error: (err) => {
@@ -626,7 +651,15 @@ export class InventoryComponent implements OnInit, OnDestroy, AfterViewInit {
 
   getBarcodePreview(code: string): string {
     if (!code) return '';
-    return this.barcodeService.generateBarcodeDataUrl(code);
+    if (this.barcodeCache.has(code)) return this.barcodeCache.get(code)!;
+    const url = this.barcodeService.generateBarcodeDataUrl(code);
+    this.barcodeCache.set(code, url);
+    // Limiter le cache à 200 entrées pour éviter fuite mémoire
+    if (this.barcodeCache.size > 200) {
+      const firstKey = this.barcodeCache.keys().next().value;
+      if (firstKey) this.barcodeCache.delete(firstKey);
+    }
+    return url;
   }
 
   getStatusClass(status: string): string {

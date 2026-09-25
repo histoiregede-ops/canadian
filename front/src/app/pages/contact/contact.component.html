@@ -1,20 +1,61 @@
 <div class="contact-page">
-  <!-- Header -->
+  <!-- HERO MESH -->
   <section class="contact-hero">
+    <div class="hero-glow"></div>
     <div class="contact-hero-content">
-      <span class="section-label">Contact</span>
-      <h1>Contactez-nous</h1>
-      <p>Une question ? Un projet ? Notre équipe est là pour vous répondre.</p>
+      <div class="hero-eyebrow">
+        <span class="eyebrow-dot"></span>
+        <span>Contact • Support Premium</span>
+        <span class="eyebrow-separator">•</span>
+        <span class="live-indicator"><i></i> Réponse sous 24h</span>
+      </div>
+      <h1>Contactez-nous <span class="hero-title-accent">simplement</span></h1>
+      <p>Une question ? Un projet ? Notre équipe premium vous répond avec précision — devis, support et accompagnement personnalisé.</p>
+      <div class="hero-meta">
+        <span class="meta-pill"><span class="meta-dot dot-success"></span> 24h de réponse</span>
+        <span class="meta-pill"><span class="meta-dot dot-accent"></span> Devis gratuit</span>
+        <span class="meta-pill"><span class="meta-dot dot-warning"></span> Lun–Sam 8h–19h</span>
+      </div>
     </div>
+  </section>
+
+  <!-- KPI -->
+  <section class="kpi-grid">
+    <article class="kpi-card">
+      <div class="kpi-top"><div class="kpi-icon">✦</div><span class="kpi-trend positive">Garantie</span></div>
+      <p class="kpi-label">Délai de réponse</p>
+      <p class="kpi-value">&lt;24<span>heures</span></p>
+      <div class="kpi-bar"><i style="width: 86%"></i></div>
+      <p class="kpi-foot"><span class="dot dot-success"></span> Support réactif</p>
+    </article>
+    <article class="kpi-card">
+      <div class="kpi-top"><div class="kpi-icon">◎</div><span class="kpi-trend">Premium</span></div>
+      <p class="kpi-label">Satisfaction</p>
+      <p class="kpi-value">4.9<span>/5 • clients</span></p>
+      <div class="kpi-bar"><i style="width: 94%"></i></div>
+      <p class="kpi-foot"><span class="dot dot-accent"></span> Confiance établie</p>
+    </article>
+    <article class="kpi-card">
+      <div class="kpi-top"><div class="kpi-icon">◈</div><span class="kpi-trend">Lomé • Togo</span></div>
+      <p class="kpi-label">Disponibilité</p>
+      <p class="kpi-value">6<span>j / 7 ouverts</span></p>
+      <div class="kpi-bar"><i style="width: 72%"></i></div>
+      <p class="kpi-foot"><span class="dot dot-warning"></span> Expertise terrain</p>
+    </article>
   </section>
 
   <div class="contact-content">
     <!-- Form -->
     <div class="contact-form-section">
-      <div class="card">
+      <div class="card form-card">
+        <div class="card-header">
+          <div>
+            <h3 class="card-title">Envoyez-nous un message</h3>
+            <p class="card-subtitle">Tous les champs * sont requis • Réponse par email confirmée</p>
+          </div>
+          <span class="header-badge"><span class="dot dot-success"></span> Sécurisé</span>
+        </div>
         <div class="card-body">
-          <h3 class="card-title">Envoyez-nous un message</h3>
-
           <form [formGroup]="contactForm" (ngSubmit)="onSubmit()">
             <div class="form-row">
               <div class="form-group">
@@ -58,17 +99,18 @@
             <div class="form-group">
               <label class="form-label" for="message">Message *</label>
               <textarea id="message" class="form-textarea" [class.form-error]="isFieldInvalid('message')"
-                formControlName="message" placeholder="Décrivez votre demande en détail..." rows="6"></textarea>
+                formControlName="message" placeholder="Décrivez votre demande en détail — contexte, besoin, timing..." rows="6"></textarea>
               <span class="form-error" *ngIf="isFieldInvalid('message')">{{ getFieldError('message') }}</span>
             </div>
 
             <button type="submit" class="btn btn-primary btn-lg btn-block" [disabled]="contactForm.invalid || isSubmitting">
-              <span *ngIf="!isSubmitting">✉️ Envoyer le message</span>
-              <span *ngIf="isSubmitting">
+              <span *ngIf="!isSubmitting">Envoyer le message →</span>
+              <span *ngIf="isSubmitting" style="display:inline-flex;align-items:center;gap:8px">
                 <span class="spinner"></span>
                 Envoi en cours...
               </span>
             </button>
+            <p class="form-trust"><span class="dot dot-success"></span> Vos données restent confidentielles • Aucune revente</p>
           </form>
         </div>
       </div>
@@ -76,10 +118,12 @@
 
     <!-- Info Sidebar -->
     <aside class="contact-info-section">
-      <div class="card">
-        <div class="card-body">
+      <div class="card info-card">
+        <div class="card-header">
           <h3 class="card-title">Informations</h3>
-
+          <span class="header-badge neutral">Lomé • Togo</span>
+        </div>
+        <div class="card-body">
           <div class="info-list">
             <div class="info-item" *ngFor="let info of contactInfo">
               <span class="info-icon">{{ info.icon }}</span>
@@ -91,18 +135,30 @@
           </div>
 
           <div class="contact-commitments">
-            <h4>Notre engagement</h4>
+            <h4>Notre engagement premium</h4>
             <ul class="commitment-list">
-              <li *ngFor="let item of commitments">✅ {{ item }}</li>
+              <li *ngFor="let item of commitments"><span class="commit-dot"></span> {{ item }}</li>
             </ul>
           </div>
 
           <div class="contact-cta">
             <p>Besoin d'une réponse immédiate ?</p>
             <a href="https://wa.me/22879803856" target="_blank" rel="noopener noreferrer" class="btn btn-primary btn-block">
-              💬 WhatsApp
+              💬 Écrire sur WhatsApp →
             </a>
+            <span class="cta-hint">Réponse instantanée • 8h–19h</span>
           </div>
+        </div>
+      </div>
+
+      <div class="card trust-card">
+        <div class="trust-icon">◆</div>
+        <h4>Pourquoi Electro Canadien ?</h4>
+        <p>10 ans d’expertise, installations certifiées, service après-vente premium. Votre énergie entre de bonnes mains.</p>
+        <div class="trust-metrics">
+          <span><strong>2h</strong> délai moyen</span>
+          <span><strong>500+</strong> clients</span>
+          <span><strong>98%</strong> satisfaction</span>
         </div>
       </div>
     </aside>
@@ -117,10 +173,10 @@
       </div>
       <div class="modal-body">
         <div style="text-align:center; padding: var(--space-4);">
-          <div style="font-size:3rem; margin-bottom:var(--space-4);">
-            {{ messageType === 'success' ? '✅' : '❌' }}
+          <div class="modal-illus" [class.success]="messageType==='success'" [class.error]="messageType!=='success'">
+            {{ messageType === 'success' ? '✓' : '!' }}
           </div>
-          <p>{{ messageText }}</p>
+          <p class="modal-text">{{ messageText }}</p>
         </div>
       </div>
       <div class="modal-footer">

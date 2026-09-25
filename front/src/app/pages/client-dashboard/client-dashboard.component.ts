@@ -58,11 +58,11 @@ interface LoyaltyInfo {
             <span class="points-number">{{ loyaltyInfo.points }}</span>
             <span class="points-label">points</span>
           </div>
-          <div class="progress-bar" *ngIf="loyaltyInfo.nextLevelPoints > 0">
+          <div class="progress-bar" *ngIf="loyaltyInfo!.nextLevelPoints > 0">
             <div class="progress-fill" [style.width.%]="getProgressPercentage()"></div>
           </div>
-          <p class="next-level" *ngIf="loyaltyInfo.nextLevelPoints > 0">
-            {{ loyaltyInfo.nextLevelPoints - loyaltyInfo.points }} points pour le niveau suivant
+          <p class="next-level" *ngIf="loyaltyInfo!.nextLevelPoints > 0">
+            {{ loyaltyInfo!.nextLevelPoints - loyaltyInfo!.points }} points pour le niveau suivant
           </p>
         </div>
       </div>

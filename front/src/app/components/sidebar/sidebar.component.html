@@ -1,142 +1,259 @@
 <aside class="sidebar" [class.open]="isOpen" [class.collapsed]="isCollapsed">
+  <!-- Header -->
   <div class="sidebar-header">
-    <div class="logo">
-      <img src="/logo_projet.png" class="logo-img" alt="Logo" width="40" height="40">
-      <span class="logo-text" [class.hide]="isCollapsed">Electro Canadien</span>
-    </div>
-    <button class="sidebar-close" (click)="closeSidebar.emit()" title="Fermer">&#x2715;</button>
+    <a routerLink="/dashboard" class="logo" (click)="closeSidebar.emit()">
+      <div class="logo-mark">
+        <img src="/logo_electro_canadien.png" class="logo-img" alt="Electro Canadien" width="44" height="44">
+        <span class="logo-glow"></span>
+      </div>
+      <div class="logo-text" [class.hide]="isCollapsed">
+        <span class="logo-title">Electro</span>
+        <span class="logo-subtitle">Canadien</span>
+      </div>
+    </a>
+    <button class="sidebar-collapse-btn" (click)="isCollapsed = !isCollapsed" title="Réduire" *ngIf="!isCollapsed">
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M10 3L5 8l5 5"/></svg>
+    </button>
+    <button class="sidebar-close" (click)="closeSidebar.emit()" title="Fermer">
+      <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 4l10 10M14 4L4 14"/></svg>
+    </button>
   </div>
 
+  <!-- Navigation -->
   <nav class="nav-menu">
+    <!-- Section: Opérations -->
+    <div class="nav-section" [class.hide]="isCollapsed">
+      <span class="nav-section-title">Opérations</span>
+    </div>
+
     <a *ngIf="user?.role === 'admin' || user?.role === 'cashier'" routerLink="/dashboard" routerLinkActive="active" class="nav-item" [class.collapsed]="isCollapsed">
-      <span class="icon">&#x1F4CA;</span>
+      <span class="nav-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 16l4-4 4 4 5-8"/></svg>
+      </span>
       <span class="label" [class.hide]="isCollapsed">Tableau de bord</span>
       <span class="tooltip" *ngIf="isCollapsed">Tableau de bord</span>
     </a>
+
     <a *ngIf="user?.role === 'admin' || user?.role === 'cashier'" routerLink="/inventory" routerLinkActive="active" class="nav-item" [class.collapsed]="isCollapsed">
-      <span class="icon">&#x1F4E6;</span>
-      <span class="label" [class.hide]="isCollapsed">Catalogue &amp; Stock</span>
-      <span class="tooltip" *ngIf="isCollapsed">Catalogue &amp; Stock</span>
+      <span class="nav-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12V8a2 2 0 0 0-.59-1.42L13.5 1.5a2 2 0 0 0-2.83 0l-5.5 5.5A2 2 0 0 0 4 8v4"/><path d="M4 12h16"/><path d="M8 12v8a2 2 0 0 0 2 2h4a2 2 0 0 0 2-2v-8"/></svg>
+      </span>
+      <span class="label" [class.hide]="isCollapsed">Catalogue & Stock</span>
+      <span class="tooltip" *ngIf="isCollapsed">Catalogue & Stock</span>
     </a>
+
     <a *ngIf="user?.role === 'admin' || user?.role === 'cashier'" routerLink="/movements" routerLinkActive="active" class="nav-item" [class.collapsed]="isCollapsed">
-      <span class="icon">&#x1F4CA;</span>
+      <span class="nav-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M7 16V8m0 0l3-3m-3 3l-3-3"/><path d="M17 8v8m0 0l-3 3m3-3l3 3"/></svg>
+      </span>
       <span class="label" [class.hide]="isCollapsed">Mouvements</span>
       <span class="tooltip" *ngIf="isCollapsed">Mouvements</span>
     </a>
+
     <a *ngIf="user?.role === 'admin' || user?.role === 'cashier'" routerLink="/transfers" routerLinkActive="active" class="nav-item" [class.collapsed]="isCollapsed">
-      <span class="icon">&#x1F4B5;</span>
+      <span class="nav-icon nav-icon--accent">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M16 13a2 2 0 1 1-4 0 2 2 0 0 1 4 0z"/><path d="M2 10h20"/></svg>
+      </span>
       <span class="label" [class.hide]="isCollapsed">Transferts</span>
       <span class="tooltip" *ngIf="isCollapsed">Transferts</span>
     </a>
+
     <a *ngIf="user?.role === 'admin' || user?.role === 'cashier'" routerLink="/scan" routerLinkActive="active" class="nav-item" [class.collapsed]="isCollapsed">
-      <span class="icon">&#x1F4F7;</span>
+      <span class="nav-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><path d="M14 14h7v7h-7z"/><path d="M17 17h.01"/></svg>
+      </span>
       <span class="label" [class.hide]="isCollapsed">Scanner</span>
       <span class="tooltip" *ngIf="isCollapsed">Scanner</span>
     </a>
+
+    <div class="nav-divider" [class.hide]="isCollapsed"></div>
+    <div class="nav-section" [class.hide]="isCollapsed">
+      <span class="nav-section-title">Approvisionnement</span>
+    </div>
+
     <a *ngIf="user?.role === 'admin' || user?.role === 'cashier'" routerLink="/suppliers" routerLinkActive="active" class="nav-item" [class.collapsed]="isCollapsed">
-      <span class="icon">&#x1F4E6;</span>
+      <span class="nav-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M13 16V6a1 1 0 0 0-1-1H4a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h9a1 1 0 0 0 1-1z"/><path d="M13 8h4a1 1 0 0 1 1 1v6a1 1 0 0 1-1 1h-4"/><path d="M16 12h.01"/></svg>
+      </span>
       <span class="label" [class.hide]="isCollapsed">Fournisseurs</span>
       <span class="tooltip" *ngIf="isCollapsed">Fournisseurs</span>
     </a>
     <a *ngIf="user?.role === 'admin'" routerLink="/purchase-orders" routerLinkActive="active" class="nav-item" [class.collapsed]="isCollapsed">
-      <span class="icon">&#x1F4E5;</span>
+      <span class="nav-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><path d="M9 14h6"/><path d="M9 18h6"/></svg>
+      </span>
       <span class="label" [class.hide]="isCollapsed">Approvisionnement</span>
       <span class="tooltip" *ngIf="isCollapsed">Approvisionnement</span>
     </a>
     <a *ngIf="user?.role === 'admin'" routerLink="/categories" routerLinkActive="active" class="nav-item" [class.collapsed]="isCollapsed">
-      <span class="icon">&#x1F3F7;&#xFE0F;</span>
+      <span class="nav-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7a2 2 0 0 1 2-2h4l2-2h4a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7z"/><path d="M8 13h8"/><path d="M8 17h5"/></svg>
+      </span>
       <span class="label" [class.hide]="isCollapsed">Catégories</span>
       <span class="tooltip" *ngIf="isCollapsed">Catégories</span>
     </a>
+
+    <div class="nav-divider" [class.hide]="isCollapsed"></div>
+    <div class="nav-section" [class.hide]="isCollapsed">
+      <span class="nav-section-title">Ventes</span>
+    </div>
+
     <a *ngIf="user?.role === 'admin' || user?.role === 'cashier'" routerLink="/sales" routerLinkActive="active" class="nav-item" [class.collapsed]="isCollapsed">
-      <span class="icon">&#x1F6D2;</span>
+      <span class="nav-icon nav-icon--primary">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1.5"/><circle cx="20" cy="21" r="1.5"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
+      </span>
       <span class="label" [class.hide]="isCollapsed">Ventes (POS)</span>
       <span class="tooltip" *ngIf="isCollapsed">Ventes (POS)</span>
     </a>
     <a *ngIf="user?.role === 'admin' || user?.role === 'cashier'" routerLink="/receipts" routerLinkActive="active" class="nav-item" [class.collapsed]="isCollapsed">
-      <span class="icon">&#x1F9FE;</span>
+      <span class="nav-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H7a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M10 13H8"/><path d="M16 17H8"/><path d="M13 13h1"/></svg>
+      </span>
       <span class="label" [class.hide]="isCollapsed">Reçus</span>
       <span class="tooltip" *ngIf="isCollapsed">Reçus</span>
     </a>
     <a routerLink="/shop" routerLinkActive="active" class="nav-item" [class.collapsed]="isCollapsed">
-      <span class="icon">&#x1F3EA;</span>
+      <span class="nav-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+      </span>
       <span class="label" [class.hide]="isCollapsed">Boutique en ligne</span>
       <span class="tooltip" *ngIf="isCollapsed">Boutique en ligne</span>
     </a>
+
+    <div class="nav-divider" [class.hide]="isCollapsed"></div>
+    <div class="nav-section" [class.hide]="isCollapsed">
+      <span class="nav-section-title">Technique</span>
+    </div>
+
     <a *ngIf="user?.role === 'admin' || user?.role === 'technician'" routerLink="/repairs" routerLinkActive="active" class="nav-item" [class.collapsed]="isCollapsed">
-      <span class="icon">&#x1F527;</span>
+      <span class="nav-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
+      </span>
       <span class="label" [class.hide]="isCollapsed">Réparations</span>
       <span class="tooltip" *ngIf="isCollapsed">Réparations</span>
     </a>
     <a *ngIf="user?.role === 'admin' || user?.role === 'technician'" routerLink="/installations" routerLinkActive="active" class="nav-item" [class.collapsed]="isCollapsed">
-      <span class="icon">&#x1F3D7;&#xFE0F;</span>
+      <span class="nav-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/><path d="M12 12h.01"/><path d="M8 12h.01"/><path d="M16 12h.01"/></svg>
+      </span>
       <span class="label" [class.hide]="isCollapsed">Installations</span>
       <span class="tooltip" *ngIf="isCollapsed">Installations</span>
     </a>
+
+    <div class="nav-divider" [class.hide]="isCollapsed"></div>
+    <div class="nav-section" [class.hide]="isCollapsed">
+      <span class="nav-section-title">Clients & Équipe</span>
+    </div>
+
     <a *ngIf="user?.role === 'admin' || user?.role === 'cashier'" routerLink="/customers" routerLinkActive="active" class="nav-item" [class.collapsed]="isCollapsed">
-      <span class="icon">&#x1F465;</span>
+      <span class="nav-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+      </span>
       <span class="label" [class.hide]="isCollapsed">Clients</span>
       <span class="tooltip" *ngIf="isCollapsed">Clients</span>
     </a>
     <a *ngIf="user?.role === 'admin'" routerLink="/technicians" routerLinkActive="active" class="nav-item" [class.collapsed]="isCollapsed">
-      <span class="icon">&#x1F6E0;&#xFE0F;</span>
+      <span class="nav-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20a8 8 0 1 0 0-16 8 8 0 0 0 0 16z"/><path d="M12 14a2 2 0 1 0 0-4 2 2 0 0 0 0 4z"/><path d="M12 14v4"/></svg>
+      </span>
       <span class="label" [class.hide]="isCollapsed">Techniciens</span>
       <span class="tooltip" *ngIf="isCollapsed">Techniciens</span>
     </a>
     <a *ngIf="user?.role === 'admin'" routerLink="/users" routerLinkActive="active" class="nav-item" [class.collapsed]="isCollapsed">
-      <span class="icon">&#x1F465;</span>
+      <span class="nav-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/><path d="M20 8v6"/><path d="M23 11v2"/><path d="M17 11v2"/></svg>
+      </span>
       <span class="label" [class.hide]="isCollapsed">Utilisateurs</span>
       <span class="tooltip" *ngIf="isCollapsed">Utilisateurs</span>
     </a>
+
+    <div class="nav-divider" [class.hide]="isCollapsed"></div>
+    <div class="nav-section" [class.hide]="isCollapsed">
+      <span class="nav-section-title">Finance</span>
+    </div>
+
     <a *ngIf="user?.role === 'admin' || user?.role === 'cashier'" routerLink="/accounting" routerLinkActive="active" class="nav-item" [class.collapsed]="isCollapsed">
-      <span class="icon">&#x1F4C8;</span>
+      <span class="nav-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 16V8"/><path d="M12 12V8"/><path d="M17 16V8"/></svg>
+      </span>
       <span class="label" [class.hide]="isCollapsed">Comptabilité</span>
       <span class="tooltip" *ngIf="isCollapsed">Comptabilité</span>
     </a>
     <a *ngIf="user?.role === 'admin'" routerLink="/payroll" routerLinkActive="active" class="nav-item" [class.collapsed]="isCollapsed">
-      <span class="icon">&#x1F4B3;</span>
+      <span class="nav-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/><path d="M7 15h.01"/><path d="M12 15h.01"/></svg>
+      </span>
       <span class="label" [class.hide]="isCollapsed">Paie</span>
       <span class="tooltip" *ngIf="isCollapsed">Paie</span>
     </a>
     <a *ngIf="user?.role === 'admin'" routerLink="/finance" routerLinkActive="active" class="nav-item" [class.collapsed]="isCollapsed">
-      <span class="icon">&#x1F4B0;</span>
-      <span class="label" [class.hide]="isCollapsed">Caisse &amp; Finance</span>
-      <span class="tooltip" *ngIf="isCollapsed">Caisse &amp; Finance</span>
+      <span class="nav-icon nav-icon--primary">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1v22"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+      </span>
+      <span class="label" [class.hide]="isCollapsed">Caisse & Finance</span>
+      <span class="tooltip" *ngIf="isCollapsed">Caisse & Finance</span>
     </a>
     <a *ngIf="user?.role === 'admin'" routerLink="/reports" routerLinkActive="active" class="nav-item" [class.collapsed]="isCollapsed">
-      <span class="icon">&#x1F4CA;</span>
+      <span class="nav-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M18 17V9"/><path d="M13 17V5"/><path d="M8 17v-3"/></svg>
+      </span>
       <span class="label" [class.hide]="isCollapsed">Rapports</span>
       <span class="tooltip" *ngIf="isCollapsed">Rapports</span>
     </a>
+
+    <div class="nav-divider" [class.hide]="isCollapsed"></div>
+    <div class="nav-section" [class.hide]="isCollapsed">
+      <span class="nav-section-title">Système</span>
+    </div>
+
     <a *ngIf="user?.role === 'admin'" routerLink="/audit" routerLinkActive="active" class="nav-item" [class.collapsed]="isCollapsed">
-      <span class="icon">&#x1F4DD;</span>
+      <span class="nav-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H7a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M10 13H8"/><path d="M16 17H8"/><path d="M13 13h4"/></svg>
+      </span>
       <span class="label" [class.hide]="isCollapsed">Audit</span>
       <span class="tooltip" *ngIf="isCollapsed">Audit</span>
     </a>
     <a *ngIf="user?.role === 'admin'" routerLink="/monitoring" routerLinkActive="active" class="nav-item" [class.collapsed]="isCollapsed">
-      <span class="icon">&#x1F4C8;</span>
+      <span class="nav-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+      </span>
       <span class="label" [class.hide]="isCollapsed">Monitoring API</span>
       <span class="tooltip" *ngIf="isCollapsed">Monitoring API</span>
     </a>
   </nav>
 
   <div class="sidebar-footer">
-    <a *ngIf="user?.role === 'admin'" routerLink="/admin-panel" routerLinkActive="active" class="nav-item" [class.collapsed]="isCollapsed">
-      <span class="icon">⚙️</span>
+    <a *ngIf="user?.role === 'admin'" routerLink="/admin-panel" routerLinkActive="active" class="nav-item nav-item--admin" [class.collapsed]="isCollapsed">
+      <span class="nav-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20a8 8 0 1 0 0-16 8 8 0 0 0 0 16z"/><path d="M12 14a2 2 0 1 0 0-4 2 2 0 0 0 0 4z"/><path d="M12 14v4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="M4.93 4.93l1.41 1.41"/><path d="M17.66 17.66l1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="M6.34 17.66l-1.41 1.41"/><path d="M19.07 4.93l-1.41 1.41"/></svg>
+      </span>
       <span class="label" [class.hide]="isCollapsed">Administration</span>
       <span class="tooltip" *ngIf="isCollapsed">Administration</span>
     </a>
+    
+    <div class="user-card" [class.collapsed]="isCollapsed">
+      <div class="user-avatar">
+        <span>{{ user?.fullName?.substring(0, 2).toUpperCase() || 'US' }}</span>
+        <span class="avatar-status"></span>
+      </div>
+      <div class="user-details" [class.hide]="isCollapsed">
+        <span class="user-name">{{ user?.fullName || 'Utilisateur' }}</span>
+        <span class="user-role">
+          <span class="role-dot" [attr.data-role]="user?.role"></span>
+          {{ user?.role || 'Membre' }}
+        </span>
+      </div>
+      <button class="user-menu-btn" [class.hide]="isCollapsed" title="Profil">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="8" r="1.5"/><circle cx="8" cy="8" r="1.5" transform="translate(0 -4)"/><circle cx="8" cy="8" r="1.5" transform="translate(0 4)"/></svg>
+      </button>
+    </div>
+
     <button class="nav-item logout-item" [class.collapsed]="isCollapsed" (click)="logout()" title="Déconnexion">
-      <span class="icon">🚪</span>
+      <span class="nav-icon nav-icon--logout">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5"/><path d="M21 12H9"/></svg>
+      </span>
       <span class="label" [class.hide]="isCollapsed">Déconnexion</span>
       <span class="tooltip" *ngIf="isCollapsed">Déconnexion</span>
     </button>
-    <div class="user-info" [class.collapsed]="isCollapsed">
-      <div class="avatar">{{ user?.fullName?.substring(0, 2).toUpperCase() || 'US' }}</div>
-      <div class="details" [class.hide]="isCollapsed">
-        <span class="name">{{ user?.fullName || 'Utilisateur' }}</span>
-        <span class="role">{{ user?.role || 'Membre' }}</span>
-      </div>
-    </div>
   </div>
 </aside>

@@ -1,131 +1,257 @@
-<div class="page-container">
-  <div class="page-header">
-    <div>
-      <h1 class="page-title">Chantiers & Installations</h1>
-      <p class="page-subtitle">Projets solaires en cours et planification</p>
-    </div>
-    <button class="btn btn-primary" (click)="openAddModal()">➕ Nouveau Projet</button>
-  </div>
-
-  <div class="loading-state" *ngIf="loading">
-    <div class="spinner"></div>
-    <p>Chargement des chantiers...</p>
-  </div>
-
-  <div class="empty-state" *ngIf="!loading && sortedInstallations.length === 0">
-    <span class="empty-icon">🏗️</span>
-    <h3 class="empty-title">Aucun projet</h3>
-    <p class="empty-text">Cliquez sur "Nouveau Projet" pour créer une installation.</p>
-  </div>
-
-  <div class="install-grid" *ngIf="!loading && sortedInstallations.length > 0">
-    <div class="card install-card" *ngFor="let install of sortedInstallations; trackBy: trackByInstallId" [class.urgent]="getUrgencyBadge(install) === 'urgent'">
-      <div class="card-body">
-        <div class="install-header">
-          <div class="install-icon">📍</div>
-          <div class="install-info">
-            <h3 class="install-location">{{ install.location }}</h3>
-            <span class="gps" *ngIf="install.gpsCoordinates">{{ install.gpsCoordinates }}</span>
-          </div>
-          <div class="install-badges">
-            <span class="badge" [class]="'badge-' + (getStatusClass(install.status))">{{ getStatusLabel(install.status) }}</span>
-            <span class="priority-badge" *ngIf="install.status !== 'completed' && install.status !== 'cancelled'" [class]="getUrgencyBadge(install)">
-              {{ getUrgencyBadge(install) === 'urgent' ? 'URGENT' : getUrgencyBadge(install) === 'high' ? 'HAUTE' : 'NORMAL' }}
-            </span>
-          </div>
+<div class="installations-page">
+  <!-- ===== HERO — Quiet Luxury Mesh ===== -->
+  <header class="installations-hero">
+    <div class="hero-glow"></div>
+    <div class="hero-content">
+      <div class="hero-left">
+        <div class="hero-eyebrow">
+          <span class="eyebrow-dot"></span>
+          <span>Chantiers • Solaire • Planning</span>
+          <span class="eyebrow-separator">•</span>
+          <span class="live-indicator"><i></i> Live</span>
         </div>
-
-        <div class="install-details">
-          <div class="detail-row">
-            <span class="detail-label">Kit</span>
-            <span class="detail-value">{{ install.kitType }} ({{ install.powerCapacity }})</span>
-          </div>
-          <div class="detail-row" *ngIf="install.roofType">
-            <span class="detail-label">Toit</span>
-            <span class="detail-value">🏠 {{ install.roofType }}</span>
-          </div>
-          <div class="detail-row" *ngIf="install.components">
-            <span class="detail-label">Composants</span>
-            <span class="detail-value">
-              <span class="comp-tag" *ngFor="let comp of install.components; trackBy: trackByComponent">{{ comp }}</span>
-            </span>
-          </div>
-          <div class="detail-row" *ngIf="install.orderNumber">
-            <span class="detail-label">Commande</span>
-            <span class="detail-value">{{ install.orderNumber }}</span>
-          </div>
-          <div class="detail-row" *ngIf="install.Technician">
-            <span class="detail-label">Technicien</span>
-            <span class="detail-value">{{ install.Technician.fullName }}</span>
-          </div>
-          <div class="detail-row">
-            <span class="detail-label">Date prévue</span>
-            <span class="detail-value">{{ install.scheduledDate | date:'dd MMM yyyy' }}</span>
-          </div>
-        </div>
-
-        <div class="card-actions">
-          <button class="btn btn-outline btn-sm" (click)="openEditModal(install)">✏️ Modifier</button>
-            <button class="btn btn-danger btn-sm" (click)="deleteInstallation(install.id!)" [disabled]="deletingId === install.id">🗑️ Supprimer</button>
-        </div>
+        <h1 class="hero-title">Chantiers <span class="hero-title-accent">& Installations</span></h1>
+        <p class="hero-subtitle">
+          Projets solaires en cours et planification — <strong>{{ installations.length }} projet{{ installations.length > 1 ? 's' : '' }}</strong> • priorité, délais et interventions en un regard
+        </p>
+      </div>
+      <div class="hero-actions">
+        <button class="btn btn-ghost btn-sm" (click)="loadInstallations()">
+          <span class="btn-icon">↻</span> Actualiser
+        </button>
+        <button class="btn btn-primary" (click)="openAddModal()">
+          <span class="btn-icon">＋</span> Nouveau Projet
+        </button>
       </div>
     </div>
+  </header>
+
+  <!-- ===== KPI — Glass 4 cards ===== -->
+  <section class="metrics">
+    <article class="metric-card metric-total">
+      <div class="metric-top">
+        <div class="metric-icon">◫</div>
+        <span class="metric-trend">Parc</span>
+      </div>
+      <div class="metric-body">
+        <p class="metric-label">Total projets</p>
+        <p class="metric-value">{{ installations.length }}<span>chantiers</span></p>
+        <div class="metric-bar"><i style="width: 82%"></i></div>
+        <p class="metric-foot"><span class="dot dot-accent"></span> {{ sortedInstallations.length }} affichés • tri prioritaire</p>
+      </div>
+    </article>
+    <article class="metric-card metric-progress">
+      <div class="metric-top">
+        <div class="metric-icon">◐</div>
+        <span class="metric-trend positive">{{ installations.filter(i => i.status==='in_progress').length }} en cours</span>
+      </div>
+      <div class="metric-body">
+        <p class="metric-label">En cours</p>
+        <p class="metric-value">{{ installations.filter(i => i.status==='in_progress').length }}<span>actifs</span></p>
+        <div class="metric-bar"><i [style.width.%]="installations.length ? (installations.filter(i => i.status==='in_progress').length / installations.length * 100) : 0"></i></div>
+        <p class="metric-foot"><span class="dot dot-success"></span> Intervention prioritaire</p>
+      </div>
+    </article>
+    <article class="metric-card metric-planned">
+      <div class="metric-top">
+        <div class="metric-icon">◈</div>
+        <span class="metric-trend neutral">{{ installations.filter(i => i.status==='planned').length }} planifiés</span>
+      </div>
+      <div class="metric-body">
+        <p class="metric-label">Planifiés</p>
+        <p class="metric-value">{{ installations.filter(i => i.status==='planned').length }}<span>à venir</span></p>
+        <div class="metric-bar"><i [style.width.%]="installations.length ? (installations.filter(i => i.status==='planned').length / installations.length * 100) : 0"></i></div>
+        <p class="metric-foot"><span class="dot dot-warning"></span> Préparation logistique</p>
+      </div>
+    </article>
+    <article class="metric-card metric-done">
+      <div class="metric-top">
+        <div class="metric-icon">✓</div>
+        <span class="metric-trend">{{ installations.filter(i => i.status==='completed').length }} livrés</span>
+      </div>
+      <div class="metric-body">
+        <p class="metric-label">Terminés</p>
+        <p class="metric-value">{{ installations.filter(i => i.status==='completed').length }}<span>réalisés</span></p>
+        <div class="metric-bar"><i [style.width.%]="installations.length ? (installations.filter(i => i.status==='completed').length / installations.length * 100) : 0"></i></div>
+        <p class="metric-foot"><span class="dot dot-success"></span> Taux de complétion</p>
+      </div>
+    </article>
+  </section>
+
+  <!-- ===== TOOLBAR ===== -->
+  <section class="toolbar">
+    <div class="toolbar-left">
+      <h2 class="toolbar-title">Parc chantiers</h2>
+      <span class="toolbar-count" *ngIf="!loading">{{ sortedInstallations.length }} / {{ installations.length }} • {{ installations.filter(i => i.status==='in_progress').length }} en cours</span>
+      <span class="toolbar-count" *ngIf="loading">Chargement…</span>
+    </div>
+    <div class="toolbar-right">
+      <button class="btn btn-secondary btn-sm" (click)="loadInstallations()">↻ Actualiser la liste</button>
+    </div>
+  </section>
+
+  <!-- ===== FILTERS PILLS — Répartition ===== -->
+  <section class="filters-pills">
+    <div class="pill-group">
+      <label>Répartition par statut</label>
+      <div class="pills">
+        <span class="pill pill-static">Étude — {{ installations.filter(i => i.status==='survey').length }}</span>
+        <span class="pill pill-static">Planifié — {{ installations.filter(i => i.status==='planned').length }}</span>
+        <span class="pill pill-static">En cours — {{ installations.filter(i => i.status==='in_progress').length }}</span>
+        <span class="pill pill-static">Tests — {{ installations.filter(i => i.status==='testing').length }}</span>
+        <span class="pill pill-static success">Terminé — {{ installations.filter(i => i.status==='completed').length }}</span>
+        <span class="pill pill-static muted">Annulé — {{ installations.filter(i => i.status==='cancelled').length }}</span>
+      </div>
+    </div>
+    <div class="filter-hint">
+      <span class="hint-dot"></span>
+      Tri par priorité • urgence auto-calculée
+    </div>
+  </section>
+
+  <!-- ===== STATES ===== -->
+  <div class="state state-loading" *ngIf="loading">
+    <div class="loader"></div>
+    <p>Chargement des chantiers…</p>
+    <span>Synchronisation planning • tri temps réel</span>
   </div>
 
-  <div class="modal-overlay" *ngIf="showModal">
-    <div class="modal-card">
+  <div class="state state-empty" *ngIf="!loading && sortedInstallations.length === 0">
+    <div class="empty-illustration">
+      <div class="empty-orb"></div>
+      <span class="empty-emoji">◈</span>
+    </div>
+    <h3>Aucun projet</h3>
+    <p>Commencez par créer une installation — site, kit, client et technicien en quelques clics.</p>
+    <button class="btn btn-primary btn-sm" (click)="openAddModal()">＋ Nouveau Projet</button>
+  </div>
+
+  <!-- ===== GRID — Cards Premium ===== -->
+  <section class="catalog-section" *ngIf="!loading && sortedInstallations.length > 0">
+    <div class="install-grid">
+      <ng-container *ngFor="let install of sortedInstallations; trackBy: trackByInstallId">
+        <ng-container *ngIf="install | installationUrgency as urgency">
+          <article class="install-card" [class.urgent]="urgency === 'urgent'">
+            <div class="install-card-top">
+              <div class="install-avatar">
+                <span>◈</span>
+              </div>
+              <div class="install-head">
+                <h3 class="install-location" [title]="install.location">{{ install.location }}</h3>
+                <span class="gps" *ngIf="install.gpsCoordinates">{{ install.gpsCoordinates }}</span>
+                <span class="gps muted" *ngIf="!install.gpsCoordinates">Coordonnées non renseignées</span>
+              </div>
+              <span class="urgency-dot" [class]="urgency"></span>
+            </div>
+
+            <div class="install-badges">
+              <span class="badge status-badge" [class]="'badge-' + (install.status | installationStatusClass)">{{ install.status | installationStatusLabel }}</span>
+              <span class="priority-pill" *ngIf="install.status !== 'completed' && install.status !== 'cancelled'" [class]="urgency">{{ urgency | installationUrgencyLabel }}</span>
+            </div>
+
+            <div class="install-divider"></div>
+
+            <div class="install-details">
+              <div class="detail-row">
+                <span class="detail-label">Kit</span>
+                <span class="detail-value strong">{{ install.kitType || '—' }} <em *ngIf="install.powerCapacity">• {{ install.powerCapacity }}</em></span>
+              </div>
+              <div class="detail-row" *ngIf="install.roofType">
+                <span class="detail-label">Toit</span>
+                <span class="detail-value">◫ {{ install.roofType }}</span>
+              </div>
+              <div class="detail-row" *ngIf="install.components && install.components.length">
+                <span class="detail-label">Composants</span>
+                <span class="detail-value">
+                  <span class="comp-tag" *ngFor="let comp of install.components; trackBy: trackByComponent">{{ comp }}</span>
+                </span>
+              </div>
+              <div class="detail-row" *ngIf="install.orderNumber">
+                <span class="detail-label">Commande</span>
+                <span class="detail-value mono">{{ install.orderNumber }}</span>
+              </div>
+              <div class="detail-row" *ngIf="install.Technician">
+                <span class="detail-label">Technicien</span>
+                <span class="detail-value">{{ install.Technician.fullName }}</span>
+              </div>
+              <div class="detail-row">
+                <span class="detail-label">Date prévue</span>
+                <span class="detail-value">{{ install.scheduledDate | date:'dd MMM yyyy' }}</span>
+              </div>
+            </div>
+
+            <div class="install-actions">
+              <button class="action-btn" (click)="openEditModal(install)"><span>✎</span> Modifier</button>
+              <button class="action-btn action-btn--danger" (click)="deleteInstallation(install.id!)" [disabled]="deletingId === install.id"><span>{{ deletingId === install.id ? '…' : '⌫' }}</span> {{ deletingId === install.id ? 'Suppression…' : 'Supprimer' }}</button>
+            </div>
+          </article>
+        </ng-container>
+      </ng-container>
+    </div>
+  </section>
+
+  <!-- ===== MODAL — Premium ===== -->
+  <div class="modal-overlay" *ngIf="showModal" (click)="showModal = false">
+    <div class="modal-card modal-premium" (click)="$event.stopPropagation()">
+      <div class="modal-glow"></div>
       <div class="modal-header">
-        <h2 class="modal-title">{{ isEditing ? '✏️ Modifier le Projet' : '➕ Nouveau Projet Solaire' }}</h2>
+        <div class="modal-header-left">
+          <div class="modal-icon"><span>{{ isEditing ? '✎' : '＋' }}</span></div>
+          <div>
+            <h2 class="modal-title">{{ isEditing ? 'Modifier le Projet' : 'Nouveau Projet Solaire' }}</h2>
+            <p class="modal-subtitle">{{ isEditing ? 'Corrigez les informations et enregistrez' : 'Créez un chantier — site, kit et intervenant en un clic' }}</p>
+          </div>
+        </div>
         <button class="modal-close" (click)="showModal = false">×</button>
       </div>
 
       <div class="modal-body">
         <form (ngSubmit)="saveInstallation($event)" class="form">
           <div class="form-group">
-            <label class="form-label">Emplacement / Adresse *</label>
-            <input type="text" [(ngModel)]="currentInstallation.location" name="location" required placeholder="Ex: Quartier Adidogomé, Lomé" class="form-input" />
+            <label class="field-label">Emplacement / Adresse <span class="required">*</span></label>
+            <input type="text" [(ngModel)]="currentInstallation.location" name="location" required placeholder="Ex: Quartier Adidogomé, Lomé" class="field-input" />
           </div>
-          <div class="form-row">
+          <div class="field-row">
             <div class="form-group">
-              <label class="form-label">Type de Kit *</label>
-              <input type="text" [(ngModel)]="currentInstallation.kitType" name="kitType" required placeholder="Ex: Kit Résidentiel 3KW" class="form-input" />
+              <label class="field-label">Type de Kit <span class="required">*</span></label>
+              <input type="text" [(ngModel)]="currentInstallation.kitType" name="kitType" required placeholder="Ex: Kit Résidentiel 3KW" class="field-input" />
             </div>
             <div class="form-group">
-              <label class="form-label">Capacité (KVA/HP)</label>
-              <input type="text" [(ngModel)]="currentInstallation.powerCapacity" name="powerCapacity" placeholder="Ex: 5 KVA" class="form-input" />
+              <label class="field-label">Capacité (KVA/HP)</label>
+              <input type="text" [(ngModel)]="currentInstallation.powerCapacity" name="powerCapacity" placeholder="Ex: 5 KVA" class="field-input" />
             </div>
           </div>
-          <div class="form-row">
+          <div class="field-row">
             <div class="form-group">
-              <label class="form-label">Client *</label>
-              <select [(ngModel)]="currentInstallation.customerId" name="customerId" required class="form-select">
+              <label class="field-label">Client <span class="required">*</span></label>
+              <select [(ngModel)]="currentInstallation.customerId" name="customerId" required class="field-select">
                 <option value="">Sélectionner un client</option>
                 <option *ngFor="let client of customers; trackBy: trackByCustomerId" [value]="client.id">{{ client.fullName || client.name }}</option>
               </select>
             </div>
             <div class="form-group">
-              <label class="form-label">Technicien *</label>
-              <select [(ngModel)]="currentInstallation.technicianId" name="technicianId" required class="form-select">
+              <label class="field-label">Technicien <span class="required">*</span></label>
+              <select [(ngModel)]="currentInstallation.technicianId" name="technicianId" required class="field-select">
                 <option value="">Assigner un technicien</option>
                 <option *ngFor="let tech of technicians; trackBy: trackByTechnicianId" [value]="tech.id">{{ tech.fullName }}</option>
               </select>
             </div>
           </div>
           <div class="form-group">
-            <label class="form-label">Commande liée</label>
-            <select [(ngModel)]="currentInstallation.orderId" name="orderId" class="form-select">
+            <label class="field-label">Commande liée</label>
+            <select [(ngModel)]="currentInstallation.orderId" name="orderId" class="field-select">
               <option value="">Aucune commande</option>
               <option *ngFor="let o of orders; trackBy: trackByOrderId" [value]="o.id">{{ o.orderNumber }} - {{ o.Customer?.fullName || o.Customer?.name || 'N/A' }}</option>
             </select>
           </div>
-          <div class="form-row">
+          <div class="field-row">
             <div class="form-group">
-              <label class="form-label">Date Prévue *</label>
-              <input type="date" [(ngModel)]="currentInstallation.scheduledDate" name="scheduledDate" required class="form-input" />
+              <label class="field-label">Date Prévue <span class="required">*</span></label>
+              <input type="date" [(ngModel)]="currentInstallation.scheduledDate" name="scheduledDate" required class="field-input" />
             </div>
             <div class="form-group">
-              <label class="form-label">Statut</label>
-              <select [(ngModel)]="currentInstallation.status" name="status" class="form-select">
+              <label class="field-label">Statut</label>
+              <select [(ngModel)]="currentInstallation.status" name="status" class="field-select">
                 <option value="survey">Étude</option>
                 <option value="planned">Planifié</option>
                 <option value="in_progress">En cours</option>
@@ -135,8 +261,8 @@
               </select>
             </div>
             <div class="form-group">
-              <label class="form-label">Priorité</label>
-              <select [(ngModel)]="currentInstallation.priority" name="priority" class="form-select">
+              <label class="field-label">Priorité</label>
+              <select [(ngModel)]="currentInstallation.priority" name="priority" class="field-select">
                 <option value="low">Faible</option>
                 <option value="normal">Normale</option>
                 <option value="high">Haute</option>
@@ -144,9 +270,12 @@
               </select>
             </div>
           </div>
-          <div class="modal-footer">
+          <div class="modal-footer premium">
             <button type="button" class="btn btn-secondary" (click)="showModal = false">Annuler</button>
-            <button type="submit" class="btn btn-primary" [disabled]="saving">{{ isEditing ? 'Mettre à jour' : 'Enregistrer' }}</button>
+            <button type="submit" class="btn btn-primary" [disabled]="saving">
+              <span *ngIf="!saving" class="btn-loading"><span>{{ isEditing ? 'Mettre à jour' : 'Enregistrer' }}</span> <span>→</span></span>
+              <span *ngIf="saving" class="btn-loading"><i class="spinner-sm"></i> Enregistrement…</span>
+            </button>
           </div>
         </form>
       </div>

@@ -15,6 +15,9 @@ export interface Transaction {
     customerName?: string;
     comment?: string;
     time?: string;
+    products?: string;
+    referenceId?: string;
+    referenceType?: string;
 }
 
 export interface DailyReportDay {

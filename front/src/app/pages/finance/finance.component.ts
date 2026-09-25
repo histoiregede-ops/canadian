@@ -3,18 +3,12 @@ import { Subscription } from 'rxjs';
 import { finalize } from 'rxjs/operators';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { Chart, registerables } from 'chart.js';
 import { ActivatedRoute } from '@angular/router';
 import { FinanceService, Transaction, FluxJournalier } from '../../services/finance.service';
 import { CustomerService, Customer } from '../../services/customer';
 import { ConfigService, ExpenseCategory } from '../../services/config';
 import { RefreshService } from '../../services/refresh.service';
 import { ToastService } from '../../services/toast.service';
-import jsPDF from 'jspdf';
-import autoTable from 'jspdf-autotable';
-import * as XLSX from 'xlsx';
-
-Chart.register(...registerables);
 
 @Component({
   selector: 'app-finance',
@@ -241,8 +235,12 @@ export class FinanceComponent implements OnInit, OnDestroy, AfterViewInit {
     this.editingComment = '';
   }
 
-  exportPDF(): void {
+  async exportPDF(): Promise<void> {
     if (!this.fluxData) return;
+    const [{ default: jsPDF }, { default: autoTable }] = await Promise.all([
+      import('jspdf'),
+      import('jspdf-autotable')
+    ]);
     const doc = new jsPDF();
     const title = `Rapport Flux Journalier`;
     const period = `Période: ${this.selectedStart} au ${this.selectedEnd}`;
@@ -269,6 +267,7 @@ export class FinanceComponent implements OnInit, OnDestroy, AfterViewInit {
       t.time || '',
       t.customerName || '-',
       t.description,
+      t.products || '-',
       t.type === 'income' ? 'Entrée' : 'Sortie',
       `${(t.type === 'income' ? '+' : '-')} ${t.amount.toLocaleString()} FCFA`,
       t.comment || ''
@@ -276,33 +275,36 @@ export class FinanceComponent implements OnInit, OnDestroy, AfterViewInit {
 
     autoTable(doc, {
       startY: (doc as any).lastAutoTable.finalY + 10,
-      head: [['Heure', 'Client', 'Description', 'Type', 'Montant', 'Commentaire']],
+      head: [['Heure', 'Client', 'Description', 'Produits vendus', 'Type', 'Montant', 'Commentaire']],
       body: rows,
       theme: 'striped',
       headStyles: { fillColor: [37, 99, 235] },
-      styles: { fontSize: 8 }
+      styles: { fontSize: 7 },
+      columnStyles: { 3: { cellWidth: 45 } }
     });
 
     doc.save(`flux-journalier-${this.selectedStart}-${this.selectedEnd}.pdf`);
   }
 
-  exportXLSX(): void {
+  async exportXLSX(): Promise<void> {
     if (!this.fluxData) return;
+    const XLSX = await import('xlsx');
     const rows = this.fluxData.transactions.map(t => ({
       Heure: t.time || '',
       Client: t.customerName || '-',
       Description: t.description,
+      'Produits vendus': t.products || '-',
       Type: t.type === 'income' ? 'Entrée' : 'Sortie',
       Montant: t.amount,
       Commentaire: t.comment || ''
     }));
 
     const summaryRows = [
-      { Heure: '', Client: '', Description: 'RÉSUMÉ', Type: '', Montant: '', Commentaire: '' },
-      { Heure: '', Client: '', Description: 'Total Entrées', Type: '', Montant: this.fluxData.income, Commentaire: '' },
-      { Heure: '', Client: '', Description: 'Total Sorties', Type: '', Montant: this.fluxData.expense, Commentaire: '' },
-      { Heure: '', Client: '', Description: 'Solde', Type: '', Montant: this.fluxData.balance, Commentaire: '' },
-      { Heure: '', Client: '', Description: '', Type: '', Montant: '', Commentaire: '' },
+      { Heure: '', Client: '', Description: 'RÉSUMÉ', 'Produits vendus': '', Type: '', Montant: '', Commentaire: '' },
+      { Heure: '', Client: '', Description: 'Total Entrées', 'Produits vendus': '', Type: '', Montant: this.fluxData.income, Commentaire: '' },
+      { Heure: '', Client: '', Description: 'Total Sorties', 'Produits vendus': '', Type: '', Montant: this.fluxData.expense, Commentaire: '' },
+      { Heure: '', Client: '', Description: 'Solde', 'Produits vendus': '', Type: '', Montant: this.fluxData.balance, Commentaire: '' },
+      { Heure: '', Client: '', Description: '', 'Produits vendus': '', Type: '', Montant: '', Commentaire: '' },
       ...rows
     ];
 
@@ -324,11 +326,13 @@ export class FinanceComponent implements OnInit, OnDestroy, AfterViewInit {
     return labels;
   }
 
-  private renderRevenueChart(dataValues: number[]): void {
+  private async renderRevenueChart(dataValues: number[]): Promise<void> {
     if (!this.revenueChartRef) return;
     const ctx = this.revenueChartRef.nativeElement.getContext('2d');
 
     if (this.revenueChart) this.revenueChart.destroy();
+    const { Chart, registerables } = await import('chart.js');
+    Chart.register(...registerables);
 
     this.revenueChart = new Chart(ctx, {
       type: 'line',
@@ -357,11 +361,13 @@ export class FinanceComponent implements OnInit, OnDestroy, AfterViewInit {
     });
   }
 
-  private renderCategoryChart(chartData: { labels: string[]; values: number[] }): void {
+  private async renderCategoryChart(chartData: { labels: string[]; values: number[] }): Promise<void> {
     if (!this.categoryChartRef) return;
     const ctx = this.categoryChartRef.nativeElement.getContext('2d');
 
     if (this.categoryChart) this.categoryChart.destroy();
+    const { Chart, registerables } = await import('chart.js');
+    Chart.register(...registerables);
 
     this.categoryChart = new Chart(ctx, {
       type: 'pie',

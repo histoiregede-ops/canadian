@@ -1,151 +1,315 @@
-<div class="sales-pos" [class.cart-collapsed]="isCartCollapsed">
-  <!-- Products Side -->
-  <div class="pos-products">
-    <!-- Customer Selector -->
-    <div class="customer-selector">
-      <div class="customer-search" *ngIf="!selectedCustomer">
-        <span>👤</span>
-        <input type="text" [(ngModel)]="customerSearchQuery" (input)="searchCustomers()"
-          (focus)="customerSearchQuery.length >= 2 && (showCustomerDropdown = customerSearchResults.length > 0)"
-          (blur)="onCustomerSearchBlur()" placeholder="Rechercher un client..." class="form-input-sm" />
-      </div>
-      <div class="customer-selected" *ngIf="selectedCustomer">
-        <span class="customer-avatar">{{ (selectedCustomer.fullName || selectedCustomer.name || '?')[0] }}</span>
-        <div class="customer-info">
-          <strong>{{ selectedCustomer.fullName || selectedCustomer.name }}</strong>
-          <span class="badge badge-warning" style="font-size:0.65rem; padding:1px 6px;">{{ getLoyaltyLevelClass() }}</span>
-          <span *ngIf="selectedCustomer.loyaltyPoints !== undefined" style="font-size:0.75rem; opacity:0.8;">{{ selectedCustomer.loyaltyPoints }} pts</span>
+<div class="sales-page">
+  <!-- ===== HERO — Mesh Gradient + Eyebrow ===== -->
+  <header class="sales-hero">
+    <div class="hero-glow"></div>
+    <div class="hero-content">
+      <div class="hero-left">
+        <div class="hero-eyebrow">
+          <span class="eyebrow-dot"></span>
+          <span>Point de vente • Caisse temps réel</span>
+          <span class="eyebrow-separator">•</span>
+          <span class="live-indicator"><i></i> Live</span>
         </div>
-        <button class="btn btn-ghost btn-sm" (click)="clearSelectedCustomer()">✕</button>
+        <h1 class="hero-title">
+          Point de
+          <span class="hero-title-accent">vente</span>
+        </h1>
+        <p class="hero-subtitle">
+          Encaissement instantané — espèces, Orange Money, Wave, Mobile Cash • fidélité intégrée, ticket en un clic.
+        </p>
       </div>
-      <div class="customer-dropdown" *ngIf="showCustomerDropdown">
-        <div class="dropdown-item" *ngFor="let c of customerSearchResults; trackBy: trackByCustomerId" (mousedown)="selectCustomer(c)">
-          <span class="fw-600">{{ c.fullName || c.name }}</span>
-          <span class="text-muted" style="font-size:0.8rem;">{{ c.phone }}</span>
+      <div class="hero-actions">
+        <button class="btn btn-ghost btn-sm" (click)="loadProducts()">
+          <span class="btn-icon">↻</span> Actualiser
+        </button>
+        <button class="btn btn-primary btn-sm" *ngIf="isCartCollapsed && cart.length>0" (click)="toggleCart()">
+          🛒 Panier ({{ cart.length }}) — {{ total | number }} FCFA
+        </button>
+        <div class="hero-badge">
+          <span class="badge-dot"></span>
+          <span>{{ products.length }} produits</span>
         </div>
       </div>
     </div>
+  </header>
 
-    <!-- Header -->
-    <div class="pos-toolbar">
-      <div class="search-box">
-        <span>🔍</span>
-        <input type="text" [(ngModel)]="searchQuery" placeholder="Scanner ou rechercher..." class="form-input" />
+  <!-- ===== METRICS — Glass 4 cards ===== -->
+  <section class="metrics">
+    <article class="metric-card metric-products">
+      <div class="metric-top">
+        <div class="metric-icon"><span>◫</span></div>
+        <span class="metric-trend positive">{{ products.length }} dispo</span>
       </div>
-      <button class="btn btn-primary btn-sm btn-show-cart" *ngIf="isCartCollapsed" (click)="toggleCart()">
-        🛒 Panier ({{ cart.length }})
-      </button>
-    </div>
+      <div class="metric-body">
+        <p class="metric-label">Catalogue</p>
+        <p class="metric-value">{{ filteredProducts.length }}<span>affichés</span></p>
+        <div class="metric-bar"><i style="width: 68%"></i></div>
+        <p class="metric-foot"><span class="dot dot-success"></span> {{ products.length }} références</p>
+      </div>
+    </article>
+    <article class="metric-card metric-cart">
+      <div class="metric-top">
+        <div class="metric-icon"><span>◎</span></div>
+        <span class="metric-trend" [class.positive]="cart.length>0" [class.neutral]="cart.length===0">{{ cart.length }} articles</span>
+      </div>
+      <div class="metric-body">
+        <p class="metric-label">Panier en cours</p>
+        <p class="metric-value">{{ cart.length }}<span>articles</span></p>
+        <div class="metric-bar"><i [style.width.%]="cart.length ? (cart.length / 8 * 100) : 8"></i></div>
+        <p class="metric-foot"><span class="dot dot-accent"></span> {{ subtotal | number }} FCFA sous-total</p>
+      </div>
+    </article>
+    <article class="metric-card metric-subtotal">
+      <div class="metric-top">
+        <div class="metric-icon"><span>≡</span></div>
+        <span class="metric-trend neutral">Sous-total</span>
+      </div>
+      <div class="metric-body">
+        <p class="metric-label">Sous-total</p>
+        <p class="metric-value">{{ subtotal | number }}<span>FCFA</span></p>
+        <div class="metric-bar"><i style="width: 54%"></i></div>
+        <p class="metric-foot"><span class="dot dot-warning"></span> Hors taxe / remise</p>
+      </div>
+    </article>
+    <article class="metric-card metric-total">
+      <div class="metric-top">
+        <div class="metric-icon"><span>◈</span></div>
+        <span class="metric-trend positive">À encaisser</span>
+      </div>
+      <div class="metric-body">
+        <p class="metric-label">Total TTC</p>
+        <p class="metric-value">{{ total | number }}<span>FCFA</span></p>
+        <div class="metric-bar"><i style="width: 82%"></i></div>
+        <p class="metric-foot"><span class="dot dot-success"></span> {{ paymentMethod || 'Espèces' }} • prêt</p>
+      </div>
+    </article>
+  </section>
 
-    <!-- Products Grid -->
-    <div class="pos-grid">
-      <div class="pos-item" *ngFor="let product of filteredProducts; trackBy: trackByProductId" (click)="addToCart(product)">
-        <div class="pos-item-image">
-          <img [src]="getProductImage(product.photo)" *ngIf="product.photo" [alt]="product.name" />
-          <span class="pos-item-placeholder" *ngIf="!product.photo">{{ product.Category?.type === 'solar' ? '☀️' : '📱' }}</span>
+  <!-- ===== SALES LAYOUT — Catalog + Cart (glass) ===== -->
+  <div class="sales-layout" [class.cart-collapsed]="isCartCollapsed">
+    <!-- ===== CATALOG PANEL ===== -->
+    <section class="catalog-panel">
+      <!-- Customer Selector — Premium Glass -->
+      <div class="customer-card">
+        <div class="customer-search" *ngIf="!selectedCustomer">
+          <div class="customer-search-icon"><span>◎</span></div>
+          <input type="text" [(ngModel)]="customerSearchQuery" (input)="searchCustomers()"
+            (focus)="customerSearchQuery.length >= 2 && (showCustomerDropdown = customerSearchResults.length > 0)"
+            (blur)="onCustomerSearchBlur()" placeholder="Rechercher un client — nom, téléphone, email…" class="customer-input" />
+          <span class="customer-hint">Fidélité</span>
         </div>
-        <div class="pos-item-name">{{ product.name }}</div>
-        <div class="pos-item-price">{{ product.price | number }} FCFA</div>
-        <div class="pos-item-stock" [class.low]="product.stockQuantity < 5">Stock: {{ product.stockQuantity }}</div>
+        <div class="customer-selected" *ngIf="selectedCustomer">
+          <span class="customer-avatar">{{ (selectedCustomer.fullName || selectedCustomer.name || '?')[0] | uppercase }}</span>
+          <div class="customer-info">
+            <strong>{{ selectedCustomer.fullName || selectedCustomer.name }}</strong>
+            <span class="loyalty-badge" [class]="'loyalty-' + getLoyaltyLevelClass()">{{ getLoyaltyLevelClass() }}</span>
+            <span *ngIf="selectedCustomer.loyaltyPoints !== undefined" class="loyalty-points">{{ selectedCustomer.loyaltyPoints }} pts</span>
+            <span *ngIf="selectedCustomer.phone" class="customer-phone">{{ selectedCustomer.phone }}</span>
+          </div>
+          <button class="btn btn-ghost btn-sm" (click)="clearSelectedCustomer()">✕</button>
+        </div>
+        <div class="customer-dropdown" *ngIf="showCustomerDropdown">
+          <div class="dropdown-item" *ngFor="let c of customerSearchResults; trackBy: trackByCustomerId" (mousedown)="selectCustomer(c)">
+            <div class="dropdown-main">
+              <span class="dropdown-name">{{ c.fullName || c.name }}</span>
+              <span class="dropdown-phone">{{ c.phone }}</span>
+            </div>
+            <span class="dropdown-chevron">›</span>
+          </div>
+        </div>
       </div>
-    </div>
+
+      <!-- Toolbar — Search + Pills -->
+      <div class="toolbar">
+        <div class="toolbar-left">
+          <h2 class="toolbar-title">Catalogue</h2>
+          <span class="toolbar-count">{{ filteredProducts.length }} produits</span>
+        </div>
+        <div class="toolbar-right">
+          <div class="search-field">
+            <span class="search-icon">⌕</span>
+            <input type="text" [(ngModel)]="searchQuery" placeholder="Scanner ou rechercher un produit…" class="search-input" />
+          </div>
+          <button class="btn btn-secondary btn-sm btn-show-cart" *ngIf="isCartCollapsed" (click)="toggleCart()">
+            🛒 Panier ({{ cart.length }})
+          </button>
+        </div>
+      </div>
+
+      <div class="filters-pills">
+        <div class="pill-group">
+          <label>Filtre catalogue</label>
+          <div class="pills">
+            <button class="pill" [class.active]="!selectedCategory" (click)="selectedCategory=''">Toutes</button>
+            <button class="pill" [class.active]="selectedCategory==='solar'" (click)="selectedCategory='solar'">☀️ Solaire</button>
+            <button class="pill" [class.active]="selectedCategory==='electronic'" (click)="selectedCategory='electronic'">📱 Électronique</button>
+            <button class="pill" [class.active]="selectedCategory && selectedCategory!=='solar' && selectedCategory!=='electronic'" (click)="selectedCategory=''">⚡ Autres</button>
+          </div>
+        </div>
+        <div class="pill-group" *ngIf="selectedCustomer">
+          <label>Fidélité</label>
+          <div class="pills">
+            <span class="pill pill-success active" style="pointer-events:none;">◈ {{ selectedCustomer.loyaltyLevel || 'bronze' }} • {{ loyaltyDiscountRate | number }} FCFA</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Products Grid — Premium Glass Cards -->
+      <div class="catalog-grid">
+        <article class="catalog-card" *ngFor="let product of filteredProducts; trackBy: trackByProductId" (click)="addToCart(product)">
+          <div class="catalog-image">
+            <img [src]="getProductImage(product.photo)" *ngIf="product.photo" [alt]="product.name" loading="lazy" decoding="async" />
+            <span class="catalog-placeholder" *ngIf="!product.photo">{{ product.Category?.type === 'solar' ? '☀️' : '◫' }}</span>
+            <span class="catalog-stock" [class.low]="product.stockQuantity < 5" [class.out]="product.stockQuantity===0">
+              <span class="stock-dot"></span> {{ product.stockQuantity }}
+            </span>
+          </div>
+          <div class="catalog-body">
+            <p class="catalog-name" [title]="product.name">{{ product.name }}</p>
+            <p class="catalog-price">{{ product.price | number }} <span>FCFA</span></p>
+            <p class="catalog-stock-label" [class.low]="product.stockQuantity < 5">Stock: {{ product.stockQuantity }}</p>
+          </div>
+          <div class="catalog-hover">
+            <span>＋ Ajouter</span>
+          </div>
+        </article>
+        <div class="catalog-empty" *ngIf="filteredProducts.length===0">
+          <div class="empty-illustration">
+            <div class="empty-orb"></div>
+            <span class="empty-emoji">⌕</span>
+          </div>
+          <p>Aucun produit ne correspond à votre recherche</p>
+          <span>Essayez un autre mot-clé ou changez de catégorie</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== CART PANEL — Sticky Glass ===== -->
+    <aside class="cart-panel" [class.collapsed]="isCartCollapsed">
+      <div class="cart-card">
+        <div class="cart-header">
+          <div class="cart-header-left">
+            <button class="btn btn-ghost btn-sm cart-toggle" (click)="toggleCart()">{{ isCartCollapsed ? '🛒' : '‹' }}</button>
+            <div *ngIf="!isCartCollapsed">
+              <h3 class="cart-title">Panier de vente</h3>
+              <p class="cart-subtitle" *ngIf="cart.length>0">{{ cart.length }} article(s) • {{ subtotal | number }} FCFA</p>
+              <p class="cart-subtitle" *ngIf="cart.length===0">Aucun article</p>
+            </div>
+          </div>
+          <button class="btn btn-ghost btn-sm" *ngIf="!isCartCollapsed && cart.length>0" (click)="clearCart()" style="color: var(--danger);">Vider</button>
+        </div>
+
+        <div class="cart-body" *ngIf="!isCartCollapsed">
+          <!-- Items -->
+          <div class="cart-items">
+            <div class="cart-item" *ngFor="let item of cart; let i = index; trackBy: trackByCartIndex">
+              <div class="cart-item-main">
+                <div class="cart-item-info">
+                  <span class="cart-item-name" [title]="item.product.name">{{ item.product.name }}</span>
+                  <span class="cart-item-price">{{ item.product.price | number }} FCFA</span>
+                </div>
+                <span class="cart-item-subtotal">{{ item.product.price * item.quantity | number }} FCFA</span>
+              </div>
+              <div class="cart-item-actions">
+                <button class="qty-btn" (click)="updateQuantity(i, -1)">−</button>
+                <span class="qty-value">{{ item.quantity }}</span>
+                <button class="qty-btn" (click)="updateQuantity(i, 1)">＋</button>
+                <button class="btn btn-ghost btn-sm" (click)="removeFromCart(i)" style="margin-left:auto; color:var(--danger);">⌫</button>
+              </div>
+            </div>
+            <div class="empty-cart" *ngIf="cart.length === 0">
+              <div class="empty-illustration small">
+                <div class="empty-orb"></div>
+                <span class="empty-emoji">◎</span>
+              </div>
+              <p>Votre panier est vide</p>
+              <span>Ajoutez des produits depuis le catalogue</span>
+            </div>
+
+            <!-- Status -->
+            <div class="pos-status" *ngIf="paymentStatus === 'initiated'">
+              <div class="loader-sm"></div>
+              <p>Paiement en cours… Confirmez sur votre téléphone.</p>
+            </div>
+            <div class="pos-status success" *ngIf="paymentStatus === 'completed'">
+              <span class="status-icon">✓</span>
+              <p>Paiement confirmé ! Commande {{ lastOrderRef }}</p>
+            </div>
+            <div class="pos-status error" *ngIf="paymentStatus === 'failed'">
+              <span class="status-icon">✕</span>
+              <p>{{ paymentErrorMessage }}</p>
+              <a [href]="getWhatsAppLink(total, lastOrderRef)" target="_blank" class="btn btn-primary btn-sm" *ngIf="lastOrderRef" style="margin-top:8px;">
+                💬 WhatsApp
+              </a>
+            </div>
+          </div>
+
+          <!-- Summary -->
+          <div class="cart-summary">
+            <div class="summary-row">
+              <span>Sous-total</span>
+              <strong>{{ subtotal | number }} FCFA</strong>
+            </div>
+            <div class="summary-row">
+              <span>Taxe</span>
+              <input type="number" [(ngModel)]="tax" class="summary-input" placeholder="0" />
+            </div>
+            <div class="summary-row loyalty" *ngIf="loyaltyDiscountRate > 0">
+              <span>◈ Fidélité ({{ selectedCustomer?.loyaltyLevel }})</span>
+              <strong style="color:var(--success);">−{{ loyaltyDiscountRate | number }} FCFA</strong>
+            </div>
+            <div class="summary-row">
+              <span>Remise</span>
+              <input type="number" [(ngModel)]="discount" class="summary-input" placeholder="0" />
+            </div>
+            <div class="summary-divider"></div>
+            <div class="summary-row summary-total">
+              <span>TOTAL</span>
+              <strong>{{ total | number }} FCFA</strong>
+            </div>
+          </div>
+
+          <!-- Payment -->
+          <div class="cart-payment">
+            <h4>Moyen de paiement</h4>
+            <div class="payment-grid">
+              <button class="payment-btn" [class.active]="paymentMethod === 'cash'" (click)="paymentMethod = 'cash'"><span>💵</span> Espèces</button>
+              <button class="payment-btn orange" [class.active]="paymentMethod === 'orange_money'" (click)="paymentMethod = 'orange_money'"><span>🟠</span> Orange</button>
+              <button class="payment-btn blue" [class.active]="paymentMethod === 'moov_money'" (click)="paymentMethod = 'moov_money'"><span>🔵</span> Mobile Cash</button>
+              <button class="payment-btn green" [class.active]="paymentMethod === 'wave'" (click)="paymentMethod = 'wave'"><span>🟢</span> Wave</button>
+              <button class="payment-btn" [class.active]="paymentMethod === 'card'" (click)="paymentMethod = 'card'"><span>💳</span> Carte</button>
+              <ng-container *ngFor="let m of paymentMethodsList">
+                <!-- keep dynamic methods visible if not already covered -->
+                <button *ngIf="['cash','orange_money','moov_money','wave','card'].indexOf(m.key)===-1" class="payment-btn" [class.active]="paymentMethod===m.key" (click)="paymentMethod=m.key">
+                  <span>◈</span> {{ m.name }}
+                </button>
+              </ng-container>
+            </div>
+            <div class="mobile-block" *ngIf="isMobileMoney">
+              <div class="mobile-label">
+                <span class="mobile-dot"></span>
+                <span>{{ paymentLabels[paymentMethod]?.name || paymentMethod }} — Téléphone du client</span>
+              </div>
+              <input type="tel" [(ngModel)]="payerPhone" class="form-input" placeholder="+223 XX XX XX XX" />
+              <span class="mobile-hint" *ngIf="paymentLabels[paymentMethod]?.operator">{{ paymentLabels[paymentMethod].operator }}</span>
+            </div>
+          </div>
+
+          <!-- Actions -->
+          <div class="cart-actions">
+            <button class="btn btn-primary btn-block cart-checkout" (click)="checkout()" [disabled]="cart.length === 0 || paymentProcessing">
+              <span *ngIf="!paymentProcessing">✓ ENCAISSER — {{ total | number }} FCFA</span>
+              <span *ngIf="paymentProcessing" class="btn-loading"><i class="spinner-sm"></i> Traitement…</span>
+            </button>
+            <button class="btn btn-secondary btn-block" (click)="printReceipt()" [disabled]="!lastCompletedOrder">
+              ⎙ IMPRIMER LE REÇU
+            </button>
+            <p class="cart-footnote">Chiffré • Reçu instantané • Support WhatsApp</p>
+          </div>
+        </div>
+      </div>
+    </aside>
+
+    <div class="cart-backdrop" *ngIf="!isCartCollapsed" (click)="toggleCart()"></div>
   </div>
-
-  <!-- Cart Side -->
-  <div class="pos-cart card" [class.collapsed]="isCartCollapsed">
-    <div class="pos-cart-header">
-      <div class="pos-cart-title">
-        <button class="btn btn-ghost btn-sm" (click)="toggleCart()">{{ isCartCollapsed ? '🛒' : '➡️' }}</button>
-        <h3 *ngIf="!isCartCollapsed">Panier de vente</h3>
-      </div>
-      <button class="btn btn-ghost btn-sm" *ngIf="!isCartCollapsed" (click)="clearCart()" style="color: var(--danger);">Vider</button>
-    </div>
-
-    <!-- Items + Status -->
-    <div class="pos-cart-items" *ngIf="!isCartCollapsed">
-      <div class="pos-cart-item" *ngFor="let item of cart; let i = index; trackBy: trackByCartIndex">
-        <div class="pos-cart-item-info">
-          <span class="fw-600">{{ item.product.name }}</span>
-          <span class="text-muted" style="font-size:0.8rem;">{{ item.product.price | number }} FCFA</span>
-        </div>
-        <div class="pos-cart-item-qty">
-          <button class="qty-btn" (click)="updateQuantity(i, -1)">−</button>
-          <span class="qty-value">{{ item.quantity }}</span>
-          <button class="qty-btn" (click)="updateQuantity(i, 1)">+</button>
-        </div>
-        <span class="pos-cart-item-subtotal">{{ item.product.price * item.quantity | number }} FCFA</span>
-      </div>
-      <div class="empty-cart" *ngIf="cart.length === 0">Votre panier est vide.</div>
-
-      <!-- Status inside scrollable area (so it doesn't push buttons) -->
-      <div class="pos-status" *ngIf="paymentStatus === 'initiated'">
-        <div class="spinner" style="width:24px;height:24px;border-width:3px;"></div>
-        <p>Paiement en cours... Confirmez sur votre téléphone.</p>
-      </div>
-      <div class="pos-status success" *ngIf="paymentStatus === 'completed'">
-        <span>✅</span>
-        <p>Paiement confirmé ! Commande {{ lastOrderRef }}</p>
-      </div>
-      <div class="pos-status error" *ngIf="paymentStatus === 'failed'">
-        <span>❌</span>
-        <p>{{ paymentErrorMessage }}</p>
-        <a [href]="getWhatsAppLink(total, lastOrderRef)" target="_blank" class="btn btn-success btn-sm" *ngIf="lastOrderRef" style="margin-top:8px;">
-          💬 WhatsApp
-        </a>
-      </div>
-    </div>
-
-    <!-- Footer (buttons always visible) -->
-    <div class="pos-cart-footer" *ngIf="!isCartCollapsed">
-      <div class="pos-summary">
-        <div class="pos-summary-row">
-          <span>Sous-total</span>
-          <span>{{ subtotal | number }} FCFA</span>
-        </div>
-        <div class="pos-summary-row">
-          <span>Taxe</span>
-          <input type="number" [(ngModel)]="tax" class="form-input-sm pos-input" />
-        </div>
-        <div class="pos-summary-row loyalty" *ngIf="loyaltyDiscountRate > 0">
-          <span>💰 Fidélité ({{ selectedCustomer?.loyaltyLevel }})</span>
-          <span style="color:var(--success);">-{{ loyaltyDiscountRate | number }} FCFA</span>
-        </div>
-        <div class="pos-summary-row">
-          <span>Remise</span>
-          <input type="number" [(ngModel)]="discount" class="form-input-sm pos-input" />
-        </div>
-        <div class="pos-divider"></div>
-        <div class="pos-summary-row pos-total">
-          <span>TOTAL</span>
-          <span>{{ total | number }} FCFA</span>
-        </div>
-      </div>
-
-      <!-- Payment Methods -->
-      <div class="pos-payment">
-        <h4>Moyen de paiement</h4>
-        <div class="pos-payment-grid">
-          <button class="pos-payment-btn" [class.active]="paymentMethod === 'cash'" (click)="paymentMethod = 'cash'">💵 Espèces</button>
-          <button class="pos-payment-btn orange" [class.active]="paymentMethod === 'orange_money'" (click)="paymentMethod = 'orange_money'">🟠 Orange Money</button>
-          <button class="pos-payment-btn blue" [class.active]="paymentMethod === 'moov_money'" (click)="paymentMethod = 'moov_money'">🔵 Mobile Cash</button>
-          <button class="pos-payment-btn green" [class.active]="paymentMethod === 'wave'" (click)="paymentMethod = 'wave'">🟢 Wave</button>
-          <button class="pos-payment-btn" [class.active]="paymentMethod === 'card'" (click)="paymentMethod = 'card'">💳 Carte</button>
-        </div>
-        <div class="pos-mobile-block" *ngIf="isMobileMoney">
-          <span class="text-muted" style="font-size:0.8rem;">📞 {{ paymentLabels[paymentMethod].name }} — Tél. du client:</span>
-          <input type="tel" [(ngModel)]="payerPhone" class="form-input" placeholder="+228 XXXX XXXX" />
-          <span class="text-muted" style="font-size:0.7rem;">{{ paymentLabels[paymentMethod].operator }}</span>
-        </div>
-      </div>
-
-      <button class="btn btn-primary btn-lg btn-block" (click)="checkout()" [disabled]="cart.length === 0 || paymentProcessing">
-        {{ paymentProcessing ? '⏳ Traitement...' : '✅ ENCAISSER' }}
-      </button>
-      <button class="btn btn-secondary btn-block" (click)="printReceipt()" [disabled]="!lastCompletedOrder" style="margin-top:8px;">
-        🖨️ IMPRIMER
-      </button>
-    </div>
-  </div>
-
-  <div class="cart-backdrop" (click)="toggleCart()"></div>
 </div>

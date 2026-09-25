@@ -34,7 +34,7 @@ export class MonitoringComponent implements AfterViewInit, OnDestroy {
   constructor(private monitoring: MonitoringService, private toast: ToastService) {}
 
   ngAfterViewInit(): void {
-    interval(30000).pipe(
+    interval(5000).pipe(
       startWith(0),
       switchMap(() => {
         this.refreshing = true;

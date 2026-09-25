@@ -12,8 +12,12 @@ function createApiMetrics() {
 
   function routePathFor(req) {
     const originalPath = (req.originalUrl || req.path).split('?')[0];
-    if (req.route?.path && req.baseUrl) return `${req.baseUrl}${req.route.path}`;
-    return originalPath.replace(/\/([0-9a-f]{8}-[0-9a-f-]{27,}|\d+)(?=\/|$)/gi, '/:id');
+    if (req.route?.path && req.baseUrl) {
+      const combined = `${req.baseUrl}${req.route.path}`;
+      // Normalise : /api/categories/ -> /api/categories (sauf racine)
+      return combined.length > 1 && combined.endsWith('/') ? combined.slice(0, -1) : combined;
+    }
+    return originalPath.replace(/\/([0-9a-f]{8}-[0-9a-f-]{27,}|\d+)(?=\/|$)/gi, '/:id').replace(/\/$/, '') || '/';
   }
 
   function keyFor(req) {

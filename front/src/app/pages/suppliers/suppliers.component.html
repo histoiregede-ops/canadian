@@ -1,66 +1,156 @@
-<div class="page-container">
-  <div class="page-header">
-    <div>
-      <h1 class="page-title">Fournisseurs</h1>
-      <p class="page-subtitle">Gérez vos fournisseurs et partenaires</p>
-    </div>
-    <button class="btn btn-primary" (click)="openAddModal()">➕ Nouveau fournisseur</button>
-  </div>
-
-  <div class="filters-card">
-    <div class="search-box">
-      <span class="search-icon">🔍</span>
-      <input 
-        type="text" 
-        class="form-input" 
-        placeholder="Rechercher par nom, contact ou email..." 
-        [(ngModel)]="searchQuery" 
-        (input)="onSearch()" 
-      />
-    </div>
-  </div>
-
-  <div class="stats-grid" *ngIf="!loading && filteredSuppliers.length > 0">
-    <div class="stat-card">
-      <div class="stat-icon info">📦</div>
-      <div class="stat-content">
-        <p class="stat-label">Total Fournisseurs</p>
-        <h3 class="stat-value">{{ suppliers.length }}</h3>
+<div class="suppliers-page">
+  <!-- ===== HERO ===== -->
+  <header class="suppliers-hero">
+    <div class="hero-glow"></div>
+    <div class="hero-content">
+      <div class="hero-left">
+        <div class="hero-eyebrow">
+          <span class="eyebrow-dot"></span>
+          <span>Supply • Partenaires • Sourcing</span>
+          <span class="eyebrow-separator">•</span>
+          <span class="live-indicator"><i></i> Live</span>
+        </div>
+        <h1 class="hero-title">Fournisseurs <span class="hero-title-accent">& Réseau</span></h1>
+        <p class="hero-subtitle">
+          Orchestrez votre sourcing — <strong>{{ suppliers.length }} partenaires</strong> • produits, villes et disponibilité en un regard
+        </p>
+      </div>
+      <div class="hero-actions">
+        <button class="btn btn-ghost btn-sm" (click)="loadSuppliers()">
+          <span class="btn-icon">↻</span> Actualiser
+        </button>
+        <button class="btn btn-primary" (click)="openAddModal()">
+          <span class="btn-icon">＋</span> Nouveau fournisseur
+        </button>
       </div>
     </div>
-    <div class="stat-card">
-      <div class="stat-icon success">✅</div>
-      <div class="stat-content">
-        <p class="stat-label">Actifs</p>
-        <h3 class="stat-value">{{ suppliers.filter(s => s.isActive !== false).length }}</h3>
+  </header>
+
+  <!-- ===== KPI ===== -->
+  <section class="metrics">
+    <article class="metric-card metric-total">
+      <div class="metric-top">
+        <div class="metric-icon">◫</div>
+        <span class="metric-trend">Réseau</span>
+      </div>
+      <div class="metric-body">
+        <p class="metric-label">Total fournisseurs</p>
+        <p class="metric-value">{{ suppliers.length }}<span>partenaires</span></p>
+        <div class="metric-bar"><i style="width: 78%"></i></div>
+        <p class="metric-foot"><span class="dot dot-accent"></span> {{ filteredSuppliers.length }} affichés</p>
+      </div>
+    </article>
+
+    <article class="metric-card metric-active">
+      <div class="metric-top">
+        <div class="metric-icon">✓</div>
+        <span class="metric-trend positive">{{ suppliers.filter(s => s.isActive !== false).length }} actifs</span>
+      </div>
+      <div class="metric-body">
+        <p class="metric-label">Actifs</p>
+        <p class="metric-value">{{ suppliers.filter(s => s.isActive !== false).length }}<span>opérationnels</span></p>
+        <div class="metric-bar"><i [style.width.%]="suppliers.length ? (suppliers.filter(s => s.isActive !== false).length / suppliers.length *100) : 0"></i></div>
+        <p class="metric-foot"><span class="dot dot-success"></span> Disponibles</p>
+      </div>
+    </article>
+
+    <article class="metric-card metric-inactive">
+      <div class="metric-top">
+        <div class="metric-icon">⊘</div>
+        <span class="metric-trend neutral">{{ suppliers.length - suppliers.filter(s => s.isActive !== false).length }} en veille</span>
+      </div>
+      <div class="metric-body">
+        <p class="metric-label">Inactifs</p>
+        <p class="metric-value">{{ suppliers.length - suppliers.filter(s => s.isActive !== false).length }}<span>en veille</span></p>
+        <div class="metric-bar"><i [style.width.%]="suppliers.length ? ((suppliers.length - suppliers.filter(s => s.isActive !== false).length)/suppliers.length*100) : 0"></i></div>
+        <p class="metric-foot"><span class="dot dot-warning"></span> À réactiver</p>
+      </div>
+    </article>
+
+    <article class="metric-card metric-contact">
+      <div class="metric-top">
+        <div class="metric-icon">✉</div>
+        <span class="metric-trend">{{ suppliers.filter(s => !!s.email).length }} joignables</span>
+      </div>
+      <div class="metric-body">
+        <p class="metric-label">Avec email</p>
+        <p class="metric-value">{{ suppliers.filter(s => !!s.email).length }}<span>contacts</span></p>
+        <div class="metric-bar"><i [style.width.%]="suppliers.length ? (suppliers.filter(s => !!s.email).length / suppliers.length*100) : 0"></i></div>
+        <p class="metric-foot"><span class="dot dot-info"></span> Canal direct</p>
+      </div>
+    </article>
+  </section>
+
+  <!-- ===== TOOLBAR ===== -->
+  <section class="toolbar">
+    <div class="toolbar-left">
+      <h2 class="toolbar-title">Réseau fournisseurs</h2>
+      <span class="toolbar-count" *ngIf="!loading">{{ filteredSuppliers.length }} / {{ suppliers.length }} • {{ suppliers.filter(s => s.isActive !== false).length }} actifs</span>
+      <span class="toolbar-count" *ngIf="loading">Chargement…</span>
+    </div>
+    <div class="toolbar-right">
+      <div class="search-field">
+        <span class="search-icon">⌕</span>
+        <input type="text" class="search-input" placeholder="Rechercher par nom, contact ou email…" [(ngModel)]="searchQuery" (input)="onSearch()" />
+      </div>
+      <button class="btn btn-secondary btn-sm" (click)="searchQuery=''; onSearch()">Réinitialiser</button>
+    </div>
+  </section>
+
+  <!-- ===== FILTERS PILLS ===== -->
+  <section class="filters-pills">
+    <div class="pill-group">
+      <label>Vue rapide</label>
+      <div class="pills">
+        <button class="pill" [class.active]="!searchQuery" (click)="searchQuery=''; onSearch()">Tous — {{ suppliers.length }}</button>
+        <button class="pill" [class.active]="searchQuery" (click)="searchQuery='@'; onSearch()" title="Filtre email">Avec email — {{ suppliers.filter(s => !!s.email).length }}</button>
+        <button class="pill pill-active" [class.active]="false" disabled style="opacity:.6; cursor:default;">Actifs — {{ suppliers.filter(s => s.isActive !== false).length }}</button>
       </div>
     </div>
+    <div class="filter-hint">
+      <span class="hint-dot"></span>
+      {{ filteredSuppliers.length }} résultat(s) • Temps réel
+    </div>
+  </section>
+
+  <!-- ===== STATES ===== -->
+  <div class="state state-loading" *ngIf="loading">
+    <div class="loader"></div>
+    <p>Chargement des fournisseurs…</p>
+    <span>Synchronisation sourcing • Produits liés calculés</span>
   </div>
 
-  <div class="loading-state" *ngIf="loading">
-    <div class="spinner"></div>
-    <p>Chargement...</p>
+  <div class="state state-empty" *ngIf="!loading && filteredSuppliers.length === 0">
+    <div class="empty-illustration">
+      <div class="empty-orb"></div>
+      <span class="empty-emoji">◈</span>
+    </div>
+    <h3>Aucun fournisseur trouvé</h3>
+    <p>Modifiez votre recherche ou ajoutez un nouveau partenaire pour étendre votre réseau.</p>
+    <button class="btn btn-primary btn-sm" (click)="openAddModal()">＋ Créer un fournisseur</button>
+    <button class="btn btn-secondary btn-sm" *ngIf="searchQuery" (click)="searchQuery=''; onSearch()">Effacer la recherche</button>
   </div>
 
-  <div class="empty-state" *ngIf="!loading && filteredSuppliers.length === 0">
-    <span class="empty-icon">📭</span>
-    <h3 class="empty-title">Aucun fournisseur trouvé</h3>
-    <p class="empty-text">Modifiez votre recherche ou ajoutez un nouveau fournisseur.</p>
-    <button class="btn btn-primary" (click)="openAddModal()">Créer un fournisseur</button>
-  </div>
-
-  <div class="suppliers-grid" *ngIf="!loading && filteredSuppliers.length > 0">
-    <div class="card supplier-card" *ngFor="let s of filteredSuppliers; trackBy: trackBySupplierId">
-      <div class="card-header">
-        <div class="supplier-header-info">
-          <h3 class="supplier-name">{{ s.name }}</h3>
-          <span class="badge" [class.badge-success]="s.isActive !== false" [class.badge-danger]="s.isActive === false">
-            {{ s.isActive !== false ? 'Actif' : 'Inactif' }}
+  <!-- ===== GRID ===== -->
+  <section class="catalog-section" *ngIf="!loading && filteredSuppliers.length > 0">
+    <div class="suppliers-grid">
+      <article class="supplier-card" *ngFor="let s of filteredSuppliers; trackBy: trackBySupplierId">
+        <div class="supplier-top">
+          <div class="supplier-avatar">
+            {{ s.name.charAt(0) }}
+          </div>
+          <div class="supplier-head">
+            <h3 class="supplier-name" [title]="s.name">{{ s.name }}</h3>
+            <span class="supplier-location" *ngIf="s.city">{{ s.city }}<span *ngIf="s.country">, {{ s.country }}</span></span>
+            <span class="supplier-location muted" *ngIf="!s.city">Localisation non renseignée</span>
+          </div>
+          <span class="status-badge" [class.active]="s.isActive !== false" [class.inactive]="s.isActive === false">
+            <span class="status-dot"></span> {{ s.isActive !== false ? 'Actif' : 'Inactif' }}
           </span>
         </div>
-      </div>
 
-      <div class="card-body">
+        <div class="supplier-divider"></div>
+
         <div class="supplier-meta">
           <div class="meta-row" *ngIf="s.contactName">
             <span class="meta-label">Contact</span>
@@ -68,99 +158,104 @@
           </div>
           <div class="meta-row" *ngIf="s.email">
             <span class="meta-label">Email</span>
-            <span class="meta-value">{{ s.email }}</span>
+            <span class="meta-value muted">{{ s.email }}</span>
           </div>
           <div class="meta-row" *ngIf="s.phone">
             <span class="meta-label">Tél</span>
             <span class="meta-value">{{ s.phone }}</span>
           </div>
-          <div class="meta-row" *ngIf="s.city">
-            <span class="meta-label">Localisation</span>
-            <span class="meta-value">{{ s.city }}{{ s.country ? ', ' + s.country : '' }}</span>
-          </div>
           <div class="meta-row" *ngIf="s.productTypes">
             <span class="meta-label">Produits</span>
-            <span class="meta-value">{{ s.productTypes }}</span>
+            <span class="meta-value tag">{{ s.productTypes }}</span>
           </div>
-          <div class="meta-row">
+          <div class="meta-row highlight">
             <span class="meta-label">Produits liés</span>
-            <span class="badge badge-neutral">{{ supplierProductCounts[s.id!] || 0 }}</span>
+            <span class="count-pill">{{ supplierProductCounts[s.id!] || 0 }}</span>
           </div>
         </div>
 
-        <div class="card-actions">
-          <button class="btn btn-outline btn-sm" (click)="openEditModal(s)">✏️ Modifier</button>
-          <button class="btn btn-danger btn-sm" (click)="deleteSupplier(s.id!)" [disabled]="deletingId === s.id">
-            {{ deletingId === s.id ? 'Suppression...' : '🗑️ Supprimer' }}
+        <div class="supplier-actions">
+          <button class="action-btn" (click)="openEditModal(s)" title="Modifier"><span>✎</span> Modifier</button>
+          <button class="action-btn action-btn--danger" (click)="deleteSupplier(s.id!)" [disabled]="deletingId === s.id" title="Supprimer">
+            <span>{{ deletingId === s.id ? '…' : '⌫' }}</span> {{ deletingId === s.id ? 'Suppression…' : 'Supprimer' }}
           </button>
         </div>
-      </div>
+      </article>
     </div>
-  </div>
+  </section>
 
+  <!-- ===== MODAL ===== -->
   <div class="modal-overlay" *ngIf="showModal" (click)="showModal = false">
-    <div class="modal-card" (click)="$event.stopPropagation()">
+    <div class="modal-card modal-premium" (click)="$event.stopPropagation()">
+      <div class="modal-glow"></div>
       <div class="modal-header">
-        <h2 class="modal-title">{{ isEditing ? '✏️ Modifier' : '➕ Nouveau' }} fournisseur</h2>
-        <button class="modal-close" (click)="showModal = false">&times;</button>
+        <div class="modal-header-left">
+          <div class="modal-icon"><span>{{ isEditing ? '✎' : '＋' }}</span></div>
+          <div>
+            <h2 class="modal-title">{{ isEditing ? 'Modifier le fournisseur' : 'Nouveau fournisseur' }}</h2>
+            <p class="modal-subtitle">{{ isEditing ? 'Corrigez les informations et enregistrez' : 'Ajoutez un partenaire — sourcing tracé' }}</p>
+          </div>
+        </div>
+        <button class="modal-close" (click)="showModal = false">×</button>
       </div>
 
       <div class="modal-body">
         <form (ngSubmit)="saveSupplier()" class="form">
           <div class="form-group">
-            <label class="form-label">Nom *</label>
-            <input class="form-input" [(ngModel)]="currentSupplier.name" required name="name" />
+            <label class="field-label">Nom <span class="required">*</span></label>
+            <input class="field-input" [(ngModel)]="currentSupplier.name" required name="name" placeholder="Ex: SolarTech Import" />
           </div>
 
-          <div class="form-row">
+          <div class="field-row">
             <div class="form-group">
-              <label class="form-label">Personne contact</label>
-              <input class="form-input" [(ngModel)]="currentSupplier.contactName" name="contactName" />
+              <label class="field-label">Personne contact</label>
+              <input class="field-input" [(ngModel)]="currentSupplier.contactName" name="contactName" placeholder="Ex: Awa Diallo" />
             </div>
             <div class="form-group">
-              <label class="form-label">Téléphone</label>
-              <input class="form-input" [(ngModel)]="currentSupplier.phone" name="phone" />
-            </div>
-          </div>
-
-          <div class="form-row">
-            <div class="form-group">
-              <label class="form-label">Email</label>
-              <input class="form-input" type="email" [(ngModel)]="currentSupplier.email" name="email" />
-            </div>
-            <div class="form-group">
-              <label class="form-label">Ville</label>
-              <input class="form-input" [(ngModel)]="currentSupplier.city" name="city" />
+              <label class="field-label">Téléphone</label>
+              <input class="field-input" [(ngModel)]="currentSupplier.phone" name="phone" placeholder="+33 6 00 00 00 00" />
             </div>
           </div>
 
-          <div class="form-group">
-            <label class="form-label">Adresse</label>
-            <textarea class="form-textarea" [(ngModel)]="currentSupplier.address" name="address"></textarea>
-          </div>
-
-          <div class="form-row">
+          <div class="field-row">
             <div class="form-group">
-              <label class="form-label">Pays</label>
-              <input class="form-input" [(ngModel)]="currentSupplier.country" name="country" />
+              <label class="field-label">Email</label>
+              <input class="field-input" type="email" [(ngModel)]="currentSupplier.email" name="email" placeholder="contact@fournisseur.com" />
             </div>
             <div class="form-group">
-              <label class="form-label">Types de produits</label>
-              <input class="form-input" [(ngModel)]="currentSupplier.productTypes" name="productTypes" placeholder="ex: solaire, électronique" />
+              <label class="field-label">Ville</label>
+              <input class="field-input" [(ngModel)]="currentSupplier.city" name="city" placeholder="Ex: Casablanca" />
             </div>
           </div>
 
           <div class="form-group">
-            <label class="form-label" style="display:flex;align-items:center;gap:8px;cursor:pointer">
-              <input type="checkbox" [(ngModel)]="currentSupplier.isActive" name="isActive" />
+            <label class="field-label">Adresse</label>
+            <textarea class="field-textarea" [(ngModel)]="currentSupplier.address" name="address" rows="2" placeholder="Rue, zone industrielle…"></textarea>
+          </div>
+
+          <div class="field-row">
+            <div class="form-group">
+              <label class="field-label">Pays</label>
+              <input class="field-input" [(ngModel)]="currentSupplier.country" name="country" placeholder="Ex: France" />
+            </div>
+            <div class="form-group">
+              <label class="field-label">Types de produits</label>
+              <input class="field-input" [(ngModel)]="currentSupplier.productTypes" name="productTypes" placeholder="ex: solaire, électronique" />
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="field-label checkbox-label">
+              <input type="checkbox" [(ngModel)]="currentSupplier.isActive" name="isActive" class="checkbox" />
               <span>Fournisseur actif</span>
             </label>
           </div>
 
-          <div class="modal-footer">
+          <div class="modal-footer premium">
             <button type="button" class="btn btn-secondary" (click)="showModal = false">Annuler</button>
             <button type="submit" class="btn btn-primary" [disabled]="saving || !currentSupplier.name">
-              {{ saving ? (isEditing ? 'Enregistrement...' : 'Création...') : (isEditing ? 'Enregistrer' : 'Créer') }}
+              <span *ngIf="!saving" class="btn-loading"><span>{{ isEditing ? 'Enregistrer' : 'Créer' }}</span> <span>→</span></span>
+              <span *ngIf="saving" class="btn-loading"><i class="spinner-sm"></i> {{ isEditing ? 'Enregistrement…' : 'Création…' }}</span>
             </button>
           </div>
         </form>

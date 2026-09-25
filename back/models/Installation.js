@@ -63,6 +63,13 @@ const Installation = sequelize.define('Installation', {
     type: DataTypes.UUID,
     allowNull: true
   }
+}, {
+  indexes: [
+    { fields: ['status'] },
+    { fields: ['priority'] },
+    { fields: ['scheduledDate'] },
+    { fields: ['orderId'] }
+  ]
 });
 
 module.exports = Installation;

@@ -1,111 +1,198 @@
-<div class="page-container">
-  <div class="page-header">
-    <div>
-      <h1 class="page-title">📊 Mouvements de Stock</h1>
-      <p class="page-subtitle">Historique complet des entrées et sorties</p>
+<div class="movements-page">
+  <!-- ===== HERO — Quiet Luxury Mesh ===== -->
+  <header class="movements-hero">
+    <div class="hero-glow"></div>
+    <div class="hero-content">
+      <div class="hero-left">
+        <div class="hero-eyebrow">
+          <span class="eyebrow-dot"></span>
+          <span>Audit • Traçabilité • Historique</span>
+          <span class="eyebrow-separator">•</span>
+          <span class="live-indicator"><i></i> Live</span>
+        </div>
+        <h1 class="hero-title">Mouvements <span class="hero-title-accent">de Stock</span></h1>
+        <p class="hero-subtitle">
+          Historique complet des entrées et sorties — <strong>{{ total }} mouvement{{ total > 1 ? 's' : '' }}</strong> • audit radiographique en temps réel
+        </p>
+      </div>
+      <div class="hero-actions">
+        <button class="btn btn-ghost btn-sm" (click)="resetFilters()">↻ Réinitialiser</button>
+        <span class="hero-badge"><span class="badge-dot"></span> Page {{ currentPage }} / {{ pages }}</span>
+      </div>
     </div>
+  </header>
+
+  <!-- ===== KPI — Glass 4 cards ===== -->
+  <section class="metrics" *ngIf="!summaryLoading && summary">
+    <article class="metric-card metric-total">
+      <div class="metric-top">
+        <div class="metric-icon">◫</div>
+        <span class="metric-trend">Total</span>
+      </div>
+      <div class="metric-body">
+        <p class="metric-label">Total Mouvements</p>
+        <p class="metric-value">{{ summary.total }}<span>opérations</span></p>
+        <div class="metric-bar"><i style="width: 84%"></i></div>
+        <p class="metric-foot"><span class="dot dot-accent"></span> Traçabilité complète</p>
+      </div>
+    </article>
+    <article class="metric-card metric-restock">
+      <div class="metric-top">
+        <div class="metric-icon">↗</div>
+        <span class="metric-trend positive">{{ getReasonCount('restock') }} entrées</span>
+      </div>
+      <div class="metric-body">
+        <p class="metric-label">Réapprovisionnements</p>
+        <p class="metric-value">{{ getReasonCount('restock') }}<span>mouvements</span></p>
+        <div class="metric-bar"><i [style.width.%]="summary.total ? (getReasonCount('restock')/summary.total*100) : 0"></i></div>
+        <p class="metric-foot"><span class="dot dot-success"></span> Flux entrants</p>
+      </div>
+    </article>
+    <article class="metric-card metric-sale">
+      <div class="metric-top">
+        <div class="metric-icon">↙</div>
+        <span class="metric-trend neutral">{{ getReasonCount('sale') }} sorties</span>
+      </div>
+      <div class="metric-body">
+        <p class="metric-label">Ventes</p>
+        <p class="metric-value">{{ getReasonCount('sale') }}<span>mouvements</span></p>
+        <div class="metric-bar"><i [style.width.%]="summary.total ? (getReasonCount('sale')/summary.total*100) : 0"></i></div>
+        <p class="metric-foot"><span class="dot dot-warning"></span> Flux sortants</p>
+      </div>
+    </article>
+    <article class="metric-card metric-return">
+      <div class="metric-top">
+        <div class="metric-icon">↩</div>
+        <span class="metric-trend">{{ getReasonCount('return') }} retours</span>
+      </div>
+      <div class="metric-body">
+        <p class="metric-label">Retours</p>
+        <p class="metric-value">{{ getReasonCount('return') }}<span>mouvements</span></p>
+        <div class="metric-bar"><i [style.width.%]="summary.total ? (getReasonCount('return')/summary.total*100) : 0"></i></div>
+        <p class="metric-foot"><span class="dot dot-danger"></span> Corrections</p>
+      </div>
+    </article>
+  </section>
+
+  <div class="state state-loading" *ngIf="summaryLoading">
+    <div class="loader"></div>
+    <p>Chargement du résumé…</p>
+    <span>Agrégation par motif • calcul en cours</span>
   </div>
 
-  <div class="filters-card">
+  <!-- ===== TOOLBAR — Filters ===== -->
+  <section class="toolbar">
+    <div class="toolbar-left">
+      <h2 class="toolbar-title">Filtres</h2>
+      <span class="toolbar-count" *ngIf="!loading">{{ total }} résultats • Page {{ currentPage }} / {{ pages }}</span>
+      <span class="toolbar-count" *ngIf="loading">Filtrage…</span>
+    </div>
+    <div class="toolbar-right">
+      <button class="btn btn-secondary btn-sm" (click)="resetFilters()">Réinitialiser les filtres</button>
+    </div>
+  </section>
+
+  <!-- ===== FILTERS — Pills & Controls ===== -->
+  <section class="filters-card">
     <div class="filter-group">
-      <div class="search-box">
-        <span class="search-icon">🔍</span>
-        <select class="form-select" [(ngModel)]="filters.productId" (change)="onFilterChange()">
-          <option value="">Tous les produits</option>
-          <option *ngFor="let p of products; trackBy: trackByProductId" [value]="p.id">{{ p.name }}</option>
-        </select>
+      <div class="filter-field">
+        <label class="filter-label">Produit</label>
+        <div class="select-wrap">
+          <select class="field-select" [(ngModel)]="filters.productId" (change)="onFilterChange()">
+            <option value="">Tous les produits</option>
+            <option *ngFor="let p of products; trackBy: trackByProductId" [value]="p.id">{{ p.name }}</option>
+          </select>
+        </div>
       </div>
-      <select class="form-select" [(ngModel)]="filters.reason" (change)="onFilterChange()">
-        <option value="">Toutes les raisons</option>
-        <option *ngFor="let r of reasons; trackBy: trackByReason" [value]="r">{{ getReasonLabel(r) }}</option>
-      </select>
-      <input type="date" class="form-input" [(ngModel)]="filters.startDate" (change)="onFilterChange()" placeholder="Du" />
-      <input type="date" class="form-input" [(ngModel)]="filters.endDate" (change)="onFilterChange()" placeholder="Au" />
-      <button class="btn btn-secondary" (click)="resetFilters()">Réinitialiser</button>
-    </div>
-  </div>
-
-  <div class="stats-grid" *ngIf="!summaryLoading && summary">
-    <div class="stat-card">
-      <div class="stat-icon info">📊</div>
-      <div class="stat-content">
-        <p class="stat-label">Total Mouvements</p>
-        <h3 class="stat-value">{{ summary.total }}</h3>
+      <div class="filter-field">
+        <label class="filter-label">Motif</label>
+        <div class="select-wrap">
+          <select class="field-select" [(ngModel)]="filters.reason" (change)="onFilterChange()">
+            <option value="">Toutes les raisons</option>
+            <option *ngFor="let r of reasons; trackBy: trackByReason" [value]="r">{{ getReasonLabel(r) }}</option>
+          </select>
+        </div>
       </div>
-    </div>
-    <div class="stat-card">
-      <div class="stat-icon success">📈</div>
-      <div class="stat-content">
-        <p class="stat-label">Réapprovisionnements</p>
-        <h3 class="stat-value">{{ getReasonCount('restock') }}</h3>
+      <div class="filter-field">
+        <label class="filter-label">Du</label>
+        <input type="date" class="field-input" [(ngModel)]="filters.startDate" (change)="onFilterChange()" placeholder="Du" />
+      </div>
+      <div class="filter-field">
+        <label class="filter-label">Au</label>
+        <input type="date" class="field-input" [(ngModel)]="filters.endDate" (change)="onFilterChange()" placeholder="Au" />
       </div>
     </div>
-    <div class="stat-card">
-      <div class="stat-icon warning">🛒</div>
-      <div class="stat-content">
-        <p class="stat-label">Ventes</p>
-        <h3 class="stat-value">{{ getReasonCount('sale') }}</h3>
+    <div class="filters-hint">
+      <span class="hint-dot"></span>
+      {{ movements.length }} mouvement(s) sur cette page
+    </div>
+  </section>
+
+  <!-- ===== STATES ===== -->
+  <div class="state state-loading" *ngIf="loading">
+    <div class="loader"></div>
+    <p>Chargement des mouvements…</p>
+    <span>Audit en temps réel • pagination {{ filters.limit }} par page</span>
+  </div>
+
+  <div class="state state-empty" *ngIf="!loading && movements.length === 0">
+    <div class="empty-illustration">
+      <div class="empty-orb"></div>
+      <span class="empty-emoji">◈</span>
+    </div>
+    <h3>Aucun mouvement trouvé</h3>
+    <p>Modifiez vos filtres ou effectuez des opérations sur les produits — ventes, réapprovisionnements ou ajustements.</p>
+    <button class="btn btn-primary btn-sm" (click)="resetFilters()">Effacer les filtres</button>
+  </div>
+
+  <!-- ===== TABLE — Glass ===== -->
+  <section class="table-section" *ngIf="!loading && movements.length > 0">
+    <div class="table-card">
+      <div class="table-wrap">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Produit</th>
+              <th>Type</th>
+              <th class="col-num">Avant</th>
+              <th class="col-num">Après</th>
+              <th class="col-num">Variation</th>
+              <th>Référence</th>
+              <th>Par</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let m of movements; trackBy: trackByMovementId">
+              <td><span class="time-pill">{{ m.createdAt | date:'dd/MM/yy HH:mm' }}</span></td>
+              <td>
+                <div class="product-cell">
+                  <span class="product-name" [title]="m.Product?.name || getProductName(m.productId)">{{ m.Product?.name || getProductName(m.productId) }}</span>
+                  <span class="product-category" *ngIf="m.Product?.Category">{{ getCategoryName($any(m.Product).Category) }}</span>
+                  <span class="product-category muted" *ngIf="!m.Product?.Category">—</span>
+                </div>
+              </td>
+              <td><span class="reason-badge" [ngClass]="getReasonBadgeClass(m.reason)">{{ getReasonLabel(m.reason) }}</span></td>
+              <td class="col-num muted">{{ formatNumber(m.previousQuantity) }}</td>
+              <td class="col-num strong">{{ formatNumber(m.newQuantity) }}</td>
+              <td class="col-num" [class.positive]="m.changeAmount >= 0" [class.negative]="m.changeAmount < 0">
+                <span class="variation-pill" [class.positive]="m.changeAmount >= 0" [class.negative]="m.changeAmount < 0">
+                  {{ m.changeAmount >= 0 ? '+' : '' }}{{ formatNumber(m.changeAmount) }}
+                </span>
+              </td>
+              <td><span class="reference-pill">{{ m.reference || '—' }}</span></td>
+              <td><span class="user-pill">{{ m.createdBy || '—' }}</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- ===== PAGINATION ===== -->
+      <div class="pagination" *ngIf="pages > 1">
+        <button class="btn btn-secondary btn-sm" (click)="goToPage(currentPage - 1)" [disabled]="currentPage === 1">‹ Précédent</button>
+        <span class="page-info">Page <strong>{{ currentPage }}</strong> / {{ pages }} • <span class="muted">{{ total }} résultats</span></span>
+        <button class="btn btn-secondary btn-sm" (click)="goToPage(currentPage + 1)" [disabled]="currentPage === pages">Suivant ›</button>
       </div>
     </div>
-    <div class="stat-card">
-      <div class="stat-icon danger">↩️</div>
-      <div class="stat-content">
-        <p class="stat-label">Retours</p>
-        <h3 class="stat-value">{{ getReasonCount('return') }}</h3>
-      </div>
-    </div>
-  </div>
-
-  <div class="loading-state" *ngIf="loading">
-    <div class="spinner"></div>
-    <p>Chargement des mouvements...</p>
-  </div>
-
-  <div class="empty-state" *ngIf="!loading && movements.length === 0">
-    <span class="empty-icon">📊</span>
-    <h3 class="empty-title">Aucun mouvement trouvé</h3>
-    <p class="empty-text">Modifiez vos filtres ou effectuez des opérations sur les produits.</p>
-  </div>
-
-  <div class="table-container" *ngIf="!loading && movements.length > 0">
-    <table class="data-table">
-      <thead>
-        <tr>
-          <th>Date</th>
-          <th>Produit</th>
-          <th>Type</th>
-          <th>Avant</th>
-          <th>Après</th>
-          <th>Variation</th>
-          <th>Référence</th>
-          <th>Par</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr *ngFor="let m of movements; trackBy: trackByMovementId">
-          <td>{{ m.createdAt | date:'dd/MM/yy HH:mm' }}</td>
-          <td>
-            <div class="product-cell">
-              <span class="product-name">{{ m.Product?.name || getProductName(m.productId) }}</span>
-              <span class="product-category" *ngIf="m.Product?.Category">{{ getCategoryName($any(m.Product).Category) }}</span>
-            </div>
-          </td>
-          <td><span class="reason-badge" [class]="getReasonBadgeClass(m.reason)">{{ getReasonLabel(m.reason) }}</span></td>
-          <td>{{ formatNumber(m.previousQuantity) }}</td>
-          <td>{{ formatNumber(m.newQuantity) }}</td>
-          <td [class.text-success]="m.changeAmount >= 0" [class.text-danger]="m.changeAmount < 0">
-            {{ m.changeAmount >= 0 ? '+' : '' }}{{ formatNumber(m.changeAmount) }}
-          </td>
-          <td class="reference-cell">{{ m.reference || '-' }}</td>
-          <td class="user-cell">{{ m.createdBy || '-' }}</td>
-        </tr>
-      </tbody>
-    </table>
-  </div>
-
-  <div class="pagination" *ngIf="pages > 1">
-    <button class="btn btn-outline btn-sm" (click)="goToPage(currentPage - 1)" [disabled]="currentPage === 1">Précédent</button>
-    <span class="page-info">Page {{ currentPage }} / {{ pages }} ({{ total }} résultats)</span>
-    <button class="btn btn-outline btn-sm" (click)="goToPage(currentPage + 1)" [disabled]="currentPage === pages">Suivant</button>
-  </div>
+  </section>
 </div>

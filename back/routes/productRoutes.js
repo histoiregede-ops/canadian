@@ -74,12 +74,28 @@ const isMissingTableError = (error) => {
 // Cache mémoire simple pour /api/products (TTL 30s) => évite findAndCountAll à chaque poll frontend
 const productsCache = new Map(); // key -> { data, expiry }
 const PRODUCTS_CACHE_TTL_MS = 30000;
+
+// Redis cache initialization
+let redisCache = null;
+let redisAvailable = false;
+try {
+  const { cache: redisCacheModule } = require('../config/redis');
+  redisCache = redisCacheModule;
+  // Initialize Redis connection
+  const { initRedis, isRedisAvailable } = require('../config/redis');
+  initRedis();
+  redisAvailable = isRedisAvailable();
+} catch (error) {
+  console.warn('[ProductRoutes] Redis not available, using in-memory cache only:', error.message);
+}
+
 const getCached = (key) => {
   const entry = productsCache.get(key);
   if (entry && entry.expiry > Date.now()) return entry.data;
   if (entry) productsCache.delete(key);
   return null;
 };
+
 const setCached = (key, data) => {
   if (productsCache.size > 100) {
     const firstKey = productsCache.keys().next().value;
@@ -87,7 +103,61 @@ const setCached = (key, data) => {
   }
   productsCache.set(key, { data, expiry: Date.now() + PRODUCTS_CACHE_TTL_MS });
 };
+
 const clearProductsCache = () => productsCache.clear();
+
+// Redis-enhanced cache functions
+const getCachedWithRedis = async (key) => {
+  // Try in-memory cache first (faster)
+  const memoryResult = getCached(key);
+  if (memoryResult) return memoryResult;
+  
+  // Try Redis if available
+  if (redisAvailable && redisCache) {
+    try {
+      const redisResult = await redisCache.get(key);
+      if (redisResult) {
+        // Populate in-memory cache for faster subsequent access
+        setCached(key, redisResult);
+        return redisResult;
+      }
+    } catch (error) {
+      console.warn('[ProductRoutes] Redis GET error:', error.message);
+    }
+  }
+  return null;
+};
+
+const setCachedWithRedis = async (key, data, ttl = 30) => {
+  // Set in both caches
+  setCached(key, data);
+  
+  if (redisAvailable && redisCache) {
+    try {
+      await redisCache.set(key, data, ttl);
+      return true;
+    } catch (error) {
+      console.warn('[ProductRoutes] Redis SET error:', error.message);
+      return false;
+    }
+  }
+  return true;
+};
+
+const clearProductsCacheWithRedis = async () => {
+  clearProductsCache();
+  
+  if (redisAvailable && redisCache) {
+    try {
+      await redisCache.clearPrefix();
+      return true;
+    } catch (error) {
+      console.warn('[ProductRoutes] Redis CLEAR error:', error.message);
+      return false;
+    }
+  }
+  return true;
+};
 
 router.get('/', async (req, res) => {
   try {
@@ -108,13 +178,16 @@ router.get('/', async (req, res) => {
     }
 
     const tDB = Date.now();
-    // findAndCountAll fait 2 requêtes (COUNT + SELECT). On parallélise et on limite les colonnes incluses
+    // findAndCountAll avec attributes limitées pour réduire le payload JSON (67KB -> ~13KB)
     const { count, rows } = await Product.findAndCountAll({
-      include: [Category, { model: Supplier, attributes: ['id', 'name'] }],
+      attributes: ['id', 'name', 'price', 'stockQuantity', 'status', 'photo', 'categoryId', 'supplierId', 'createdAt'],
+      include: [
+        { model: Category, attributes: ['id', 'name'] },
+        { model: Supplier, attributes: ['id', 'name'] }
+      ],
       order: [['createdAt', 'DESC']],
       limit: effectiveLimit,
       offset,
-      // évite de ramener les gros TEXT inutilement si non nécessaire (photo reste)
     });
     const tDBEnd = Date.now();
 
@@ -133,7 +206,13 @@ router.get('/', async (req, res) => {
 
 router.get('/:id', async (req, res) => {
   try {
-    const product = await Product.findByPk(req.params.id, { include: [Category, { model: Supplier, attributes: ['id', 'name'] }] });
+    const product = await Product.findByPk(req.params.id, {
+      attributes: ['id', 'name', 'description', 'price', 'stockQuantity', 'status', 'photo', 'barcode', 'categoryId', 'supplierId', 'isFeatured', 'lowStockThreshold', 'createdAt'],
+      include: [
+        { model: Category, attributes: ['id', 'name'] },
+        { model: Supplier, attributes: ['id', 'name'] }
+      ]
+    });
     if (product) {
       res.json(product);
     } else {

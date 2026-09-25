@@ -1,40 +1,114 @@
-<div class="messaging">
-  <header class="messaging-header">
-    <h1>Messagerie</h1>
-    <p class="subtitle">
-      {{ isAdmin ? 'Suivez et répondez aux conversations clients' : 'Contactez notre équipe support' }}
-    </p>
+<div class="msg-page">
+  <!-- HERO -->
+  <header class="msg-hero">
+    <div class="hero-glow"></div>
+    <div class="hero-content">
+      <div class="hero-left">
+        <div class="hero-eyebrow">
+          <span class="eyebrow-dot"></span>
+          <span>Messagerie • {{ isAdmin ? 'Admin' : 'Support' }}</span>
+          <span class="eyebrow-separator">•</span>
+          <span class="live-indicator"><i></i> Temps réel</span>
+        </div>
+        <h1 class="hero-title">Messagerie <span class="hero-title-accent">{{ isAdmin ? 'Opérationnelle' : 'Client' }}</span></h1>
+        <p class="hero-subtitle">
+          {{ isAdmin ? 'Suivez et répondez aux conversations clients • Priorisation et traçabilité' : 'Contactez notre équipe support • Réponse sous 2h' }}
+        </p>
+        <div class="hero-meta">
+          <span class="meta-pill"><span class="meta-dot dot-accent"></span> {{ conversations.length }} conversations</span>
+          <span class="meta-pill"><span class="meta-dot dot-success"></span> {{ messages.length }} messages</span>
+          <span class="meta-pill" *ngIf="selectedConversation"><span class="meta-dot" [class.dot-success]="selectedConversation.status==='open'" [class.dot-warning]="selectedConversation.status!=='open'"></span> {{ selectedConversation.status === 'open' ? 'Ouvert' : 'Fermé' }}</span>
+        </div>
+      </div>
+      <div class="hero-actions">
+        <button class="btn btn-secondary btn-sm" (click)="sidebarOpen = !sidebarOpen">☰ Liste</button>
+        <button class="btn btn-primary btn-sm" (click)="showNewConversationForm = !showNewConversationForm">
+          {{ showNewConversationForm ? 'Annuler' : '+ Nouveau' }}
+        </button>
+      </div>
+    </div>
+    <div *ngIf="showNotificationBanner" class="notification-banner">
+      <span class="notif-dot"></span> {{ notificationMessage }}
+    </div>
   </header>
 
-  <div class="messaging-body">
-    <div *ngIf="showNotificationBanner" class="notification-banner">
-      {{ notificationMessage }}
+  <!-- KPI -->
+  <section class="kpi-grid">
+    <article class="kpi-card">
+      <div class="kpi-top"><div class="kpi-icon">▦</div><span class="kpi-trend">Total</span></div>
+      <p class="kpi-label">Conversations</p>
+      <p class="kpi-value">{{ conversations.length }}<span>threads</span></p>
+      <div class="kpi-bar"><i style="width: 64%"></i></div>
+      <p class="kpi-foot"><span class="dot dot-accent"></span> Suivi centralisé</p>
+    </article>
+    <article class="kpi-card">
+      <div class="kpi-top"><div class="kpi-icon">✉</div><span class="kpi-trend positive">Fil actuel</span></div>
+      <p class="kpi-label">Messages</p>
+      <p class="kpi-value">{{ messages.length }}<span>échanges</span></p>
+      <div class="kpi-bar"><i [style.width.%]="messages.length ? 72 : 10"></i></div>
+      <p class="kpi-foot"><span class="dot dot-success"></span> WebSocket actif</p>
+    </article>
+    <article class="kpi-card">
+      <div class="kpi-top"><div class="kpi-icon">◈</div><span class="kpi-trend" [class.positive]="selectedConversation?.status==='open'">{{ selectedConversation?.status === 'open' ? 'Ouvert' : selectedConversation ? 'Fermé' : '—' }}</span></div>
+      <p class="kpi-label">Statut</p>
+      <p class="kpi-value" style="font-size:var(--font-lg)">{{ selectedConversation ? (selectedConversation.status === 'open' ? 'Ouvert — en cours' : 'Fermé — archivé') : 'Aucune sélection' }}</p>
+      <div class="kpi-bar"><i [style.width.%]="selectedConversation?.status==='open' ? 80 : 20"></i></div>
+      <p class="kpi-foot"><span class="dot dot-warning"></span> SLA respectée</p>
+    </article>
+  </section>
+
+  <!-- TOOLBAR -->
+  <div class="toolbar" *ngIf="showNewConversationForm">
+    <div class="toolbar-left">
+      <h3 class="toolbar-title">Nouvelle conversation</h3>
+      <p class="toolbar-sub">Définissez un sujet clair pour accélérer la résolution</p>
     </div>
+    <div class="new-conv-inline">
+      <input
+        type="text"
+        [(ngModel)]="conversationSubject"
+        placeholder="Sujet de la conversation..."
+        class="form-input"
+      />
+      <div class="form-actions">
+        <button class="btn btn-primary btn-sm" (click)="createNewConversation()">Créer →</button>
+        <button class="btn btn-ghost btn-sm" (click)="showNewConversationForm = false">Annuler</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- LAYOUT -->
+  <div class="msg-layout">
     <aside class="conversations-panel" [class.open]="sidebarOpen">
       <div class="panel-header">
-        <h2>Conversations</h2>
-        <button class="btn btn-primary" (click)="showNewConversationForm = !showNewConversationForm">
-          + Nouveau
-        </button>
-        <button class="btn-close-sidebar" (click)="sidebarOpen = false">&times;</button>
+        <div>
+          <h2>Conversations</h2>
+          <p class="panel-subtitle">{{ conversations.length }} fils • tri récent</p>
+        </div>
+        <div class="panel-actions">
+          <button class="btn btn-primary btn-sm desktop-new" (click)="showNewConversationForm = !showNewConversationForm">+ Nouveau</button>
+          <button class="btn-close-sidebar" (click)="sidebarOpen = false" aria-label="Fermer">×</button>
+        </div>
       </div>
 
-      <div *ngIf="showNewConversationForm" class="new-conv-form">
+      <div *ngIf="showNewConversationForm" class="new-conv-form mobile-only">
         <input
           type="text"
           [(ngModel)]="conversationSubject"
           placeholder="Sujet de la conversation..."
         />
         <div class="form-actions">
-          <button class="btn btn-primary btn-sm" (click)="createNewConversation()">Creer</button>
+          <button class="btn btn-primary btn-sm" (click)="createNewConversation()">Créer</button>
           <button class="btn btn-ghost btn-sm" (click)="showNewConversationForm = false">Annuler</button>
         </div>
       </div>
 
       <div class="conversations-list">
-        <div *ngIf="loading" class="state-msg">Chargement...</div>
-        <div *ngIf="!loading && conversations.length === 0" class="state-msg">
-          Aucune conversation pour le moment
+        <div *ngIf="loading" class="state-msg"><div class="loader-sm"></div> Chargement...</div>
+        <div *ngIf="!loading && conversations.length === 0" class="state-msg empty">
+          <div class="empty-illus">✉</div>
+          <strong>Aucune conversation</strong>
+          <p>Créez votre premier fil pour démarrer.</p>
         </div>
         <div
           *ngFor="let conv of conversations; trackBy: trackByConversationId"
@@ -42,16 +116,16 @@
           [class.active]="selectedConversation?.id === conv.id"
           (click)="selectConversation(conv); sidebarOpen = false"
         >
-          <div class="conv-avatar">{{ conv.customerName.charAt(0) || conv.subject.charAt(0) }}</div>
+          <div class="conv-avatar">{{ (conv.customerName?.charAt(0) || conv.subject?.charAt(0) || '?') | uppercase }}</div>
           <div class="conv-body">
             <h3>{{ conv.subject }}</h3>
-            <p class="conv-preview">{{ conv.lastMessage }}</p>
+            <p class="conv-preview">{{ conv.lastMessage || '—' }}</p>
             <p *ngIf="isAdmin" class="conv-client">{{ conv.customerName }} <span *ngIf="conv.customerPhone" class="conv-phone">{{ conv.customerPhone }}</span></p>
           </div>
           <div class="conv-meta">
             <span class="conv-time">{{ conv.updatedAt | date:'short' }}</span>
             <span class="badge" [class.closed]="conv.status === 'closed'">
-              {{ conv.status === 'open' ? 'Ouvert' : 'Ferme' }}
+              {{ conv.status === 'open' ? 'Ouvert' : 'Fermé' }}
             </span>
             <span *ngIf="conv.unreadCount > 0" class="unread">{{ conv.unreadCount }}</span>
           </div>
@@ -61,14 +135,14 @@
 
     <main class="chat-panel">
       <div *ngIf="!selectedConversation" class="empty-state">
-        <div class="empty-icon">&#9993;</div>
-        <h2>Selectionnez une conversation</h2>
-        <p>Choisissez une conversation dans la liste ou creez-en une nouvelle</p>
+        <div class="empty-illus">✉</div>
+        <h2>Sélectionnez une conversation</h2>
+        <p>Choisissez une conversation dans la liste ou créez-en une nouvelle avec le bouton + Nouveau.</p>
       </div>
 
       <ng-container *ngIf="selectedConversation">
         <div class="chat-header">
-          <button class="btn-back" (click)="sidebarOpen = true">&larr;</button>
+          <button class="btn-back" (click)="sidebarOpen = true" aria-label="Retour">←</button>
           <div class="chat-meta">
             <h2>{{ selectedConversation.subject }}</h2>
             <div class="customer-info" *ngIf="isAdmin">
@@ -81,15 +155,15 @@
               </a>
             </div>
             <span class="status" [class.open]="selectedConversation.status === 'open'">
-              {{ selectedConversation.status === 'open' ? 'Ouvert' : 'Ferme' }}
+              {{ selectedConversation.status === 'open' ? 'Ouvert • en cours' : 'Fermé • archivé' }}
             </span>
           </div>
           <button
             *ngIf="selectedConversation.status === 'open'"
-            class="btn btn-danger btn-sm"
+            class="btn btn-ghost btn-sm"
             (click)="closeConversation()"
           >
-            Fermer
+            Fermer ×
           </button>
         </div>
 
@@ -110,7 +184,7 @@
           </div>
           <div *ngIf="typingUsers.size > 0" class="typing">
             <span class="dot-pulse"></span>
-            <span>Quelqu'un ecrit...</span>
+            <span>Quelqu’un écrit…</span>
           </div>
         </div>
 
@@ -118,7 +192,7 @@
           <textarea
             [(ngModel)]="newMessage"
             (keydown)="onKeyDown($event)"
-            placeholder="Tapez votre message... (Shift+Entree pour nouvelle ligne)"
+            placeholder="Tapez votre message... (Shift+Entrée pour nouvelle ligne)"
             rows="1"
           ></textarea>
           <button
@@ -138,13 +212,13 @@
             (click)="sendMessage()"
             [disabled]="!newMessage.trim() || sendingMessage"
           >
-            <span style="font-size:1.2rem">{{ sendingMessage ? '...' : '→' }}</span>
+            <span style="font-size:1.2rem">{{ sendingMessage ? '…' : '→' }}</span>
           </button>
         </div>
-        <div *ngIf="isListening" class="voice-status">Parlez maintenant…</div>
+        <div *ngIf="isListening" class="voice-status"><span class="dot dot-success"></span> Parlez maintenant…</div>
 
         <div *ngIf="selectedConversation.status === 'closed'" class="closed-banner">
-          Cette conversation est fermee. Creez-en une nouvelle pour continuer.
+          <span>◆</span> Cette conversation est fermée. Créez-en une nouvelle pour continuer.
         </div>
       </ng-container>
     </main>

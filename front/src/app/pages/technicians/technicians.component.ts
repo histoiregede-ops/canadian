@@ -86,6 +86,7 @@ export class TechniciansComponent implements OnInit, OnDestroy {
   }
 
   openAddModal(): void {
+    this.saving = false;
     this.isEditing = false;
     this.editingId = null;
     this.currentTechnician = { username: '', password: '', email: '', fullName: '', role: 'technician' };
@@ -93,6 +94,7 @@ export class TechniciansComponent implements OnInit, OnDestroy {
   }
 
   openEditModal(tech: User): void {
+    this.saving = false;
     this.isEditing = true;
     this.editingId = tech.id;
     this.currentTechnician = {
@@ -105,10 +107,49 @@ export class TechniciansComponent implements OnInit, OnDestroy {
     this.showModal = true;
   }
 
+  closeModal(): void {
+    // Permet de fermer même si saving est bloqué, et débloque pour la prochaine ouverture
+    this.showModal = false;
+    // Si saving reste bloqué plus de 2s après fermeture, on le force à false pour ne pas bloquer le prochain ajout
+    if (this.saving) {
+      setTimeout(() => { this.saving = false; }, 500);
+    }
+  }
+
+  onOverlayClick(event: MouseEvent): void {
+    this.closeModal();
+  }
+
   saveTechnician(event?: Event): void {
     event?.preventDefault();
-    if (!this.currentTechnician.fullName || !this.currentTechnician.email) return;
     if (this.saving) return;
+
+    // Normalisation avant validation/envoi
+    this.currentTechnician.fullName = this.currentTechnician.fullName?.trim() || '';
+    this.currentTechnician.email = this.currentTechnician.email?.trim().toLowerCase() || '';
+    this.currentTechnician.username = this.currentTechnician.username?.trim() || '';
+
+    if (!this.currentTechnician.fullName || !this.currentTechnician.email) {
+      this.toastService.show('Nom complet et email requis', 'error');
+      return;
+    }
+    // Validation email simple
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(this.currentTechnician.email)) {
+      this.toastService.show("Format d'email invalide", 'error');
+      return;
+    }
+    // Validation spécifique création AVANT de passer en saving
+    if (!this.isEditing) {
+      if (!this.currentTechnician.username || !this.currentTechnician.password) {
+        this.toastService.show("Nom d'utilisateur et mot de passe requis", 'error');
+        return;
+      }
+      if (this.currentTechnician.password.length < 6) {
+        this.toastService.show('Mot de passe trop court (min 6 caractères)', 'error');
+        return;
+      }
+    }
+
     this.saving = true;
 
     if (this.isEditing && this.editingId) {
@@ -126,11 +167,11 @@ export class TechniciansComponent implements OnInit, OnDestroy {
           },
           error: (err) => {
             console.error('Error updating technician:', err);
-            this.toastService.show(err.error?.error || 'Erreur mise à jour technicien', 'error');
+            const msg = err.error?.error || err.error?.message || 'Erreur mise à jour technicien';
+            this.toastService.show(msg, 'error');
           }
         });
     } else {
-      if (!this.currentTechnician.username || !this.currentTechnician.password) return;
       this.userService.createUser(this.currentTechnician)
         .pipe(finalize(() => { this.saving = false; }))
         .subscribe({
@@ -142,7 +183,8 @@ export class TechniciansComponent implements OnInit, OnDestroy {
           },
           error: (err) => {
             console.error('Error saving technician:', err);
-            this.toastService.show(err.error?.error || 'Erreur création technicien', 'error');
+            const msg = err.error?.error || err.error?.message || 'Erreur création technicien';
+            this.toastService.show(msg, 'error');
           }
         });
     }

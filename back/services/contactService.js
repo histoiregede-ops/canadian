@@ -162,11 +162,22 @@ class ContactService {
       // Validation des données
       this.validateContactData(contactData);
 
-      // Envoi à l'admin
-      const adminResult = await this.sendContactEmail(contactData);
+      // Si Brevo non configuré (local/test), on simule l'envoi
+      if (!this.apiKey) {
+        console.warn('⚠️ BREVO_API_KEY non configuré — message contact simulé (local)');
+        return {
+          success: true,
+          message: 'Message enregistré (email simulé en local)',
+          adminMessageId: 'simulated-admin',
+          clientMessageId: 'simulated-client'
+        };
+      }
 
-      // Envoi de confirmation au client
-      const clientResult = await this.sendConfirmationEmail(contactData);
+      // Envoi à l'admin et confirmation en parallèle
+      const [adminResult, clientResult] = await Promise.all([
+        this.sendContactEmail(contactData),
+        this.sendConfirmationEmail(contactData)
+      ]);
 
       return {
         success: true,

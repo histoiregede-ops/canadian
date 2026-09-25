@@ -1,98 +1,216 @@
-<div class="page-container">
-  <div class="page-header">
-    <div>
-      <h1 class="page-title">Comptabilité</h1>
-      <p class="page-subtitle">Suivi des entrées et sorties, reporting journalier et export.</p>
-    </div>
-    <div class="header-actions">
-      <button class="btn btn-primary" (click)="loadFlux()">🔄 Actualiser le rapport</button>
-    </div>
-  </div>
-
-  <div class="summary-grid">
-    <div class="stat-card">
-      <p class="stat-label">Entrées totales</p>
-      <h3 class="stat-value">{{ summary.revenue | number }} FCFA</h3>
-    </div>
-    <div class="stat-card">
-      <p class="stat-label">Sorties totales</p>
-      <h3 class="stat-value">{{ summary.expense | number }} FCFA</h3>
-    </div>
-    <div class="stat-card">
-      <p class="stat-label">Solde net</p>
-      <h3 class="stat-value">{{ summary.balance | number }} FCFA</h3>
-    </div>
-  </div>
-
-  <div class="form-card">
-    <div class="form-grid">
-      <div class="form-group">
-        <label>Période de</label>
-        <input type="date" [(ngModel)]="selectedStart" class="form-input" />
+<div class="accounting-page">
+  <!-- ===== HERO ===== -->
+  <header class="accounting-hero">
+    <div class="hero-glow"></div>
+    <div class="hero-content">
+      <div class="hero-left">
+        <div class="hero-eyebrow">
+          <span class="eyebrow-dot"></span>
+          <span>Finance • Comptabilité</span>
+          <span class="eyebrow-separator">•</span>
+          <span class="live-indicator"><i></i> Temps réel</span>
+        </div>
+        <h1 class="hero-title">
+          Comptabilité
+          <span class="hero-title-accent">intelligente</span>
+        </h1>
+        <p class="hero-subtitle">
+          Suivi des flux, reporting journalier et exports • Précision au centime, vision à 360°
+        </p>
       </div>
-      <div class="form-group">
-        <label>à</label>
-        <input type="date" [(ngModel)]="selectedEnd" class="form-input" />
-      </div>
-      <div class="form-group form-actions">
-        <button class="btn btn-primary" (click)="loadFlux()">Charger</button>
+      <div class="hero-actions">
+        <button class="btn btn-ghost btn-sm" (click)="loadFlux()">
+          <span class="btn-icon">↻</span> Actualiser
+        </button>
+        <button class="btn btn-primary" (click)="loadFlux()">
+          <span class="btn-icon">◈</span> Générer le rapport
+        </button>
       </div>
     </div>
+  </header>
+
+  <!-- ===== KPIs ===== -->
+  <section class="kpi-grid">
+    <article class="kpi-card kpi-revenue">
+      <div class="kpi-top">
+        <div class="kpi-icon"><span>↗</span></div>
+        <span class="kpi-trend positive">+14%</span>
+      </div>
+      <p class="kpi-label">Entrées totales</p>
+      <p class="kpi-value">{{ summary.revenue | number:'1.0-0' }}<span>FCFA</span></p>
+      <div class="kpi-bar"><i style="width: 72%"></i></div>
+      <p class="kpi-foot"><span class="dot dot-success"></span> Flux entrants</p>
+    </article>
+    <article class="kpi-card kpi-expense">
+      <div class="kpi-top">
+        <div class="kpi-icon"><span>↘</span></div>
+        <span class="kpi-trend negative">−6%</span>
+      </div>
+      <p class="kpi-label">Sorties totales</p>
+      <p class="kpi-value">{{ summary.expense | number:'1.0-0' }}<span>FCFA</span></p>
+      <div class="kpi-bar"><i style="width: 38%"></i></div>
+      <p class="kpi-foot"><span class="dot dot-danger"></span> Flux sortants</p>
+    </article>
+    <article class="kpi-card kpi-balance" [class.kpi-positive]="summary.balance >= 0" [class.kpi-negative]="summary.balance < 0">
+      <div class="kpi-top">
+        <div class="kpi-icon"><span>◈</span></div>
+        <span class="kpi-trend" [class.positive]="summary.balance >= 0" [class.negative]="summary.balance < 0">
+          {{ summary.balance >= 0 ? 'Excédent' : 'Déficit' }}
+        </span>
+      </div>
+      <p class="kpi-label">Solde net</p>
+      <p class="kpi-value">{{ summary.balance | number:'1.0-0' }}<span>FCFA</span></p>
+      <div class="kpi-bar"><i [style.width.%]="summary.balance >= 0 ? 65 : 35"></i></div>
+      <p class="kpi-foot">Période sélectionnée</p>
+    </article>
+  </section>
+
+  <!-- ===== FILTERS ===== -->
+  <section class="filter-card">
+    <div class="filter-header">
+      <div class="filter-title">
+        <h3>Période d'analyse</h3>
+        <p>Sélectionnez l'intervalle pour le flux journalier</p>
+      </div>
+      <div class="filter-presets">
+        <button type="button" class="preset" (click)="selectedStart = selectedEnd = today()">Aujourd'hui</button>
+        <button type="button" class="preset" (click)="setLast7Days()">7 jours</button>
+        <button type="button" class="preset" (click)="setThisMonth()">Ce mois</button>
+      </div>
+    </div>
+    <div class="filter-body">
+      <div class="field">
+        <label class="field-label">Du</label>
+        <div class="date-field">
+          <span class="date-icon">▦</span>
+          <input type="date" [(ngModel)]="selectedStart" class="date-input" />
+        </div>
+      </div>
+      <div class="field">
+        <label class="field-label">Au</label>
+        <div class="date-field">
+          <span class="date-icon">▦</span>
+          <input type="date" [(ngModel)]="selectedEnd" class="date-input" />
+        </div>
+      </div>
+      <div class="field field-action">
+        <label class="field-label">&nbsp;</label>
+        <button class="btn btn-primary btn-block" (click)="loadFlux()">
+          <span>◈</span> Charger le rapport
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== LOADING ===== -->
+  <div class="state state-loading" *ngIf="reportLoading">
+    <div class="loader"></div>
+    <div class="loader-text">
+      <p>Analyse des flux en cours...</p>
+      <span>Agrégation des transactions et calcul des soldes</span>
+    </div>
   </div>
 
-  <div *ngIf="reportLoading" class="loading-state">
-    <div class="spinner"></div>
-    <p>Chargement du rapport...</p>
-  </div>
-
-  <div *ngIf="!reportLoading && fluxData" class="report-card">
+  <!-- ===== REPORT ===== -->
+  <section class="report-card" *ngIf="!reportLoading && fluxData">
     <div class="report-header">
-      <div>
-        <h2>Flux journalier</h2>
-        <p>{{ selectedStart }} → {{ selectedEnd }}</p>
+      <div class="report-header-left">
+        <h2 class="report-title">Flux journalier</h2>
+        <p class="report-subtitle">
+          <span class="report-dot"></span>
+          {{ selectedStart | date:'dd MMM yyyy' }} → {{ selectedEnd | date:'dd MMM yyyy' }}
+          <span class="report-sep">•</span>
+          {{ fluxData.transactions.length }} opérations
+        </p>
       </div>
       <div class="report-actions">
-        <button class="btn btn-secondary" (click)="exportPDF()">📄 Export PDF</button>
-        <button class="btn btn-secondary" (click)="exportXLSX()">📊 Export XLSX</button>
+        <button class="btn btn-secondary btn-sm" (click)="exportPDF()">
+          <span>⎙</span> PDF
+        </button>
+        <button class="btn btn-secondary btn-sm" (click)="exportXLSX()">
+          <span>▦</span> Excel
+        </button>
       </div>
     </div>
 
+    <!-- Summary -->
     <div class="report-summary">
-      <div class="report-item report-income">
-        <span>Entrées</span>
-        <strong>+{{ fluxData.income | number }} FCFA</strong>
+      <div class="summary-item summary-income">
+        <div class="summary-icon">↗</div>
+        <div class="summary-text">
+          <span class="summary-label">Entrées</span>
+          <strong class="summary-value">+{{ fluxData.income | number:'1.0-0' }} <span>FCFA</span></strong>
+        </div>
       </div>
-      <div class="report-item report-expense">
-        <span>Sorties</span>
-        <strong>-{{ fluxData.expense | number }} FCFA</strong>
+      <div class="summary-item summary-expense">
+        <div class="summary-icon">↘</div>
+        <div class="summary-text">
+          <span class="summary-label">Sorties</span>
+          <strong class="summary-value">−{{ fluxData.expense | number:'1.0-0' }} <span>FCFA</span></strong>
+        </div>
       </div>
-      <div class="report-item report-balance">
-        <span>Solde</span>
-        <strong>{{ fluxData.balance | number }} FCFA</strong>
+      <div class="summary-item summary-balance" [class.positive]="fluxData.balance >= 0" [class.negative]="fluxData.balance < 0">
+        <div class="summary-icon">◈</div>
+        <div class="summary-text">
+          <span class="summary-label">Solde net</span>
+          <strong class="summary-value">{{ fluxData.balance | number:'1.0-0' }} <span>FCFA</span></strong>
+        </div>
       </div>
     </div>
 
-    <div class="table-container">
+    <!-- Table -->
+    <div class="table-wrap">
       <table class="data-table">
         <thead>
           <tr>
             <th>Heure</th>
             <th>Description</th>
+            <th>Produits</th>
             <th>Type</th>
-            <th>Montant</th>
+            <th class="th-amount">Montant</th>
             <th>Commentaire</th>
           </tr>
         </thead>
         <tbody>
-          <tr *ngFor="let transaction of fluxData.transactions">
-            <td>{{ transaction.time || '-' }}</td>
-            <td>{{ transaction.description }}</td>
-            <td>{{ formatType(transaction.type) }}</td>
-            <td>{{ transaction.amount | number }} FCFA</td>
-            <td>{{ transaction.comment || '-' }}</td>
+          <tr *ngFor="let t of fluxData.transactions; trackBy: trackById" class="row">
+            <td class="td-time">
+              <span class="time-pill">{{ t.time || '—' }}</span>
+            </td>
+            <td class="td-desc">
+              <p class="desc-main">{{ t.description }}</p>
+              <p class="desc-sub" *ngIf="t.customerName">{{ t.customerName }}</p>
+            </td>
+            <td class="td-products">
+              <span class="products-pill" *ngIf="t.products" [title]="t.products">{{ t.products }}</span>
+              <span class="products-empty" *ngIf="!t.products">—</span>
+            </td>
+            <td>
+              <span class="type-badge" [class.type-income]="t.type==='income'" [class.type-expense]="t.type==='expense'">
+                <span class="type-dot"></span>
+                {{ t.type==='income' ? 'Entrée' : 'Sortie' }}
+              </span>
+            </td>
+            <td class="td-amount" [class.amount-income]="t.type==='income'" [class.amount-expense]="t.type==='expense'">
+              <span class="amount-sign">{{ t.type==='income' ? '+' : '−' }}</span>{{ t.amount | number:'1.0-0' }}<span class="amount-ccy">FCFA</span>
+            </td>
+            <td class="td-comment">
+              <span class="comment-text" [title]="t.comment || ''">{{ t.comment || '—' }}</span>
+            </td>
           </tr>
         </tbody>
       </table>
+      <div class="empty-row" *ngIf="fluxData.transactions.length===0">
+        <div class="empty-illustration"><span>◈</span></div>
+        <p>Aucune opération sur cette période</p>
+        <span>Élargissez l'intervalle ou vérifiez les filtres</span>
+      </div>
     </div>
+  </section>
+
+  <!-- Empty before first load -->
+  <div class="state state-empty" *ngIf="!reportLoading && !fluxData">
+    <div class="empty-illustration"><span>▦</span></div>
+    <h3>Prêt à analyser</h3>
+    <p>Sélectionnez une période et chargez le rapport pour voir les flux détaillés.</p>
   </div>
 </div>

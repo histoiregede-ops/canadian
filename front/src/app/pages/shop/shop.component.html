@@ -1,205 +1,265 @@
 <div class="shop-page">
-  <!-- ===== TOP NAV ===== -->
+  <!-- ===== NAV PREMIUM ===== -->
   <nav class="shop-nav">
     <div class="shop-nav-inner">
-      <a routerLink="/shop" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }" class="nav-link active">🏠 Boutique</a>
-      <a routerLink="/cart" routerLinkActive="active" class="nav-link">🛒 Panier</a>
-      <a routerLink="/checkout" routerLinkActive="active" class="nav-link">💳 Paiement</a>
-      <a routerLink="/login" class="nav-link staff-link">👤 Staff</a>
-      <a *ngIf="!isCustomerLoggedIn" routerLink="/login" class="nav-link login-link">🔒 Connexion</a>
-      <a *ngIf="isCustomerLoggedIn" class="nav-link login-link" (click)="logoutCustomer()" style="cursor:pointer">🚪 Déconnexion</a>
+      <div class="nav-pills">
+        <a routerLink="/shop" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }" class="nav-pill active"><span class="nav-dot"></span> Boutique</a>
+        <a routerLink="/cart" routerLinkActive="active" class="nav-pill"><span class="nav-dot"></span> Panier</a>
+        <a routerLink="/checkout" routerLinkActive="active" class="nav-pill">Paiement</a>
+      </div>
+      <div class="nav-actions">
+        <a routerLink="/login" class="nav-staff">Staff</a>
+        <a *ngIf="!isCustomerLoggedIn" routerLink="/login" class="btn btn-secondary btn-sm">Connexion</a>
+        <a *ngIf="isCustomerLoggedIn" class="btn btn-ghost btn-sm" (click)="logoutCustomer()" style="cursor:pointer">Déconnexion</a>
+      </div>
     </div>
   </nav>
 
-<!-- ===== HERO BANNER ===== -->
-<section class="hero-banner">
-  <div class="hero-overlay"></div>
-  <div class="hero-content">
-    <h1>Bienvenue chez <span class="hero-highlight">Electro Canadien</span></h1>
-    <p>Découvrez notre gamme complète de produits solaires, électroménagers et accessoires. Qualité premium au meilleur prix.</p>
-    <div class="hero-cta">
-      <span class="hero-badge">⭐ Meilleurs produits</span>
-      <span class="hero-badge">📦 Livraison rapide</span>
-      <span class="hero-badge">🔧 Service après-vente</span>
+  <!-- ===== HERO MESH ===== -->
+  <header class="shop-hero">
+    <div class="hero-glow"></div>
+    <div class="hero-content">
+      <div class="hero-left">
+        <div class="hero-eyebrow">
+          <span class="eyebrow-dot"></span>
+          <span>Boutique • Expérience premium</span>
+          <span class="eyebrow-separator">•</span>
+          <span class="live-indicator"><i></i> Live</span>
+        </div>
+        <h1 class="hero-title">
+          Electro
+          <span class="hero-title-accent">Canadien</span>
+        </h1>
+        <p class="hero-subtitle">
+          Solaire, électroménager et accessoires — <strong>{{ totalProducts || products.length }} références</strong> • qualité premium, livraison rapide et SAV d’exception.
+        </p>
+        <div class="hero-badges">
+          <span class="hero-badge"><span class="hero-badge-dot"></span> Meilleurs produits</span>
+          <span class="hero-badge"><span class="hero-badge-dot"></span> Livraison rapide</span>
+          <span class="hero-badge"><span class="hero-badge-dot"></span> SAV 24/7</span>
+        </div>
+      </div>
+      <div class="hero-actions">
+        <button class="btn btn-secondary btn-sm" (click)="goToCart()">Voir panier →</button>
+        <button class="btn btn-primary" (click)="goToShop()">Explorer le catalogue</button>
+      </div>
     </div>
-  </div>
-</section>
+  </header>
 
-  <!-- ===== OPERATIONS CAROUSEL ===== -->
-  <section class="ops-carousel">
-    <div class="ops-carousel-inner">
-      <div class="ops-carousel-track" [style.transform]="'translateX(-' + currentSlide * 100 + '%)'">
+  <!-- ===== KPI ===== -->
+  <section class="shop-metrics">
+    <article class="metric-card">
+      <div class="metric-top">
+        <div class="metric-icon metric-icon--primary"><span>◫</span></div>
+        <span class="metric-trend positive">Catalogue</span>
+      </div>
+      <p class="metric-label">Références</p>
+      <p class="metric-value">{{ products.length }}<span>produits</span></p>
+      <div class="metric-bar"><i style="width: 78%"></i></div>
+      <p class="metric-foot"><span class="dot dot-success"></span> {{ filteredProducts.length }} affichés • {{ categories.length }} catégories</p>
+    </article>
+    <article class="metric-card">
+      <div class="metric-top">
+        <div class="metric-icon metric-icon--success"><span>✓</span></div>
+        <span class="metric-trend neutral">Disponible</span>
+      </div>
+      <p class="metric-label">En stock</p>
+      <p class="metric-value">{{ products.length }}<span>références</span></p>
+      <div class="metric-bar"><i style="width: 66%"></i></div>
+      <p class="metric-foot"><span class="dot dot-accent"></span> {{ filteredProducts.length }} filtrés • veille continue</p>
+    </article>
+    <article class="metric-card">
+      <div class="metric-top">
+        <div class="metric-icon metric-icon--warm"><span>⬡</span></div>
+        <span class="metric-trend">{{ categories.length }} • familles</span>
+      </div>
+      <p class="metric-label">Catégories</p>
+      <p class="metric-value">{{ categories.length }}<span>familles</span></p>
+      <div class="metric-bar"><i style="width: 42%"></i></div>
+      <p class="metric-foot"><span class="dot dot-warning"></span> Solaire, électro, accessoires</p>
+    </article>
+    <article class="metric-card">
+      <div class="metric-top">
+        <div class="metric-icon metric-icon--accent"><span>◈</span></div>
+        <span class="metric-trend positive">Sélection</span>
+      </div>
+      <p class="metric-label">Vedettes</p>
+      <p class="metric-value">{{ featuredProducts.length }}<span>best-sellers</span></p>
+      <div class="metric-bar"><i style="width: 54%"></i></div>
+      <p class="metric-foot"><span class="dot dot-accent"></span> Les plus demandés</p>
+    </article>
+  </section>
+
+  <!-- ===== OPERATIONS CAROUSEL PREMIUM ===== -->
+  <section class="ops-stage">
+    <div class="ops-stage-inner">
+      <div class="ops-track" [style.transform]="'translateX(-' + currentSlide * 100 + '%)'">
         <div class="ops-slide" *ngFor="let slide of carouselSlides; let i = index; trackBy: trackBySlideId">
           <div class="ops-slide-bg" [style.background-image]="carouselErrors.has(i) ? 'none' : 'url(' + getCarouselImage(slide.image) + ')'"></div>
           <div class="ops-slide-overlay"></div>
           <div class="ops-slide-content">
-            <span class="ops-slide-icon">{{ slide.icon }}</span>
+            <span class="ops-slide-badge">{{ slide.icon }} • Premium</span>
             <h3>{{ slide.title }}</h3>
             <p>{{ slide.desc }}</p>
-            <a [href]="slide.link" target="_blank" rel="noopener noreferrer" class="btn btn-primary">📞 Nous contacter</a>
+            <a [href]="slide.link" target="_blank" rel="noopener noreferrer" class="btn btn-primary btn-sm">Nous contacter →</a>
           </div>
         </div>
       </div>
     </div>
     <div class="ops-dots">
-      <button *ngFor="let slide of carouselSlides; let i = index; trackBy: trackBySlideId" class="ops-dot" [class.active]="i === currentSlide" (click)="goToSlide(i)" aria-label="Slide {{ i + 1 }}"></button>
+      <button *ngFor="let slide of carouselSlides; let i = index; trackBy: trackBySlideId" class="ops-dot" [class.active]="i === currentSlide" (click)="goToSlide(i)" [attr.aria-label]="'Slide ' + (i + 1)"></button>
     </div>
   </section>
 
-  <!-- ===== SERVICES ===== -->
-  <section class="services-section" *ngIf="!loading">
-    <div class="section-label">Nos Services</div>
-    <h2 class="section-title">🛠️ Des solutions complètes pour votre quotidien</h2>
+  <!-- ===== SERVICES GLASS ===== -->
+  <section class="services-stage" *ngIf="!loading">
+    <div class="section-head">
+      <span class="eyebrow">Nos Services</span>
+      <h2>Des solutions complètes pour votre quotidien</h2>
+      <p>Installation, réparation et vente — accompagnement de A à Z par nos experts.</p>
+    </div>
     <div class="services-grid">
       <article class="service-card" *ngFor="let service of services; trackBy: trackByServiceTitle">
         <div class="service-icon">{{ service.icon }}</div>
         <h3>{{ service.title }}</h3>
         <p>{{ service.desc }}</p>
-        <a [href]="service.link" target="_blank" rel="noopener noreferrer" class="btn btn-primary">{{ service.linkText }} →</a>
+        <a [href]="service.link" target="_blank" rel="noopener noreferrer" class="service-cta">{{ service.linkText }} <span>→</span></a>
       </article>
     </div>
   </section>
 
-  <!-- ===== FEATURED SECTIONS ===== -->
-  <section class="sections-container" *ngIf="!loading">
-    <article class="feature-section" *ngFor="let section of sections; let i = index; trackBy: trackBySectionIndex" [ngClass]="'section-' + (i + 1)">
-      <div class="section-image">
-        <img [src]="section.image" [alt]="section.title" />
-        <div class="section-overlay"></div>
-        <span class="section-badge">{{ section.badge }}</span>
-        <div class="section-content">
-          <h2>{{ section.title }}</h2>
-          <p>{{ section.desc }}</p>
-          <a [href]="section.ctaLink" target="_blank" rel="noopener noreferrer" class="section-cta">{{ section.ctaText }} →</a>
-        </div>
+  <!-- ===== FEATURED SECTIONS — editorial ===== -->
+  <section class="editorial-grid" *ngIf="!loading">
+    <article class="editorial-card" *ngFor="let section of sections; let i = index; trackBy: trackBySectionIndex">
+      <div class="editorial-media">
+        <img [src]="section.image" [alt]="section.title" loading="lazy" />
+        <div class="editorial-overlay"></div>
+        <span class="editorial-badge">{{ section.badge }}</span>
+      </div>
+      <div class="editorial-body">
+        <h3>{{ section.title }}</h3>
+        <p>{{ section.desc }}</p>
+        <a [href]="section.ctaLink" target="_blank" rel="noopener noreferrer" class="btn btn-secondary btn-sm">{{ section.ctaText }} →</a>
       </div>
     </article>
   </section>
 
   <!-- ===== FEATURED PRODUCTS ===== -->
-  <section class="featured-section" *ngIf="!loading && featuredProducts.length > 0">
-    <div class="section-label">Produits Vedettes</div>
-    <h2 class="section-title">⭐ Les plus populaires du moment</h2>
+  <section class="featured-stage" *ngIf="!loading && featuredProducts.length > 0">
+    <div class="section-head">
+      <span class="eyebrow">Produits Vedettes</span>
+      <h2>Les plus populaires du moment</h2>
+    </div>
     <div class="featured-grid">
-      <div class="product-card" *ngFor="let product of featuredProducts; trackBy: trackByProductId">
-        <div class="product-image-container">
+      <article class="product-card" *ngFor="let product of featuredProducts; trackBy: trackByProductId">
+        <div class="product-media">
           <div class="product-image">
-            <span class="placeholder" *ngIf="!product.photo">📦</span>
-            <img [src]="getProductImage(product.photo)" *ngIf="product.photo" alt="{{ product.name }}" />
+            <span class="placeholder" *ngIf="!product.photo">◫</span>
+            <img [src]="getProductImage(product.photo)" *ngIf="product.photo" [alt]="product.name" loading="lazy" />
           </div>
-          <span class="badge badge-warning product-badge">Nouveauté</span>
-          <span class="stock-indicator" [class.in-stock]="product.stockQuantity > 0" [class.out-of-stock]="product.stockQuantity === 0">
-            {{ product.stockQuantity > 0 ? product.stockQuantity + ' en stock' : 'Rupture' }}
-          </span>
+          <span class="corner-badge">Nouveauté</span>
+          <span class="stock-pill" [class.out]="product.stockQuantity === 0" [class.low]="product.stockQuantity > 0 && product.stockQuantity <= 5">{{ product.stockQuantity > 0 ? product.stockQuantity + ' en stock' : 'Rupture' }}</span>
         </div>
-        <div class="product-details">
-          <span class="badge badge-neutral category-tag">{{ product.Category?.name || 'Général' }}</span>
-          <h3 class="product-name">{{ product.name }}</h3>
-          <p class="product-desc">{{ product.description | slice:0:60 }}{{ (product.description?.length || 0) > 60 ? '...' : '' }}</p>
-          <div class="product-footer">
-            <span class="product-price">{{ product.price | number }} FCFA</span>
+        <div class="product-body">
+          <span class="category-pill">{{ product.Category?.name || 'Général' }}</span>
+          <h3 class="product-name" [title]="product.name">{{ product.name }}</h3>
+          <p class="product-desc">{{ product.description | slice:0:60 }}{{ (product.description?.length || 0) > 60 ? '…' : '' }}</p>
+          <div class="product-foot">
+            <span class="price">{{ product.price | number }}<span>FCFA</span></span>
             <div class="product-actions">
-              <button class="btn btn-primary btn-sm" (click)="addToCart(product)" [disabled]="product.stockQuantity === 0" title="Ajouter au panier">
-                🛒 Ajouter
-              </button>
-              <a class="btn btn-secondary btn-sm" [href]="getWhatsAppLink(product)" target="_blank" rel="noopener" title="WhatsApp">
-                💬
-              </a>
+              <button class="action-btn primary" (click)="addToCart(product)" [disabled]="product.stockQuantity === 0" title="Ajouter au panier">＋</button>
+              <a class="action-btn" [href]="getWhatsAppLink(product)" target="_blank" rel="noopener" title="WhatsApp">💬</a>
             </div>
           </div>
         </div>
-      </div>
+      </article>
     </div>
   </section>
 
-  <!-- ===== CATALOGUE ===== -->
-  <section class="catalogue-section">
-    <div class="section-label">Catalogue</div>
-    <h2 class="section-title">📦 Tous nos produits</h2>
-
-    <div class="catalogue-toolbar">
-      <div class="search-box">
-        <span class="search-icon">🔍</span>
-        <input type="text" placeholder="Rechercher un produit..." [(ngModel)]="searchQuery" class="form-input" />
-        <button
-          *ngIf="isSpeechSupported"
-          type="button"
-          class="voice-btn"
-          [class.listening]="isListening"
-          (click)="toggleVoiceSearch()"
-          aria-label="Recherche vocale"
-        >
-          <span *ngIf="!isListening">🎙️</span>
-          <span *ngIf="isListening">⏹️</span>
-        </button>
+  <!-- ===== CATALOGUE TOOLBAR ===== -->
+  <section class="catalog-stage">
+    <div class="catalog-toolbar">
+      <div class="toolbar-left">
+        <h2>Catalogue</h2>
+        <span class="toolbar-count" *ngIf="!loading">{{ filteredProducts.length }} / {{ totalProducts || products.length }} • {{ categories.length }} catégories</span>
+        <span class="toolbar-count" *ngIf="loading">Chargement…</span>
       </div>
-
-      <div class="category-chips">
-        <button class="chip" [class.active]="selectedCategoryId === ''" (click)="selectedCategoryId = ''">📁 Toutes</button>
-        <button class="chip" *ngFor="let cat of categories; trackBy: trackByCategoryId" [class.active]="selectedCategoryId === cat.id" (click)="selectedCategoryId = cat.id || ''">{{ cat.name }}</button>
-      </div>
-
-      <select [(ngModel)]="sortBy" (change)="onSortChange()" class="form-select filter-select">
-        <option value="name">📝 Trier par nom</option>
-        <option value="price-low">💰 Prix: bas à haut</option>
-        <option value="price-high">💰 Prix: haut à bas</option>
-        <option value="rating">⭐ Trier par note</option>
-      </select>
-    </div>
-
-    <!-- Loading -->
-    <div *ngIf="loading" class="loading-state">
-      <div class="spinner"></div>
-      <p>Chargement du catalogue...</p>
-    </div>
-
-    <!-- Empty -->
-    <div *ngIf="!loading && filteredProducts.length === 0" class="empty-state">
-      <div class="empty-icon">📭</div>
-      <h3 class="empty-title">Aucun produit trouvé</h3>
-      <p class="empty-text">Essayez de modifier vos filtres de recherche</p>
-    </div>
-
-    <!-- Products Grid -->
-    <div *ngIf="!loading && filteredProducts.length > 0" class="products-grid">
-      <div class="product-card" *ngFor="let product of filteredProducts; trackBy: trackByProductId">
-        <div class="product-image-container">
-          <div class="product-image">
-            <span class="placeholder" *ngIf="!product.photo">📦</span>
-            <img [src]="getProductImage(product.photo)" *ngIf="product.photo" alt="{{ product.name }}" />
-          </div>
-          <span class="badge badge-warning product-badge" *ngIf="product.stockQuantity > 10">Nouveauté</span>
-          <span class="stock-indicator" [class.in-stock]="product.stockQuantity > 0" [class.out-of-stock]="product.stockQuantity === 0">
-            {{ product.stockQuantity > 0 ? product.stockQuantity + ' en stock' : 'Rupture' }}
-          </span>
+      <div class="toolbar-right">
+        <div class="search-field">
+          <span class="search-icon">⌕</span>
+          <input type="text" placeholder="Rechercher produit, description..." [(ngModel)]="searchQuery" class="search-input" />
+          <button *ngIf="isSpeechSupported" type="button" class="voice-btn" [class.listening]="isListening" (click)="toggleVoiceSearch()" aria-label="Recherche vocale">
+            <span *ngIf="!isListening">🎙️</span><span *ngIf="isListening">⏹️</span>
+          </button>
         </div>
+        <select [(ngModel)]="sortBy" (change)="onSortChange()" class="sort-select">
+          <option value="name">Trier : Nom</option>
+          <option value="price-low">Prix : bas → haut</option>
+          <option value="price-high">Prix : haut → bas</option>
+          <option value="rating">Note : ★ → ☆</option>
+        </select>
+        <button class="btn btn-ghost btn-sm" (click)="searchQuery=''; selectedCategoryId=''; sortBy='name'; onSortChange()">Réinitialiser</button>
+      </div>
+    </div>
 
-        <div class="product-details">
-          <span class="badge badge-neutral category-tag">{{ product.Category?.name || 'Général' }}</span>
-          <h3 class="product-name">{{ product.name }}</h3>
-          <p class="product-desc">{{ product.description | slice:0:80 }}{{ (product.description?.length || 0) > 80 ? '...' : '' }}</p>
+    <div class="pills-bar">
+      <div class="pills-label">Catégories</div>
+      <div class="pills">
+        <button class="pill" [class.active]="selectedCategoryId === ''" (click)="selectedCategoryId = ''">Toutes</button>
+        <button class="pill" *ngFor="let cat of categories; trackBy: trackByCategoryId" [class.active]="selectedCategoryId === cat.id" (click)="selectedCategoryId = cat.id || ''">{{ cat.name }}</button>
+      </div>
+    </div>
 
-          <!-- Reviews -->
-          <div class="product-reviews" *ngIf="product.reviews || product.reviewsLoading">
-            <div *ngIf="!product.reviews" class="reviews-loading">
-              <span class="spinner-sm"></span>
-              <small>Chargement des avis...</small>
+    <!-- STATES -->
+    <div *ngIf="loading" class="state state-loading">
+      <div class="loader"></div>
+      <p>Chargement du catalogue…</p>
+      <span>Synchronisation des références premium</span>
+    </div>
+
+    <div *ngIf="!loading && filteredProducts.length === 0" class="state state-empty">
+      <div class="empty-illus"><span>⌕</span></div>
+      <h3>Aucun produit trouvé</h3>
+      <p>Essayez d’ajuster vos filtres ou votre recherche.</p>
+    </div>
+
+    <!-- PRODUCTS GRID -->
+    <div *ngIf="!loading && filteredProducts.length > 0" class="products-grid">
+      <article class="product-card" *ngFor="let product of filteredProducts; trackBy: trackByProductId">
+        <div class="product-media">
+          <div class="product-image">
+            <span class="placeholder" *ngIf="!product.photo">◫</span>
+            <img [src]="getProductImage(product.photo)" *ngIf="product.photo" [alt]="product.name" loading="lazy" />
+          </div>
+          <span class="corner-badge" *ngIf="product.stockQuantity > 10">Nouveauté</span>
+          <span class="stock-pill" [class.out]="product.stockQuantity === 0" [class.low]="product.stockQuantity > 0 && product.stockQuantity <= 5">{{ product.stockQuantity > 0 ? product.stockQuantity + ' en stock' : 'Rupture' }}</span>
+        </div>
+        <div class="product-body">
+          <span class="category-pill">{{ product.Category?.name || 'Général' }}</span>
+          <h3 class="product-name" [title]="product.name">{{ product.name }}</h3>
+          <p class="product-desc">{{ product.description | slice:0:80 }}{{ (product.description?.length || 0) > 80 ? '…' : '' }}</p>
+
+          <div class="reviews-block" *ngIf="product.reviews || product.reviewsLoading">
+            <div *ngIf="product.reviewsLoading && !product.reviews" class="reviews-loading">
+              <span class="mini-loader"></span> <small>Chargement des avis…</small>
             </div>
-            <div *ngIf="product.reviews">
-              <div class="rating-summary">
-                <span *ngFor="let filled of getStarArray(getAverageRatingNumber(product.reviews.stats.averageRating)); trackBy: trackByIndex" class="star">{{ filled ? '⭐' : '☆' }}</span>
-                <span class="rating-text">{{ formatRating(product.reviews.stats.averageRating) }} ({{ product.reviews.stats.totalReviews }} avis)</span>
+            <div *ngIf="product.reviews" class="reviews-content">
+              <div class="rating-row">
+                <span class="stars">
+                  <span *ngFor="let filled of getStarArray(getAverageRatingNumber(product.reviews.stats.averageRating)); trackBy: trackByIndex" class="star" [class.filled]="filled">{{ filled ? '★' : '☆' }}</span>
+                </span>
+                <span class="rating-text">{{ formatRating(product.reviews.stats.averageRating) }} • {{ product.reviews.stats.totalReviews }} avis</span>
               </div>
               <div class="reviews-preview" *ngIf="product.showReviews">
-                <div class="review-item" *ngFor="let review of product.reviews.reviews.slice(0, 2); trackBy: trackByReviewId">
-                  <div class="review-header">
+                <div class="review-item" *ngFor="let review of product.reviews.reviews.slice(0,2); trackBy: trackByReviewId">
+                  <div class="review-head">
                     <strong>{{ review.customerName }}</strong>
-                    <span *ngFor="let filled of getStarArray(review.rating); trackBy: trackByIndex">{{ filled ? '⭐' : '☆' }}</span>
+                    <span class="review-stars"><span *ngFor="let filled of getStarArray(review.rating); trackBy: trackByIndex">{{ filled ? '★' : '☆' }}</span></span>
                   </div>
-                  <p class="review-comment">{{ review.comment | slice:0:100 }}{{ review.comment.length > 100 ? '...' : '' }}</p>
-                  <div class="review-footer">
+                  <p class="review-comment">{{ review.comment | slice:0:100 }}{{ review.comment.length > 100 ? '…' : '' }}</p>
+                  <div class="review-foot">
                     <small>{{ review.createdAt | date:'dd/MM/yyyy' }}</small>
-                    <span class="badge badge-success" *ngIf="review.isVerified">✓ Achat vérifié</span>
+                    <span class="verified" *ngIf="review.isVerified">✓ Vérifié</span>
                   </div>
                 </div>
               </div>
@@ -209,24 +269,20 @@
             </div>
           </div>
 
-          <div class="product-footer">
-            <span class="product-price">{{ product.price | number }} FCFA</span>
+          <div class="product-foot">
+            <span class="price">{{ product.price | number }}<span>FCFA</span></span>
             <div class="product-actions">
-              <button class="btn btn-primary btn-sm" (click)="addToCart(product)" [disabled]="product.stockQuantity === 0" title="Ajouter au panier">
-                🛒 Ajouter
-              </button>
-              <a class="btn btn-secondary btn-sm" [href]="getWhatsAppLink(product)" target="_blank" rel="noopener" title="WhatsApp">
-                💬
-              </a>
+              <button class="action-btn primary" (click)="addToCart(product)" [disabled]="product.stockQuantity === 0" title="Ajouter au panier">＋</button>
+              <a class="action-btn" [href]="getWhatsAppLink(product)" target="_blank" rel="noopener" title="WhatsApp">💬</a>
             </div>
           </div>
         </div>
-      </div>
+      </article>
     </div>
 
-    <!-- Results count -->
-    <div *ngIf="!loading && filteredProducts.length > 0" class="results-info">
-      {{ filteredProducts.length }} produit(s) trouvé(s) / {{ totalProducts }} au total
+    <div *ngIf="!loading && filteredProducts.length > 0" class="results-bar">
+      <span>{{ filteredProducts.length }} produit(s) trouvé(s)</span>
+      <span class="results-total">/ {{ totalProducts || products.length }} au catalogue</span>
     </div>
   </section>
 </div>

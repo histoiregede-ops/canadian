@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { CashTransaction } = require('../models');
+const { CashTransaction, Order, OrderItem, Product } = require('../models');
 const { Op, fn, col, literal } = require('sequelize');
 const sequelize = require('../config/database');
 
@@ -160,6 +160,40 @@ router.get('/flux-journalier', authenticate, authorize('admin'), async (req, res
       order: [['date', 'ASC']]
     });
 
+    // --- Enrichissement produits vendus ---
+    // Collecte des références pour batch fetch
+    const incomeTx = transactions.filter(t => t.type === 'income');
+    const orderIds = incomeTx.map(t => t.referenceId).filter(Boolean);
+    const orderNumbers = incomeTx.map(t => {
+      if (t.notes && t.notes.includes(',')) return null; // déjà produit dans notes, pas besoin de lookup
+      const m = t.description?.match(/Vente\s+(ORD-[0-9]+)/);
+      return m ? m[1] : null;
+    }).filter(Boolean);
+
+    let ordersById = [];
+    let ordersByNumber = [];
+    if (orderIds.length) {
+      ordersById = await Order.findAll({
+        where: { id: orderIds },
+        include: [{ model: OrderItem, as: 'products', include: [{ model: Product, attributes: ['name'] }] }]
+      });
+    }
+    if (orderNumbers.length) {
+      ordersByNumber = await Order.findAll({
+        where: { orderNumber: orderNumbers },
+        include: [{ model: OrderItem, as: 'products', include: [{ model: Product, attributes: ['name'] }] }]
+      });
+    }
+    const mapById = new Map(ordersById.map(o => [o.id, (o.products || []).map(p => p.Product?.name || 'Produit').join(', ')]));
+    const mapByNumber = new Map(ordersByNumber.map(o => [o.orderNumber, (o.products || []).map(p => p.Product?.name || 'Produit').join(', ')]));
+    const getProductsForTx = (t) => {
+      if (t.notes && t.notes.trim().length > 0 && t.referenceType === 'order') return t.notes;
+      if (t.referenceId && mapById.has(t.referenceId)) return mapById.get(t.referenceId);
+      const m = t.description?.match(/Vente\s+(ORD-[0-9]+)/);
+      if (m && mapByNumber.has(m[1])) return mapByNumber.get(m[1]);
+      return '';
+    };
+
     let income = 0, expense = 0;
     const items = transactions.map(t => {
       const amount = parseFloat(t.amount);
@@ -175,7 +209,10 @@ router.get('/flux-journalier', authenticate, authorize('admin'), async (req, res
         category: t.category,
         customerId: t.customerId,
         customerName: t.customerName,
-        comment: t.comment
+        comment: t.comment,
+        products: t.type === 'income' ? getProductsForTx(t) : '',
+        referenceId: t.referenceId,
+        referenceType: t.referenceType
       };
     });
 

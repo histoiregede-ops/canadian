@@ -1,94 +1,220 @@
-<div class="page-container">
-  <div class="page-header">
-    <div>
-      <h1 class="page-title">📁 Catégories de Produits</h1>
-      <p class="page-subtitle">Organisez vos articles en catégories</p>
-    </div>
-    <button class="btn btn-primary" (click)="openAddModal()">➕ Nouvelle Catégorie</button>
-  </div>
-
-  <div class="loading-state" *ngIf="loading">
-    <div class="spinner"></div>
-    <p>Chargement des catégories...</p>
-  </div>
-
-  <div class="empty-state" *ngIf="!loading && categories.length === 0">
-    <span class="empty-icon">📂</span>
-    <h3 class="empty-title">Aucune catégorie créée</h3>
-    <p class="empty-text">Commencez par créer une première catégorie pour organiser vos produits.</p>
-    <button class="btn btn-primary" (click)="openAddModal()">Créer une catégorie</button>
-  </div>
-
-  <div class="categories-grid" *ngIf="!loading && categories.length > 0">
-    <div class="card category-card" *ngFor="let category of categories">
-      <div class="card-body">
-        <div class="category-header">
-          <div class="category-icon">{{ getCategoryIcon(category.type) }}</div>
-          <div class="category-info">
-            <h3 class="category-name">{{ category.name }}</h3>
-            <span class="badge badge-neutral">{{ getCategoryTypeLabel(category.type) }}</span>
-          </div>
+<div class="categories-page">
+  <!-- ===== HERO ===== -->
+  <header class="categories-hero">
+    <div class="hero-glow"></div>
+    <div class="hero-content">
+      <div class="hero-left">
+        <div class="hero-eyebrow">
+          <span class="eyebrow-dot"></span>
+          <span>Catalogue • Taxonomie • Organisation</span>
+          <span class="eyebrow-separator">•</span>
+          <span class="live-indicator"><i></i> Live</span>
         </div>
-
-        <div class="category-meta">
-          <span class="meta-item">
-            <span class="meta-icon">📊</span>
-            <span class="meta-value">{{ getProductCount(category.id) }} produits</span>
-          </span>
-        </div>
-
-        <div class="card-actions">
-          <button class="btn btn-outline btn-sm" (click)="openEditModal(category)" title="Modifier">
-            ✏️ Modifier
-          </button>
-          <button class="btn btn-danger btn-sm" (click)="deleteCategory(category)" [disabled]="deletingId === category.id" title="Supprimer">
-            {{ deletingId === category.id ? 'Suppression...' : '🗑️ Supprimer' }}
-          </button>
-        </div>
+        <h1 class="hero-title">Catégories <span class="hero-title-accent">& Produits</span></h1>
+        <p class="hero-subtitle">
+          Structurez votre catalogue — <strong>{{ categories.length }} catégories</strong> • solaire, électronique et accessoires unifiés
+        </p>
+      </div>
+      <div class="hero-actions">
+        <button class="btn btn-ghost btn-sm" (click)="loadCategories()">
+          <span class="btn-icon">↻</span> Actualiser
+        </button>
+        <button class="btn btn-primary" (click)="openAddModal()">
+          <span class="btn-icon">＋</span> Nouvelle catégorie
+        </button>
       </div>
     </div>
+  </header>
+
+  <!-- ===== KPI ===== -->
+  <section class="metrics">
+    <article class="metric-card metric-total">
+      <div class="metric-top">
+        <div class="metric-icon">◫</div>
+        <span class="metric-trend">Taxonomie</span>
+      </div>
+      <div class="metric-body">
+        <p class="metric-label">Total catégories</p>
+        <p class="metric-value">{{ categories.length }}<span>catégories</span></p>
+        <div class="metric-bar"><i style="width: 72%"></i></div>
+        <p class="metric-foot"><span class="dot dot-accent"></span> Organisation</p>
+      </div>
+    </article>
+
+    <article class="metric-card metric-solar">
+      <div class="metric-top">
+        <div class="metric-icon">☀</div>
+        <span class="metric-trend">Solaire</span>
+      </div>
+      <div class="metric-body">
+        <p class="metric-label">Solaire</p>
+        <p class="metric-value">{{ categories.filter(c => c.type==='solar').length }}<span>catégories</span></p>
+        <div class="metric-bar"><i [style.width.%]="categories.length ? (categories.filter(c => c.type==='solar').length / categories.length *100) : 0"></i></div>
+        <p class="metric-foot"><span class="dot dot-warning"></span> Énergie</p>
+      </div>
+    </article>
+
+    <article class="metric-card metric-elec">
+      <div class="metric-top">
+        <div class="metric-icon">⚡</div>
+        <span class="metric-trend positive">Électronique</span>
+      </div>
+      <div class="metric-body">
+        <p class="metric-label">Électronique</p>
+        <p class="metric-value">{{ categories.filter(c => c.type==='electronics').length }}<span>catégories</span></p>
+        <div class="metric-bar"><i [style.width.%]="categories.length ? (categories.filter(c => c.type==='electronics').length / categories.length *100) : 0"></i></div>
+        <p class="metric-foot"><span class="dot dot-success"></span> Circuits</p>
+      </div>
+    </article>
+
+    <article class="metric-card metric-acc">
+      <div class="metric-top">
+        <div class="metric-icon">🔧</div>
+        <span class="metric-trend neutral">{{ categories.filter(c => c.type==='accessory').length + categories.filter(c => c.type==='other').length }} divers</span>
+      </div>
+      <div class="metric-body">
+        <p class="metric-label">Accessoires & Autres</p>
+        <p class="metric-value">{{ categories.filter(c => c.type==='accessory').length + categories.filter(c => c.type==='other').length }}<span>catégories</span></p>
+        <div class="metric-bar"><i [style.width.%]="categories.length ? ((categories.filter(c => c.type==='accessory').length + categories.filter(c => c.type==='other').length)/categories.length*100) : 0"></i></div>
+        <p class="metric-foot"><span class="dot dot-info"></span> Compléments</p>
+      </div>
+    </article>
+  </section>
+
+  <!-- ===== TOOLBAR ===== -->
+  <section class="toolbar">
+    <div class="toolbar-left">
+      <h2 class="toolbar-title">Taxonomie</h2>
+      <span class="toolbar-count" *ngIf="!loading">{{ categories.length }} catégories • {{ categories.filter(c => c.type==='solar').length }} solaire</span>
+      <span class="toolbar-count" *ngIf="loading">Chargement…</span>
+    </div>
+    <div class="toolbar-right">
+      <div class="search-field">
+        <span class="search-icon">⌕</span>
+        <input type="text" placeholder="Rechercher une catégorie…" class="search-input" disabled title="Recherche à venir" />
+      </div>
+      <button class="btn btn-secondary btn-sm" (click)="loadCategories()">Réinitialiser</button>
+    </div>
+  </section>
+
+  <!-- ===== FILTERS PILLS ===== -->
+  <section class="filters-pills">
+    <div class="pill-group">
+      <label>Filtrer par type</label>
+      <div class="pills">
+        <button class="pill active">Toutes — {{ categories.length }}</button>
+        <button class="pill">☀ Solaire — {{ categories.filter(c => c.type==='solar').length }}</button>
+        <button class="pill">🔌 Électronique — {{ categories.filter(c => c.type==='electronics').length }}</button>
+        <button class="pill">🔧 Accessoires — {{ categories.filter(c => c.type==='accessory').length }}</button>
+        <button class="pill">📦 Autre — {{ categories.filter(c => c.type==='other').length }}</button>
+      </div>
+    </div>
+    <div class="filter-hint">
+      <span class="hint-dot"></span>
+      {{ categories.length }} catégorie(s) • Temps réel
+    </div>
+  </section>
+
+  <!-- ===== STATES ===== -->
+  <div class="state state-loading" *ngIf="loading">
+    <div class="loader"></div>
+    <p>Chargement des catégories…</p>
+    <span>Synchronisation taxonomie • Comptage produits</span>
   </div>
 
-  <div class="modal-overlay" *ngIf="showModal">
-    <div class="modal-card">
+  <div class="state state-empty" *ngIf="!loading && categories.length === 0">
+    <div class="empty-illustration">
+      <div class="empty-orb"></div>
+      <span class="empty-emoji">📂</span>
+    </div>
+    <h3>Aucune catégorie créée</h3>
+    <p>Commencez par créer une première catégorie pour organiser vos produits et structurer votre catalogue.</p>
+    <button class="btn btn-primary btn-sm" (click)="openAddModal()">＋ Créer une catégorie</button>
+  </div>
+
+  <!-- ===== GRID ===== -->
+  <section class="catalog-section" *ngIf="!loading && categories.length > 0">
+    <div class="categories-grid">
+      <article class="category-card" *ngFor="let category of categories; trackBy: trackByCategoryId">
+        <div class="category-top">
+          <div class="category-icon" [class.solar]="category.type==='solar'" [class.electronics]="category.type==='electronics'" [class.accessory]="category.type==='accessory'" [class.other]="category.type==='other'">
+            {{ getCategoryIcon(category.type) }}
+          </div>
+          <div class="category-head">
+            <h3 class="category-name" [title]="category.name">{{ category.name }}</h3>
+            <span class="category-type-badge">{{ getCategoryTypeLabel(category.type) }}</span>
+          </div>
+          <span class="count-pill">{{ getProductCount(category.id) }}<span>produits</span></span>
+        </div>
+
+        <div class="category-divider"></div>
+
+        <div class="category-meta">
+          <div class="meta-row">
+            <span class="meta-label">Produits liés</span>
+            <span class="meta-value strong">{{ getProductCount(category.id) }}</span>
+          </div>
+          <div class="meta-bar">
+            <i [style.width.%]="getProductCount(category.id) ? 60 : 12"></i>
+          </div>
+          <span class="meta-hint"><span class="hint-dot small"></span> Suivi catalogue</span>
+        </div>
+
+        <div class="category-actions">
+          <button class="action-btn" (click)="openEditModal(category)" title="Modifier"><span>✎</span> Modifier</button>
+          <button class="action-btn action-btn--danger" (click)="deleteCategory(category)" [disabled]="deletingId === category.id" title="Supprimer">
+            <span>{{ deletingId === category.id ? '…' : '⌫' }}</span> {{ deletingId === category.id ? 'Suppression…' : 'Supprimer' }}
+          </button>
+        </div>
+      </article>
+    </div>
+  </section>
+
+  <!-- ===== MODAL ===== -->
+  <div class="modal-overlay" *ngIf="showModal" (click)="closeModal()">
+    <div class="modal-card modal-premium" (click)="$event.stopPropagation()">
+      <div class="modal-glow"></div>
       <div class="modal-header">
-        <h2 class="modal-title">{{ isEditing ? '✏️ Modifier la catégorie' : '➕ Nouvelle catégorie' }}</h2>
-        <button class="modal-close" (click)="closeModal()" aria-label="Fermer">×</button>
+        <div class="modal-header-left">
+          <div class="modal-icon"><span>{{ isEditing ? '✎' : '＋' }}</span></div>
+          <div>
+            <h2 class="modal-title">{{ isEditing ? 'Modifier la catégorie' : 'Nouvelle catégorie' }}</h2>
+            <p class="modal-subtitle">{{ isEditing ? 'Corrigez le nom ou le type et enregistrez' : 'Créez une catégorie — organisation instantanée' }}</p>
+          </div>
+        </div>
+        <button class="modal-close" (click)="closeModal()">×</button>
       </div>
 
       <div class="modal-body">
         <div class="alert alert-danger" *ngIf="errorMessage">
-          <span class="alert-icon">⚠️</span>
+          <span class="alert-icon">⚠</span>
           <span>{{ errorMessage }}</span>
         </div>
 
         <form (ngSubmit)="saveCategory()" class="form">
           <div class="form-group">
-            <label class="form-label">Nom de la catégorie</label>
-            <input 
-              type="text"
-              [(ngModel)]="currentCategory.name" 
-              name="name" 
-              placeholder="Ex: Panneaux Solaires"
-              required 
-              class="form-input"
-            />
+            <label class="field-label">Nom de la catégorie <span class="required">*</span></label>
+            <input type="text" [(ngModel)]="currentCategory.name" name="name" placeholder="Ex: Panneaux Solaires" required class="field-input" />
           </div>
 
           <div class="form-group">
-            <label class="form-label">Type de catégorie</label>
-            <select [(ngModel)]="currentCategory.type" name="type" class="form-select">
-              <option value="solar">☀️ Solaire</option>
-              <option value="electronics">🔌 Électronique</option>
-              <option value="accessory">🔧 Accessoires</option>
-              <option value="other">📦 Autre</option>
-            </select>
+            <label class="field-label">Type de catégorie</label>
+            <div class="select-wrap">
+              <select [(ngModel)]="currentCategory.type" name="type" class="field-select">
+                <option value="solar">☀ Solaire</option>
+                <option value="electronics">🔌 Électronique</option>
+                <option value="accessory">🔧 Accessoires</option>
+                <option value="other">📦 Autre</option>
+              </select>
+            </div>
+            <span class="field-hint">Détermine l’icône et le regroupement catalogue</span>
           </div>
 
-          <div class="modal-footer">
+          <div class="modal-footer premium">
             <button type="button" class="btn btn-secondary" (click)="closeModal()">Annuler</button>
             <button type="submit" class="btn btn-primary" [disabled]="saving || !currentCategory.name">
-              {{ saving ? (isEditing ? 'Enregistrement...' : 'Création...') : (isEditing ? 'Enregistrer' : 'Créer') }}
+              <span *ngIf="!saving" class="btn-loading"><span>{{ isEditing ? 'Enregistrer' : 'Créer' }}</span> <span>→</span></span>
+              <span *ngIf="saving" class="btn-loading"><i class="spinner-sm"></i> {{ isEditing ? 'Enregistrement…' : 'Création…' }}</span>
             </button>
           </div>
         </form>

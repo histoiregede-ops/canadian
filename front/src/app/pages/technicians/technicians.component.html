@@ -1,93 +1,211 @@
-<div class="page-container">
-  <div class="page-header">
-    <div>
-      <h1 class="page-title">Techniciens</h1>
-      <p class="page-subtitle">Gestion des techniciens et assignations</p>
-    </div>
-    <button class="btn btn-primary" (click)="openAddModal()">➕ Ajouter un technicien</button>
-  </div>
-
-  <div class="stats-grid">
-    <div class="stat-card">
-      <div class="stat-icon info">👨‍🔧</div>
-      <div class="stat-content">
-        <p class="stat-label">Techniciens</p>
-        <h3 class="stat-value">{{ technicians.length }}</h3>
+<div class="technicians-page">
+  <!-- ===== HERO ===== -->
+  <header class="tech-hero">
+    <div class="hero-glow"></div>
+    <div class="hero-content">
+      <div class="hero-left">
+        <div class="hero-eyebrow">
+          <span class="eyebrow-dot"></span>
+          <span>Équipe • Techniciens • Atelier</span>
+          <span class="eyebrow-separator">•</span>
+          <span class="live-indicator"><i></i> Live</span>
+        </div>
+        <h1 class="hero-title">Techniciens <span class="hero-title-accent">& Expertise</span></h1>
+        <p class="hero-subtitle">
+          Pilotez votre force terrain — <strong>{{ technicians.length }} profils</strong> • assignations, disponibilité et traçabilité
+        </p>
+      </div>
+      <div class="hero-actions">
+        <button class="btn btn-ghost btn-sm" (click)="loadTechnicians()">
+          <span class="btn-icon">↻</span> Actualiser
+        </button>
+        <button class="btn btn-primary" (click)="openAddModal()">
+          <span class="btn-icon">＋</span> Ajouter un technicien
+        </button>
       </div>
     </div>
-    <div class="stat-card">
-      <div class="stat-icon success">📧</div>
-      <div class="stat-content">
-        <p class="stat-label">Avec email</p>
-        <h3 class="stat-value">{{ getWithEmail() }}</h3>
+  </header>
+
+  <!-- ===== KPI ===== -->
+  <section class="metrics">
+    <article class="metric-card metric-total">
+      <div class="metric-top">
+        <div class="metric-icon">◫</div>
+        <span class="metric-trend">Effectif</span>
+      </div>
+      <div class="metric-body">
+        <p class="metric-label">Techniciens</p>
+        <p class="metric-value">{{ technicians.length }}<span>profils</span></p>
+        <div class="metric-bar"><i style="width: 82%"></i></div>
+        <p class="metric-foot"><span class="dot dot-accent"></span> Équipe active</p>
+      </div>
+    </article>
+
+    <article class="metric-card metric-email">
+      <div class="metric-top">
+        <div class="metric-icon">✉</div>
+        <span class="metric-trend positive">{{ getWithEmail() }} joignables</span>
+      </div>
+      <div class="metric-body">
+        <p class="metric-label">Avec email</p>
+        <p class="metric-value">{{ getWithEmail() }}<span>emails</span></p>
+        <div class="metric-bar"><i [style.width.%]="technicians.length ? (getWithEmail()/technicians.length*100) : 0"></i></div>
+        <p class="metric-foot"><span class="dot dot-success"></span> Canal opérationnel</p>
+      </div>
+    </article>
+
+    <article class="metric-card metric-noemail">
+      <div class="metric-top">
+        <div class="metric-icon">⊘</div>
+        <span class="metric-trend neutral">{{ technicians.length - getWithEmail() }} à compléter</span>
+      </div>
+      <div class="metric-body">
+        <p class="metric-label">Sans email</p>
+        <p class="metric-value">{{ technicians.length - getWithEmail() }}<span>incomplets</span></p>
+        <div class="metric-bar"><i [style.width.%]="technicians.length ? ((technicians.length - getWithEmail())/technicians.length*100) : 0"></i></div>
+        <p class="metric-foot"><span class="dot dot-warning"></span> À mettre à jour</p>
+      </div>
+    </article>
+
+    <article class="metric-card metric-available">
+      <div class="metric-top">
+        <div class="metric-icon">◈</div>
+        <span class="metric-trend">100% dispo</span>
+      </div>
+      <div class="metric-body">
+        <p class="metric-label">Opérationnels</p>
+        <p class="metric-value">{{ technicians.length }}<span>actifs</span></p>
+        <div class="metric-bar"><i style="width: 68%"></i></div>
+        <p class="metric-foot"><span class="dot dot-info"></span> Prêts assignation</p>
+      </div>
+    </article>
+  </section>
+
+  <!-- ===== TOOLBAR ===== -->
+  <section class="toolbar">
+    <div class="toolbar-left">
+      <h2 class="toolbar-title">Équipe technique</h2>
+      <span class="toolbar-count" *ngIf="!loading">{{ filteredTechnicians.length }} / {{ technicians.length }} • {{ getWithEmail() }} joignables</span>
+      <span class="toolbar-count" *ngIf="loading">Chargement…</span>
+    </div>
+    <div class="toolbar-right">
+      <div class="search-field">
+        <span class="search-icon">⌕</span>
+        <input type="text" placeholder="Rechercher par nom ou email…" [(ngModel)]="searchQuery" class="search-input" />
+      </div>
+      <button class="btn btn-secondary btn-sm" (click)="searchQuery=''">Réinitialiser</button>
+    </div>
+  </section>
+
+  <!-- ===== FILTERS — Pills Info ===== -->
+  <section class="filters-pills">
+    <div class="pill-group">
+      <label>Filtres rapides</label>
+      <div class="pills">
+        <button class="pill" [class.active]="!searchQuery" (click)="searchQuery=''">Tous — {{ technicians.length }}</button>
+        <button class="pill" [class.active]="searchQuery==='@'" (click)="searchQuery='@'">Avec email — {{ getWithEmail() }}</button>
+        <button class="pill" (click)="searchQuery=''; $event.preventDefault()" title="Affichage uniquement">Opérationnels — {{ technicians.length }}</button>
       </div>
     </div>
-  </div>
-
-  <div class="filters-card">
-    <div class="search-box">
-      <span class="search-icon">🔍</span>
-      <input type="text" placeholder="Rechercher par nom ou email..." [(ngModel)]="searchQuery" class="form-input" />
+    <div class="filter-hint">
+      <span class="hint-dot"></span>
+      {{ filteredTechnicians.length }} résultat(s) • Temps réel
     </div>
+  </section>
+
+  <!-- ===== STATES ===== -->
+  <div class="state state-loading" *ngIf="loading">
+    <div class="loader"></div>
+    <p>Chargement des techniciens…</p>
+    <span>Synchronisation équipe • Profils terrain</span>
   </div>
 
-  <div class="loading-state" *ngIf="loading">
-    <div class="spinner"></div>
-    <p>Chargement des techniciens...</p>
+  <div class="state state-empty" *ngIf="!loading && filteredTechnicians.length === 0">
+    <div class="empty-illustration">
+      <div class="empty-orb"></div>
+      <span class="empty-emoji">◈</span>
+    </div>
+    <h3>{{ searchQuery ? 'Aucun résultat' : 'Aucun technicien' }}</h3>
+    <p>{{ searchQuery ? 'Aucun technicien ne correspond à votre recherche. Essayez un autre terme.' : 'Cliquez sur “Ajouter un technicien” pour créer votre premier profil.' }}</p>
+    <button class="btn btn-primary btn-sm" *ngIf="!searchQuery" (click)="openAddModal()">＋ Ajouter un technicien</button>
+    <button class="btn btn-secondary btn-sm" *ngIf="searchQuery" (click)="searchQuery=''">Effacer la recherche</button>
   </div>
 
-  <div class="empty-state" *ngIf="!loading && filteredTechnicians.length === 0">
-    <span class="empty-icon">👨‍🔧</span>
-    <h3 class="empty-title">{{ searchQuery ? 'Aucun résultat' : 'Aucun technicien' }}</h3>
-    <p class="empty-text">{{ searchQuery ? 'Aucun technicien ne correspond à votre recherche.' : 'Cliquez sur "Ajouter un technicien" pour en créer un.' }}</p>
-  </div>
-
-  <div class="tech-grid" *ngIf="!loading && filteredTechnicians.length > 0">
-    <div class="card tech-card" *ngFor="let tech of filteredTechnicians; trackBy: trackByTechnicianId">
-      <div class="card-body">
-        <div class="tech-header">
+  <!-- ===== GRID ===== -->
+  <section class="catalog-section" *ngIf="!loading && filteredTechnicians.length > 0">
+    <div class="tech-grid">
+      <article class="tech-card" *ngFor="let tech of filteredTechnicians; trackBy: trackByTechnicianId">
+        <div class="tech-top">
           <div class="tech-avatar">{{ getInitials(tech.fullName || '') }}</div>
-          <div class="tech-info">
-            <h3 class="tech-name">{{ tech.fullName }}</h3>
-            <span class="tech-email">{{ tech.email }}</span>
+          <div class="tech-head">
+            <h3 class="tech-name" [title]="tech.fullName">{{ tech.fullName }}</h3>
+            <span class="tech-email" [title]="tech.email">{{ tech.email }}</span>
+          </div>
+          <span class="role-badge">Technicien</span>
+        </div>
+        <div class="tech-divider"></div>
+        <div class="tech-meta">
+          <span class="meta-pill"><span class="meta-dot dot-success"></span> Actif</span>
+          <span class="meta-pill"><span class="meta-dot dot-info"></span> Terrain</span>
+          <span class="meta-pill" *ngIf="tech.email"><span class="meta-dot dot-accent"></span> Joignable</span>
+        </div>
+        <div class="tech-actions">
+          <button class="action-btn" (click)="openEditModal(tech)" title="Modifier"><span>✎</span> Modifier</button>
+          <button class="action-btn action-btn--danger" (click)="deleteTechnician(tech.id)" [disabled]="deletingId === tech.id" title="Supprimer">
+            <span>{{ deletingId === tech.id ? '…' : '⌫' }}</span> {{ deletingId === tech.id ? 'Suppression…' : 'Supprimer' }}
+          </button>
+        </div>
+      </article>
+    </div>
+  </section>
+
+  <!-- ===== MODAL ===== -->
+  <div class="modal-overlay" *ngIf="showModal" (click)="onOverlayClick($event)">
+    <div class="modal-card modal-premium" (click)="$event.stopPropagation()">
+      <div class="modal-glow"></div>
+      <div class="modal-header">
+        <div class="modal-header-left">
+          <div class="modal-icon"><span>{{ isEditing ? '✎' : '＋' }}</span></div>
+          <div>
+            <h2 class="modal-title">{{ isEditing ? 'Modifier le technicien' : 'Ajouter un technicien' }}</h2>
+            <p class="modal-subtitle">{{ isEditing ? 'Corrigez les informations et enregistrez' : 'Créez un profil terrain — accès et traçabilité' }}</p>
           </div>
         </div>
-        <div class="card-actions">
-          <button class="btn btn-outline btn-sm" (click)="openEditModal(tech)">✏️ Modifier</button>
-            <button class="btn btn-danger btn-sm" (click)="deleteTechnician(tech.id)" [disabled]="deletingId === tech.id">🗑️ Supprimer</button>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <div class="modal-overlay" *ngIf="showModal">
-    <div class="modal-card">
-      <div class="modal-header">
-        <h2 class="modal-title">{{ isEditing ? '✏️ Modifier le technicien' : '➕ Ajouter un technicien' }}</h2>
-        <button class="modal-close" (click)="showModal = false">×</button>
+        <button class="modal-close" (click)="closeModal()">×</button>
       </div>
 
       <div class="modal-body">
         <form (ngSubmit)="saveTechnician($event)" class="form">
           <div class="form-group">
-            <label class="form-label">Nom complet *</label>
-            <input type="text" [(ngModel)]="currentTechnician.fullName" name="fullName" required placeholder="Ex: Koffi Amégnigan" class="form-input" />
+            <label class="field-label">Nom complet <span class="required">*</span></label>
+            <input type="text" [(ngModel)]="currentTechnician.fullName" name="fullName" required placeholder="Ex: Koffi Amégnigan" class="field-input" />
           </div>
+
           <div class="form-group">
-            <label class="form-label">Email *</label>
-            <input type="email" [(ngModel)]="currentTechnician.email" name="email" required placeholder="tech@solartech.ma" class="form-input" />
+            <label class="field-label">Email <span class="required">*</span></label>
+            <input type="email" [(ngModel)]="currentTechnician.email" name="email" required placeholder="tech@solartech.ma" class="field-input" />
           </div>
-          <div class="form-group" *ngIf="!isEditing">
-            <label class="form-label">Nom d'utilisateur *</label>
-            <input type="text" [(ngModel)]="currentTechnician.username" name="username" required placeholder="koffi.amegnigan" class="form-input" />
+
+          <div class="field-row" *ngIf="!isEditing">
+            <div class="form-group">
+              <label class="field-label">Nom d'utilisateur <span class="required">*</span></label>
+              <input type="text" [(ngModel)]="currentTechnician.username" name="username" required placeholder="koffi.amegnigan" class="field-input" />
+            </div>
+            <div class="form-group">
+              <label class="field-label">Mot de passe <span class="required">*</span></label>
+              <input type="password" [(ngModel)]="currentTechnician.password" name="password" required placeholder="••••••••" class="field-input" />
+              <span class="field-hint">Min 6 caractères</span>
+            </div>
           </div>
-          <div class="form-group" *ngIf="!isEditing">
-            <label class="form-label">Mot de passe *</label>
-            <input type="password" [(ngModel)]="currentTechnician.password" name="password" required placeholder="••••••••" class="form-input" />
-          </div>
-          <div class="modal-footer">
-            <button type="button" class="btn btn-secondary" (click)="showModal = false">Annuler</button>
-            <button type="submit" class="btn btn-primary" [disabled]="saving">{{ isEditing ? 'Mettre à jour' : 'Enregistrer' }}</button>
+
+          <div class="field-hint" *ngIf="isEditing" style="margin-top:4px;">Nom d'utilisateur et mot de passe non modifiables ici</div>
+
+          <div class="modal-footer premium">
+            <button type="button" class="btn btn-secondary" (click)="closeModal()">Annuler</button>
+            <button type="submit" class="btn btn-primary" [disabled]="saving">
+              <span *ngIf="!saving" class="btn-loading"><span>{{ isEditing ? 'Mettre à jour' : 'Enregistrer' }}</span> <span>→</span></span>
+              <span *ngIf="saving" class="btn-loading"><i class="spinner-sm"></i> {{ isEditing ? 'Mise à jour…' : 'Création en cours…' }}</span>
+            </button>
           </div>
         </form>
       </div>
